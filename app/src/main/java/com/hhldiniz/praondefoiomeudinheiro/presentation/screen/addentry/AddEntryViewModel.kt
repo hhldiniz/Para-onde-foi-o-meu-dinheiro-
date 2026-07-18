@@ -1,11 +1,10 @@
 package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hhldiniz.praondefoiomeudinheiro.PraondefoiomeudinheiroApp
-import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
+import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
+import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,11 +26,10 @@ data class AddEntryUiState(
     val newCategoryName: String = "",
 )
 
-class AddEntryViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val app = application as PraondefoiomeudinheiroApp
-    private val importRepository = app.importRepository
-    private val categoryRepository = app.categoryRepository
+class AddEntryViewModel(
+    private val importRepository: ImportRepository,
+    private val categoryRepository: CategoryRepository,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEntryUiState())
     val uiState: StateFlow<AddEntryUiState> = _uiState.asStateFlow()

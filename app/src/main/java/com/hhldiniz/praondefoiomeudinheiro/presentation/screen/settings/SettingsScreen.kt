@@ -34,17 +34,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.hhldiniz.praondefoiomeudinheiro.PraondefoiomeudinheiroApp
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalYellow
 import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
+import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.HardShadowBox
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 /** Settings screen allowing the user to change the preferred currency. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +54,8 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
 ) {
     val selectedCurrency by CurrencyHolder.selectedCurrency.collectAsState()
-    val context = LocalContext.current
+    val importRepository = koinInject<ImportRepository>()
+    val categoryDao = koinInject<CategoryDao>()
     val coroutineScope = rememberCoroutineScope()
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -127,9 +129,8 @@ fun SettingsScreen(
                 TextButton(
                     onClick = {
                         showDeleteConfirm = false
-                        val app = context.applicationContext as PraondefoiomeudinheiroApp
                         coroutineScope.launch {
-                            app.importRepository.clearAllData(app.database.categoryDao())
+                            importRepository.clearAllData(categoryDao)
                         }
                     }
                 ) {

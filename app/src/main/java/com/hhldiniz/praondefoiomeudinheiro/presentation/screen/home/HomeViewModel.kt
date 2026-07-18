@@ -1,18 +1,17 @@
 package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home
 
-import android.app.Application
 import android.content.ContentResolver
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
-import com.hhldiniz.praondefoiomeudinheiro.PraondefoiomeudinheiroApp
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
-import com.hhldiniz.praondefoiomeudinheiro.data.repository.FileSpreadsheetRepository
+import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CsvEntry
+import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -59,11 +58,11 @@ private fun ImportedEntry.toParsedEntry() = ParsedEntry(dateMillis, amount, desc
 
 private fun ImportedEntry.toEntryDisplay() = EntryDisplay(dateMillis, description, category, amount, isExpense)
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel(
+    private val importRepository: ImportRepository,
+    private val repository: SpreadsheetRepository,
+) : ViewModel() {
 
-    private val repository = FileSpreadsheetRepository()
-    private val app = application as PraondefoiomeudinheiroApp
-    private val importRepository = app.importRepository
     private val _uiState = MutableStateFlow(HomeUiState(selectedCurrency = CurrencyHolder.selectedCurrency.value))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -108,7 +107,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     )
 
     init {
-        CurrencyHolder.init(getApplication())
         viewModelScope.launch {
             CurrencyHolder.selectedCurrency.collect { currency ->
                 _uiState.update { it.copy(selectedCurrency = currency) }

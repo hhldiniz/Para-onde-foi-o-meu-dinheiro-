@@ -11,29 +11,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.hhldiniz.praondefoiomeudinheiro.PraondefoiomeudinheiroApp
+import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry.AddEntryScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home.HomeScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.landing.LandingScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.settings.SettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 
 @Composable
 fun AppNavigation() {
-    val context = LocalContext.current
-    val app = context.applicationContext as PraondefoiomeudinheiroApp
+    val importRepository = koinInject<ImportRepository>()
     val navController = rememberNavController()
     var startDestination by remember { mutableStateOf<String?>(null) }
     var refreshKey by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         val count = withContext(Dispatchers.IO) {
-            app.database.importedEntryDao().count()
+            importRepository.count()
         }
         startDestination = if (count > 0) Screen.Home.route else Screen.Landing.route
     }

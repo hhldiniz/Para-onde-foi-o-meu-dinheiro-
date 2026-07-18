@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
-import com.hhldiniz.praondefoiomeudinheiro.data.repository.FileSpreadsheetRepository
+import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.FileValidationReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,9 +37,10 @@ sealed class LandingUiState {
  * via [FileSpreadsheetRepository], and state transitions through the
  * [LandingUiState] sealed class.
  */
-class LandingViewModel : ViewModel() {
+class LandingViewModel(
+    private val repository: SpreadsheetRepository,
+) : ViewModel() {
 
-    private val repository = FileSpreadsheetRepository()
     private val _uiState = MutableStateFlow<LandingUiState>(LandingUiState.Idle)
     val uiState: StateFlow<LandingUiState> = _uiState.asStateFlow()
 

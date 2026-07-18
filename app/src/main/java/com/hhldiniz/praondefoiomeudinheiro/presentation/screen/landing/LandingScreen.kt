@@ -33,7 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.androidx.compose.koinViewModel
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.FileValidationReport
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvalidSpreadsheetFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.ValidSpreadsheetFile
@@ -58,7 +58,7 @@ import androidx.compose.ui.res.stringResource
 fun LandingScreen(
     onComplete: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LandingViewModel = viewModel(),
+    viewModel: LandingViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current

@@ -47,7 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.androidx.compose.koinViewModel
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlack
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
@@ -63,7 +63,7 @@ import java.util.Locale
 @Composable
 fun AddEntryScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: AddEntryViewModel = viewModel(),
+    viewModel: AddEntryViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
