@@ -133,6 +133,7 @@ fun SettingsScreen(
                         coroutineScope.launch {
                             importRepository.clearAllData(categoryDao)
                             DataClearedHolder.markCleared()
+                            onNavigateBack()
                         }
                     }
                 ) {
