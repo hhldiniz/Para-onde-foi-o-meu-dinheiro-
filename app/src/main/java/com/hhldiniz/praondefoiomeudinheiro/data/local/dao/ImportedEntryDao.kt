@@ -7,6 +7,11 @@ import androidx.room.Query
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import kotlinx.coroutines.flow.Flow
 
+data class CategoryTotal(
+    val category: String,
+    val total: Double,
+)
+
 /** Room DAO for [ImportedEntry] persistence. */
 @Dao
 interface ImportedEntryDao {
@@ -38,4 +43,40 @@ interface ImportedEntryDao {
     /** Returns the total number of stored entries. */
     @Query("SELECT COUNT(*) FROM imported_entries")
     suspend fun count(): Int
+
+    /** Category totals for pie chart, optionally filtered by date range and category. */
+    @Query("""
+        SELECT category, SUM(amount) AS total FROM imported_entries
+        WHERE is_expense = :isExpense
+        AND (:category IS NULL OR category = :category)
+        AND date_millis BETWEEN :startMillis AND :endMillis
+        GROUP BY category ORDER BY total DESC
+    """)
+    suspend fun getCategoryTotals(
+        isExpense: Boolean,
+        category: String?,
+        startMillis: Long,
+        endMillis: Long,
+    ): List<CategoryTotal>
+
+    /** Raw entries within a date range for line chart aggregation. */
+    @Query("""
+        SELECT * FROM imported_entries
+        WHERE is_expense = :isExpense
+        AND (:category IS NULL OR category = :category)
+        AND date_millis BETWEEN :startMillis AND :endMillis
+        ORDER BY date_millis ASC
+    """)
+    suspend fun getEntriesByDateRange(
+        isExpense: Boolean,
+        category: String?,
+        startMillis: Long,
+        endMillis: Long,
+    ): List<ImportedEntry>
+
+    @Query("SELECT MIN(date_millis) FROM imported_entries")
+    suspend fun getMinDate(): Long?
+
+    @Query("SELECT MAX(date_millis) FROM imported_entries")
+    suspend fun getMaxDate(): Long?
 }

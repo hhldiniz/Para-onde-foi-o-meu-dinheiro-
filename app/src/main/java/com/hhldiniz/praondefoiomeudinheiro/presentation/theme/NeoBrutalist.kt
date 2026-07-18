@@ -7,23 +7,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 
 /**
@@ -38,26 +30,14 @@ fun HardShadowBox(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    var contentSize by remember { mutableStateOf(IntSize.Zero) }
-    val density = LocalDensity.current
-
     Box(modifier = modifier) {
-        if (contentSize != IntSize.Zero) {
-            Box(
-                modifier = Modifier
-                    .offset(x = offsetX, y = offsetY)
-                    .size(
-                        with(density) { contentSize.width.toDp() },
-                        with(density) { contentSize.height.toDp() }
-                    )
-                    .background(shadowColor, RectangleShape)
-            )
-        }
         Box(
-            modifier = Modifier.onSizeChanged { contentSize = it }
-        ) {
-            content()
-        }
+            modifier = Modifier
+                .matchParentSize()
+                .offset(x = offsetX, y = offsetY)
+                .background(shadowColor, RectangleShape)
+        )
+        content()
     }
 }
 

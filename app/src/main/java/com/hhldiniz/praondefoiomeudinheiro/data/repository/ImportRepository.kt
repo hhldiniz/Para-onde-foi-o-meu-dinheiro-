@@ -1,5 +1,6 @@
 package com.hhldiniz.praondefoiomeudinheiro.data.repository
 
+import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryTotal
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.ImportedEntryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import kotlinx.coroutines.flow.Flow
@@ -33,4 +34,22 @@ class ImportRepository(private val dao: ImportedEntryDao) {
 
     /** Returns the total entry count. */
     suspend fun count(): Int = dao.count()
+
+    suspend fun getCategoryTotals(
+        isExpense: Boolean,
+        category: String?,
+        startMillis: Long,
+        endMillis: Long,
+    ): List<CategoryTotal> = dao.getCategoryTotals(isExpense, category, startMillis, endMillis)
+
+    suspend fun getEntriesByDateRange(
+        isExpense: Boolean,
+        category: String?,
+        startMillis: Long,
+        endMillis: Long,
+    ): List<ImportedEntry> = dao.getEntriesByDateRange(isExpense, category, startMillis, endMillis)
+
+    suspend fun getMinDate(): Long? = dao.getMinDate()
+
+    suspend fun getMaxDate(): Long? = dao.getMaxDate()
 }

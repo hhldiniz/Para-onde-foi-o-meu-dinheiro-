@@ -55,7 +55,7 @@ fun SpendingPieChart(
     currencySymbol: String = "R$",
     title: String? = null,
 ) {
-    val total = data.sumOf { it.value }
+    val total = remember(data) { data.sumOf { it.value } }
     if (total <= 0.0 || data.isEmpty()) return
 
     val borderColor = MaterialTheme.colorScheme.outline
