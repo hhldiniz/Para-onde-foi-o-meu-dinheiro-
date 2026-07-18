@@ -144,7 +144,7 @@ class HomeViewModel(
 
     fun loadData(contentResolver: ContentResolver) {
         val uriList = CsvUriHolder.uris
-        if (uriList.isEmpty()) {
+        if (uriList.isEmpty() || DataClearedHolder.cleared.value) {
             viewModelScope.launch {
                 val hasRoomData = withContext(Dispatchers.IO) { importRepository.count() > 0 }
                 if (hasRoomData && !DataClearedHolder.cleared.value) {
