@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">Where Did My Money Go</string>
+
+    <!-- Landing Screen -->
+    <string name="landing_title">Where Did\nMy Money Go?</string>
+    <string name="landing_instruction">Select a CSV file or a folder with your expenses</string>
+    <string name="landing_btn_select_csv">SELECT CSV FILE</string>
+    <string name="landing_btn_select_folder">SELECT FOLDER</string>
+    <string name="landing_validating">VALIDATING FILES...</string>
+    <string name="landing_title_valid">FILES LOADED</string>
+    <string name="landing_title_invalid">VALIDATION RESULT</string>
+    <string name="landing_warning_invalid">WARNING: one or more files are not in the correct format and were ignored.</string>
+    <string name="landing_tag_valid">VALID (%d)</string>
+    <string name="landing_tag_ignored">IGNORED (%d)</string>
+    <string name="landing_btn_continue">CONTINUE</string>
+    <string name="landing_btn_back">BACK</string>
+    <string name="landing_columns_format">%1$d columns: %2$s</string>
+
+    <!-- Error Messages -->
+    <string name="error_no_valid_files">No valid file found.</string>
+    <string name="error_no_csv_in_folder">No .csv file found in the folder.</string>
+    <string name="error_no_valid_csv_in_folder">No valid .csv file found in the folder.</string>
+    <string name="error_unsupported_format">Unsupported format. Only .csv files are accepted.</string>
+    <string name="error_cannot_read_file">Could not read file: %s</string>
+    <string name="error_empty_file">Empty file.</string>
+    <string name="error_no_header_or_data">File must contain a header and at least one data row.</string>
+    <string name="error_header_not_found">Invalid format. Header line with expected columns not found: Date, Amount, Description, Category.</string>
+    <string name="error_invalid_header">Invalid format. Header must contain columns: Date, Amount, Description, Category.</string>
+    <string name="error_no_data_rows">File must contain at least one data row after the header.</string>
+    <string name="error_cannot_open_file">Could not open file</string>
+
+    <!-- File headers -->
+    <string name="header_expenses">Expenses: Date, Amount, Description, Category</string>
+    <string name="header_income">Income: Date, Amount, Description, Category</string>
+
+    <!-- General -->
+    <string name="unknown_file">unknown</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">Where Did\nMy Money Go?</string>
+    <string name="home_total_spending">TOTAL SPENDING</string>
+    <string name="home_period_label">Period: %s</string>
+    <string name="home_date_from">From</string>
+    <string name="home_date_to">To</string>
+    <string name="home_date_placeholder">---</string>
+    <string name="home_date_ok">OK</string>
+    <string name="home_date_cancel">Cancel</string>
+
+    <!-- Period labels -->
+    <string name="period_day">Day</string>
+    <string name="period_week">Week</string>
+    <string name="period_month">Month</string>
+    <string name="period_year">Year</string>
+    <string name="period_custom">Custom</string>
+
+    <!-- Chart -->
+    <string name="chart_spending_by_category">SPENDING BY CATEGORY</string>
+
+    <!-- Indicators -->
+    <string name="home_patrimony">TOTAL PATRIMONY</string>
+    <string name="home_remaining_balance">BALANCE AFTER SPENDING</string>
+</resources>

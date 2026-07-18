@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">¿A dónde fue mi dinero?</string>
+
+    <!-- Landing Screen -->
+    <string name="landing_title">¿A Dónde Fue\nMi Dinero?</string>
+    <string name="landing_instruction">Seleccione un archivo CSV o una carpeta con sus gastos</string>
+    <string name="landing_btn_select_csv">SELECCIONAR ARCHIVO CSV</string>
+    <string name="landing_btn_select_folder">SELECCIONAR CARPETA</string>
+    <string name="landing_validating">VALIDANDO ARCHIVOS...</string>
+    <string name="landing_title_valid">ARCHIVOS CARGADOS</string>
+    <string name="landing_title_invalid">RESULTADO DE VALIDACIÓN</string>
+    <string name="landing_warning_invalid">ATENCIÓN: uno o más archivos no están en el formato correcto y fueron ignorados.</string>
+    <string name="landing_tag_valid">VÁLIDOS (%d)</string>
+    <string name="landing_tag_ignored">IGNORADOS (%d)</string>
+    <string name="landing_btn_continue">CONTINUAR</string>
+    <string name="landing_btn_back">VOLVER</string>
+    <string name="landing_columns_format">%1$d columnas: %2$s</string>
+
+    <!-- Error Messages -->
+    <string name="error_no_valid_files">No se encontró ningún archivo válido.</string>
+    <string name="error_no_csv_in_folder">No se encontró ningún archivo .csv en la carpeta.</string>
+    <string name="error_no_valid_csv_in_folder">No se encontró ningún archivo .csv válido en la carpeta.</string>
+    <string name="error_unsupported_format">Formato no soportado. Solo se aceptan archivos .csv.</string>
+    <string name="error_cannot_read_file">No se pudo leer el archivo: %s</string>
+    <string name="error_empty_file">Archivo vacío.</string>
+    <string name="error_no_header_or_data">El archivo debe contener un encabezado y al menos una fila de datos.</string>
+    <string name="error_header_not_found">Formato inválido. No se encontró la línea de encabezado con las columnas esperadas: Fecha, Valor, Descripción, Categoría.</string>
+    <string name="error_invalid_header">Formato inválido. El encabezado debe contener las columnas: Fecha, Valor, Descripción, Categoría.</string>
+    <string name="error_no_data_rows">El archivo debe contener al menos una fila de datos después del encabezado.</string>
+    <string name="error_cannot_open_file">No se pudo abrir el archivo</string>
+
+    <!-- File headers -->
+    <string name="header_expenses">Gastos: Fecha, Valor, Descripción, Categoría</string>
+    <string name="header_income">Ingresos: Fecha, Valor, Descripción, Categoría</string>
+
+    <!-- General -->
+    <string name="unknown_file">desconocido</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">¿A Dónde Fue\nMi Dinero?</string>
+    <string name="home_total_spending">GASTOS TOTALES</string>
+    <string name="home_period_label">Período: %s</string>
+    <string name="home_date_from">Desde</string>
+    <string name="home_date_to">Hasta</string>
+    <string name="home_date_placeholder">---</string>
+    <string name="home_date_ok">OK</string>
+    <string name="home_date_cancel">Cancelar</string>
+
+    <!-- Period labels -->
+    <string name="period_day">Día</string>
+    <string name="period_week">Semana</string>
+    <string name="period_month">Mes</string>
+    <string name="period_year">Año</string>
+    <string name="period_custom">Personalizado</string>
+
+    <!-- Chart -->
+    <string name="chart_spending_by_category">GASTOS POR CATEGORÍA</string>
+
+    <!-- Indicators -->
+    <string name="home_patrimony">PATRIMONIO TOTAL</string>
+    <string name="home_remaining_balance">SALDO DESPUÉS DE GASTOS</string>
+</resources>
