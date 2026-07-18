@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
@@ -132,6 +133,13 @@ class HomeViewModel(
                 _uiState.update { it.copy(selectedCurrency = currency) }
             }
         }
+        viewModelScope.launch {
+            DataClearedHolder.cleared.collect { cleared ->
+                if (cleared) {
+                    showZeroedState()
+                }
+            }
+        }
     }
 
     fun loadData(contentResolver: ContentResolver) {
@@ -139,11 +147,10 @@ class HomeViewModel(
         if (uriList.isEmpty()) {
             viewModelScope.launch {
                 val hasRoomData = withContext(Dispatchers.IO) { importRepository.count() > 0 }
-                if (hasRoomData) {
+                if (hasRoomData && !DataClearedHolder.cleared.value) {
                     loadFromRoom()
                 } else {
-                    _uiState.update { it.copy(debugMessage = "Nenhum dado encontrado. Usando dados mock.") }
-                    loadMockData()
+                    showZeroedState()
                 }
             }
             return
@@ -187,10 +194,11 @@ class HomeViewModel(
             _uiState.update { it.copy(debugMessage = result.errors.joinToString("\n")) }
             if (result.spending.isEmpty() && result.earnings.isEmpty()) {
                 _uiState.update {
-                    it.copy(debugMessage = (it.debugMessage ?: "") + "\nDados vazios. Usando mock.")
+                    it.copy(debugMessage = (it.debugMessage ?: "") + "\nNenhum dado encontrado nos arquivos.")
                 }
-                loadMockData()
+                showZeroedState()
             } else {
+                DataClearedHolder.reset()
                 detectCurrency(result.rawAmounts)
                 updateDerivedState()
                 loadDataForPeriod(Period.MONTH)
@@ -237,6 +245,7 @@ class HomeViewModel(
             }
             _uiState.update { it.copy(debugMessage = errors.joinToString("\n")) }
             if (imported.isNotEmpty()) {
+                DataClearedHolder.reset()
                 detectCurrency(rawAmounts)
                 updateDerivedState()
                 loadDataForPeriod(_uiState.value.selectedPeriod)
@@ -283,6 +292,7 @@ class HomeViewModel(
             }
             _uiState.update { it.copy(debugMessage = errors.joinToString("\n")) }
             if (imported.isNotEmpty()) {
+                DataClearedHolder.reset()
                 updateDerivedState()
                 loadDataForPeriod(_uiState.value.selectedPeriod)
             }
@@ -300,44 +310,33 @@ class HomeViewModel(
             .mapNotNull { it.uri }
     }
 
-    private var mockSpending = listOf<ParsedEntry>()
-    private var mockEarnings = listOf<ParsedEntry>()
-
-    private fun loadMockData() {
-        val now = Calendar.getInstance()
-        val year = now.get(Calendar.YEAR)
-
-        mockSpending = (0 until 12).map { i ->
-            val cal = Calendar.getInstance().apply { set(year, i, 15, 0, 0, 0); set(Calendar.MILLISECOND, 0) }
-            ParsedEntry(cal.timeInMillis, baseValues[i], "", categories[i % categories.size])
-        }
-        mockEarnings = (0 until 12).map { i ->
-            val cal = Calendar.getInstance().apply { set(year, i, 5, 0, 0, 0); set(Calendar.MILLISECOND, 0) }
-            ParsedEntry(cal.timeInMillis, baseEarningsValues[i], "", earningCategories[i % earningCategories.size])
-        }
-        val allCategories = (mockSpending.asSequence() + mockEarnings.asSequence())
-            .map { it.category }.distinct().sorted().toList()
-        val minDate = mockSpending.minOfOrNull { it.dateMillis }
-            ?: mockEarnings.minOfOrNull { it.dateMillis }
-        val maxDate = mockEarnings.maxOfOrNull { it.dateMillis }
-            ?: mockSpending.maxOfOrNull { it.dateMillis }
-        _uiState.update { it.copy(allCategories = allCategories, datasetMinDate = minDate, datasetMaxDate = maxDate) }
-        loadDataForPeriod(Period.MONTH)
-    }
-
-    private val isMockData: Boolean get() = mockSpending.isNotEmpty() || mockEarnings.isNotEmpty()
-
     fun refreshData() {
-        mockSpending = emptyList()
-        mockEarnings = emptyList()
         viewModelScope.launch {
             val hasRoomData = withContext(Dispatchers.IO) { importRepository.count() > 0 }
-            if (hasRoomData) {
+            if (hasRoomData && !DataClearedHolder.cleared.value) {
                 loadFromRoom()
             } else {
-                loadMockData()
+                showZeroedState()
             }
         }
+    }
+
+    private fun showZeroedState() {
+        _uiState.update {
+            it.copy(
+                spendingData = emptyList(),
+                categorySpending = emptyList(),
+                earningsData = emptyList(),
+                categoryEarnings = emptyList(),
+                totalSpending = 0.0,
+                totalEarnings = 0.0,
+                allCategories = emptyList(),
+                datasetMinDate = null,
+                datasetMaxDate = null,
+                debugMessage = null,
+            )
+        }
+        loadDataForPeriod(Period.MONTH)
     }
 
     fun onPeriodSelected(period: Period) {
@@ -377,19 +376,15 @@ class HomeViewModel(
                 selectedCategory = category,
             )
         } else {
-            val (start, end) = computeDateRange()
-            filterAndEmit(period, start, end, null, null, category)
+            viewModelScope.launch {
+                val (start, end) = withContext(Dispatchers.IO) {
+                    val min = importRepository.getMinDate() ?: System.currentTimeMillis()
+                    val max = importRepository.getMaxDate() ?: min
+                    min to max
+                }
+                filterAndEmit(period, start, end, null, null, category)
+            }
         }
-    }
-
-    private fun computeDateRange(): Pair<Long, Long> {
-        val min = if (isMockData) mockSpending.minOfOrNull { it.dateMillis }
-            ?: mockEarnings.minOfOrNull { it.dateMillis } else null
-        val max = if (isMockData) mockEarnings.maxOfOrNull { it.dateMillis }
-            ?: mockSpending.maxOfOrNull { it.dateMillis } else null
-        val start = min ?: Calendar.getInstance().run { timeInMillis }
-        val end = max ?: start
-        return start to end
     }
 
     private fun updateDerivedState() {
@@ -413,9 +408,7 @@ class HomeViewModel(
 
     private fun loadDataForPeriod(period: Period) {
         viewModelScope.launch {
-            val (start, end) = if (isMockData) {
-                computeDateRange()
-            } else withContext(Dispatchers.IO) {
+            val (start, end) = withContext(Dispatchers.IO) {
                 val min = importRepository.getMinDate() ?: System.currentTimeMillis()
                 val max = importRepository.getMaxDate() ?: min
                 min to max
@@ -442,39 +435,27 @@ class HomeViewModel(
                 withContext(Dispatchers.IO) {
                     val monthNames = listOf("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
 
-                    if (isMockData) {
-                        val filteredSpending = mockSpending.filter { it.dateMillis in startMillis..endMillis }
-                            .let { list -> if (selectedCategory != null) list.filter { it.category == selectedCategory } else list }
-                        val filteredEarnings = mockEarnings.filter { it.dateMillis in startMillis..endMillis }
-                            .let { list -> if (selectedCategory != null) list.filter { it.category == selectedCategory } else list }
-                        val ts = filteredSpending.sumOf { it.amount }
-                        val te = filteredEarnings.sumOf { it.amount }
-                        val sd = buildChartData(filteredSpending, kPeriod, monthNames)
-                        val ed = buildChartData(filteredEarnings, kPeriod, monthNames)
-                        QuadResult(sd.first, sd.second, ed.first, ed.second, ts, te)
-                    } else {
-                        val spendingCatTotals = importRepository.getCategoryTotals(
-                            isExpense = true, category = selectedCategory,
-                            startMillis = startMillis, endMillis = endMillis,
-                        )
-                        val earningsCatTotals = importRepository.getCategoryTotals(
-                            isExpense = false, category = selectedCategory,
-                            startMillis = startMillis, endMillis = endMillis,
-                        )
-                        val spendingEntries = importRepository.getEntriesByDateRange(
-                            isExpense = true, category = selectedCategory,
-                            startMillis = startMillis, endMillis = endMillis,
-                        )
-                        val earningsEntries = importRepository.getEntriesByDateRange(
-                            isExpense = false, category = selectedCategory,
-                            startMillis = startMillis, endMillis = endMillis,
-                        )
-                        val ts = spendingCatTotals.sumOf { it.total }
-                        val te = earningsCatTotals.sumOf { it.total }
-                        val sd = buildChartData(spendingEntries.map { it.toParsedEntry() }, kPeriod, monthNames)
-                        val ed = buildChartData(earningsEntries.map { it.toParsedEntry() }, kPeriod, monthNames)
-                        QuadResult(sd.first, sd.second, ed.first, ed.second, ts, te)
-                    }
+                    val spendingCatTotals = importRepository.getCategoryTotals(
+                        isExpense = true, category = selectedCategory,
+                        startMillis = startMillis, endMillis = endMillis,
+                    )
+                    val earningsCatTotals = importRepository.getCategoryTotals(
+                        isExpense = false, category = selectedCategory,
+                        startMillis = startMillis, endMillis = endMillis,
+                    )
+                    val spendingEntries = importRepository.getEntriesByDateRange(
+                        isExpense = true, category = selectedCategory,
+                        startMillis = startMillis, endMillis = endMillis,
+                    )
+                    val earningsEntries = importRepository.getEntriesByDateRange(
+                        isExpense = false, category = selectedCategory,
+                        startMillis = startMillis, endMillis = endMillis,
+                    )
+                    val ts = spendingCatTotals.sumOf { it.total }
+                    val te = earningsCatTotals.sumOf { it.total }
+                    val sd = buildChartData(spendingEntries.map { it.toParsedEntry() }, kPeriod, monthNames)
+                    val ed = buildChartData(earningsEntries.map { it.toParsedEntry() }, kPeriod, monthNames)
+                    QuadResult(sd.first, sd.second, ed.first, ed.second, ts, te)
                 }
 
             _uiState.update {
@@ -631,12 +612,5 @@ class HomeViewModel(
             cleaned.contains(",") -> cleaned.replace(",", ".").toDoubleOrNull()
             else -> cleaned.toDoubleOrNull()
         }
-    }
-
-    companion object {
-        private val baseValues = listOf(1200.0, 980.0, 1500.0, 1100.0, 1350.0, 890.0, 1600.0, 1050.0, 1400.0, 1250.0, 950.0, 1800.0)
-        private val baseEarningsValues = listOf(10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0)
-        private val categories = listOf("Alimentacao", "Transporte", "Lazer", "Saude", "Educacao", "Moradia", "Outros")
-        private val earningCategories = listOf("Salario", "Freelance", "Investimentos", "Outros")
     }
 }

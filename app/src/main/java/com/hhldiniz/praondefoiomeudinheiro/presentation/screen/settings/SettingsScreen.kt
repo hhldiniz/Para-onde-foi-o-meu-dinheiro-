@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalYellow
 import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
@@ -131,6 +132,7 @@ fun SettingsScreen(
                         showDeleteConfirm = false
                         coroutineScope.launch {
                             importRepository.clearAllData(categoryDao)
+                            DataClearedHolder.markCleared()
                         }
                     }
                 ) {
