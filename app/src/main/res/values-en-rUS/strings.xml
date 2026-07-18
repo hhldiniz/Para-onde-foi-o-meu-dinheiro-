@@ -73,4 +73,14 @@
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_placeholder">Settings coming soon</string>
+    <string name="settings_back_content_description">Back</string>
+
+    <!-- Settings Danger Zone -->
+    <string name="settings_danger_title">DANGER ZONE</string>
+    <string name="settings_danger_description">This permanently deletes all internal app data (entries and categories).</string>
+    <string name="settings_danger_delete_button">DELETE ALL DATA</string>
+    <string name="settings_danger_confirm_title">Delete all data?</string>
+    <string name="settings_danger_confirm_text">All entries and categories will be permanently deleted. This action cannot be undone.</string>
+    <string name="settings_danger_confirm_button">DELETE EVERYTHING</string>
+    <string name="settings_danger_cancel_button">CANCEL</string>
 </resources>

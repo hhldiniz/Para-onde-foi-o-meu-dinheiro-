@@ -73,4 +73,14 @@
     <!-- Settings Screen -->
     <string name="settings_title">Configuración</string>
     <string name="settings_placeholder">Configuración próximamente</string>
+    <string name="settings_back_content_description">Volver</string>
+
+    <!-- Settings Danger Zone -->
+    <string name="settings_danger_title">ZONA DE PELIGRO</string>
+    <string name="settings_danger_description">Esta acción elimina permanentemente todos los datos internos de la aplicación (movimientos y categorías).</string>
+    <string name="settings_danger_delete_button">ELIMINAR TODOS LOS DATOS</string>
+    <string name="settings_danger_confirm_title">¿Eliminar todos los datos?</string>
+    <string name="settings_danger_confirm_text">Todos los movimientos y categorías se eliminarán permanentemente. Esta acción no se puede deshacer.</string>
+    <string name="settings_danger_confirm_button">ELIMINAR TODO</string>
+    <string name="settings_danger_cancel_button">CANCELAR</string>
 </resources>

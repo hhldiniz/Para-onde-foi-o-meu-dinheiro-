@@ -71,4 +71,14 @@
     <!-- Settings Screen -->
     <string name="settings_title">Configurações</string>
     <string name="settings_placeholder">Configurações em breve</string>
+    <string name="settings_back_content_description">Voltar</string>
+
+    <!-- Settings Danger Zone -->
+    <string name="settings_danger_title">ZONA DE PERIGO</string>
+    <string name="settings_danger_description">Esta ação apaga permanentemente todos os dados internos do aplicativo (movimentos e categorias).</string>
+    <string name="settings_danger_delete_button">APAGAR TODOS OS DADOS</string>
+    <string name="settings_danger_confirm_title">Apagar todos os dados?</string>
+    <string name="settings_danger_confirm_text">Todos os movimentos e categorias serão apagados permanentemente. Esta ação não pode ser desfeita.</string>
+    <string name="settings_danger_confirm_button">APAGAR TUDO</string>
+    <string name="settings_danger_cancel_button">CANCELAR</string>
 </resources>

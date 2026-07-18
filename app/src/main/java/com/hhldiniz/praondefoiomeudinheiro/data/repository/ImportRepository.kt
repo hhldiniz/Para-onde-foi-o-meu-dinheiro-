@@ -1,5 +1,6 @@
 package com.hhldiniz.praondefoiomeudinheiro.data.repository
 
+import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryTotal
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.ImportedEntryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
@@ -31,6 +32,12 @@ class ImportRepository(private val dao: ImportedEntryDao) {
 
     /** Deletes all entries from the database. */
     suspend fun deleteAll() = dao.deleteAll()
+
+    /** Deletes all entries and categories from the database. */
+    suspend fun clearAllData(categoryDao: CategoryDao) {
+        dao.deleteAll()
+        categoryDao.deleteAll()
+    }
 
     /** Returns the total entry count. */
     suspend fun count(): Int = dao.count()

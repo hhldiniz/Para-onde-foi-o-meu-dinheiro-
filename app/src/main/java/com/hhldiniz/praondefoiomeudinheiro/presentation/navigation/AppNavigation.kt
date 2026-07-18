@@ -72,7 +72,9 @@ fun AppNavigation() {
         }
 
         composable(Screen.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(Screen.AddEntry.route) {
