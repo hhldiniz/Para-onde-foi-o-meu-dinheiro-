@@ -165,23 +165,23 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun importFile(uri: Uri, contentResolver: ContentResolver) {
         viewModelScope.launch {
             val (imported, errors) = withContext(Dispatchers.IO) {
-                val importedResult = mutableListOf<ImportedEntry>()
                 val errorMessages = mutableListOf<String>()
-                repository.readValues(uri, contentResolver)
-                    .onSuccess { range ->
-                        val fileName = uri.lastPathSegment ?: ""
-                        val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
-                        val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
-                        val entries = sp.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = true, fileName = fileName) } +
-                            ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) }
-                        importedResult.addAll(entries)
-                        importRepository.insertEntries(entries)
-                        errorMessages.add("Importado: ${sp.size} gastos, ${ep.size} rendas")
-                    }
-                    .onFailure { error ->
-                        errorMessages.add("Falha ao importar: ${error.message}")
-                    }
-                importedResult to errorMessages
+                val result = repository.readValues(uri, contentResolver)
+                if (result.isSuccess) {
+                    val range = result.getOrThrow()
+                    val fileName = uri.lastPathSegment ?: ""
+                    val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
+                    val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
+                    val entries = sp.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = true, fileName = fileName) } +
+                        ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) }
+                    val inserted = importRepository.insertEntries(entries)
+                    errorMessages.add("Importado: ${inserted.size} registros (${entries.size - inserted.size} duplicatas ignoradas)")
+                    inserted to errorMessages
+                } else {
+                    val error = result.exceptionOrNull()
+                    errorMessages.add("Falha ao importar: ${error?.message}")
+                    emptyList<ImportedEntry>() to errorMessages
+                }
             }
             val message = errors.joinToString("\n")
             _uiState.update { it.copy(debugMessage = message) }
@@ -201,24 +201,26 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val (imported, errors) = withContext(Dispatchers.IO) {
                 val csvUris = listCsvUris(context, treeUri)
-                val importedResult = mutableListOf<ImportedEntry>()
+                val allEntries = mutableListOf<ImportedEntry>()
                 val errorMessages = mutableListOf<String>()
                 for (uri in csvUris) {
-                    repository.readValues(uri, context.contentResolver)
-                        .onSuccess { range ->
-                            val fileName = uri.lastPathSegment ?: ""
-                            val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
-                            val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
-                            importedResult += sp.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = true, fileName = fileName) }
-                            importedResult += ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) }
-                            errorMessages.add("${fileName}: ${sp.size} gastos, ${ep.size} rendas")
-                        }
-                        .onFailure { error ->
-                            errorMessages.add("Falha ao ler $uri: ${error.message}")
-                        }
+                    val result = repository.readValues(uri, context.contentResolver)
+                    if (result.isSuccess) {
+                        val range = result.getOrThrow()
+                        val fileName = uri.lastPathSegment ?: ""
+                        val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
+                        val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
+                        allEntries += sp.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = true, fileName = fileName) }
+                        allEntries += ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) }
+                        errorMessages.add("${fileName}: ${sp.size} gastos, ${ep.size} rendas")
+                    } else {
+                        val error = result.exceptionOrNull()
+                        errorMessages.add("Falha ao ler $uri: ${error?.message}")
+                    }
                 }
-                importRepository.insertEntries(importedResult)
-                importedResult to errorMessages
+                val inserted = importRepository.insertEntries(allEntries)
+                errorMessages.add("Total: ${inserted.size} registros (${allEntries.size - inserted.size} duplicatas ignoradas)")
+                inserted to errorMessages
             }
             val message = errors.joinToString("\n")
             _uiState.update { it.copy(debugMessage = message) }

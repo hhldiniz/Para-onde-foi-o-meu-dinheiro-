@@ -6,8 +6,9 @@ import kotlinx.coroutines.flow.Flow
 
 class ImportRepository(private val dao: ImportedEntryDao) {
 
-    suspend fun insertEntries(entries: List<ImportedEntry>) {
-        dao.insertAll(entries)
+    suspend fun insertEntries(entries: List<ImportedEntry>): List<ImportedEntry> {
+        val results = dao.insertAll(entries)
+        return entries.filterIndexed { index, _ -> results[index] != -1L }
     }
 
     fun getAllEntries(): Flow<List<ImportedEntry>> = dao.getAllEntries()

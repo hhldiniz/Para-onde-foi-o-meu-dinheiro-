@@ -27,7 +27,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -191,35 +191,37 @@ private fun HomeContent(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         floatingActionButton = {
-            Box {
-                FloatingActionButton(
-                    onClick = { showImportMenu = true },
-                    containerColor = BrutalPink,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = "Importar dados"
-                    )
-                }
-                DropdownMenu(
-                    expanded = showImportMenu,
-                    onDismissRequest = { showImportMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Importar arquivo") },
-                        onClick = {
-                            showImportMenu = false
-                            onImportFile()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Importar pasta") },
-                        onClick = {
-                            showImportMenu = false
-                            onImportFolder()
-                        }
-                    )
+            if (!showEntries) {
+                Box {
+                    FloatingActionButton(
+                        onClick = { showImportMenu = true },
+                        containerColor = BrutalPink,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.FileDownload,
+                            contentDescription = "Importar dados"
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showImportMenu,
+                        onDismissRequest = { showImportMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Importar arquivo") },
+                            onClick = {
+                                showImportMenu = false
+                                onImportFile()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Importar pasta") },
+                            onClick = {
+                                showImportMenu = false
+                                onImportFolder()
+                            }
+                        )
+                    }
                 }
             }
         },
