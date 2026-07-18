@@ -48,7 +48,8 @@ private data class LoadResult(
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = FileSpreadsheetRepository()
-    private val importRepository = (application as PraondefoiomeudinheiroApp).importRepository
+    private val app = application as PraondefoiomeudinheiroApp
+    private val importRepository = app.importRepository
     private val _uiState = MutableStateFlow(HomeUiState(selectedCurrency = CurrencyHolder.selectedCurrency.value))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -88,8 +89,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val uriList = CsvUriHolder.uris
         if (rawSpending.isNotEmpty() || rawEarnings.isNotEmpty()) return
         if (uriList.isEmpty()) {
-            _uiState.update { it.copy(debugMessage = "Nenhum URI encontrado. Usando dados mock.") }
-            loadMockData()
+            viewModelScope.launch {
+                val hasRoomData = withContext(Dispatchers.IO) { importRepository.count() > 0 }
+                if (hasRoomData) {
+                    loadFromRoom()
+                } else {
+                    _uiState.update { it.copy(debugMessage = "Nenhum dado encontrado. Usando dados mock.") }
+                    loadMockData()
+                }
+            }
             return
         }
         viewModelScope.launch {
@@ -139,6 +147,102 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 loadDataForPeriod(Period.MONTH)
             }
         }
+    }
+
+    private fun loadFromRoom() {
+        viewModelScope.launch {
+            val entries = withContext(Dispatchers.IO) { app.database.importedEntryDao().getAllEntriesByDate() }
+            rawSpending = entries.filter { it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
+            rawEarnings = entries.filter { !it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
+            val allCategories = (rawSpending + rawEarnings).map { it.category }.distinct().sorted()
+            val minDate = (rawSpending + rawEarnings).minOfOrNull { it.dateMillis }
+            val maxDate = (rawSpending + rawEarnings).maxOfOrNull { it.dateMillis }
+            _uiState.update { it.copy(allCategories = allCategories, datasetMinDate = minDate, datasetMaxDate = maxDate) }
+            loadDataForPeriod(Period.MONTH)
+        }
+    }
+
+    fun importFile(uri: Uri, contentResolver: ContentResolver) {
+        viewModelScope.launch {
+            val (imported, errors) = withContext(Dispatchers.IO) {
+                val importedResult = mutableListOf<ImportedEntry>()
+                val errorMessages = mutableListOf<String>()
+                repository.readValues(uri, contentResolver)
+                    .onSuccess { range ->
+                        val fileName = uri.lastPathSegment ?: ""
+                        val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
+                        val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
+                        val entries = sp.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = true, fileName = fileName) } +
+                            ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) }
+                        importedResult.addAll(entries)
+                        importRepository.insertEntries(entries)
+                        errorMessages.add("Importado: ${sp.size} gastos, ${ep.size} rendas")
+                    }
+                    .onFailure { error ->
+                        errorMessages.add("Falha ao importar: ${error.message}")
+                    }
+                importedResult to errorMessages
+            }
+            val message = errors.joinToString("\n")
+            _uiState.update { it.copy(debugMessage = message) }
+            if (imported.isNotEmpty()) {
+                rawSpending += imported.filter { it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
+                rawEarnings += imported.filter { !it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
+                val allCategories = (rawSpending + rawEarnings).map { it.category }.distinct().sorted()
+                val minDate = (rawSpending + rawEarnings).minOfOrNull { it.dateMillis }
+                val maxDate = (rawSpending + rawEarnings).maxOfOrNull { it.dateMillis }
+                _uiState.update { it.copy(allCategories = allCategories, datasetMinDate = minDate, datasetMaxDate = maxDate) }
+                loadDataForPeriod(_uiState.value.selectedPeriod)
+            }
+        }
+    }
+
+    fun importFolder(treeUri: Uri, context: android.content.Context) {
+        viewModelScope.launch {
+            val (imported, errors) = withContext(Dispatchers.IO) {
+                val csvUris = listCsvUris(context, treeUri)
+                val importedResult = mutableListOf<ImportedEntry>()
+                val errorMessages = mutableListOf<String>()
+                for (uri in csvUris) {
+                    repository.readValues(uri, context.contentResolver)
+                        .onSuccess { range ->
+                            val fileName = uri.lastPathSegment ?: ""
+                            val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
+                            val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
+                            importedResult += sp.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = true, fileName = fileName) }
+                            importedResult += ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) }
+                            errorMessages.add("${fileName}: ${sp.size} gastos, ${ep.size} rendas")
+                        }
+                        .onFailure { error ->
+                            errorMessages.add("Falha ao ler $uri: ${error.message}")
+                        }
+                }
+                importRepository.insertEntries(importedResult)
+                importedResult to errorMessages
+            }
+            val message = errors.joinToString("\n")
+            _uiState.update { it.copy(debugMessage = message) }
+            if (imported.isNotEmpty()) {
+                rawSpending += imported.filter { it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
+                rawEarnings += imported.filter { !it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
+                val allCategories = (rawSpending + rawEarnings).map { it.category }.distinct().sorted()
+                val minDate = (rawSpending + rawEarnings).minOfOrNull { it.dateMillis }
+                val maxDate = (rawSpending + rawEarnings).maxOfOrNull { it.dateMillis }
+                _uiState.update { it.copy(allCategories = allCategories, datasetMinDate = minDate, datasetMaxDate = maxDate) }
+                loadDataForPeriod(_uiState.value.selectedPeriod)
+            }
+        }
+    }
+
+    private fun listCsvUris(context: android.content.Context, treeUri: Uri): List<Uri> {
+        val documentFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
+        return documentFile.listFiles()
+            .filter { file ->
+                val n = file.name
+                n?.endsWith(".csv", ignoreCase = true) == true ||
+                n?.endsWith(".ods", ignoreCase = true) == true
+            }
+            .mapNotNull { it.uri }
     }
 
     private fun loadMockData() {

@@ -22,6 +22,9 @@ interface ImportedEntryDao {
     @Query("SELECT * FROM imported_entries WHERE is_expense = 0 ORDER BY date_millis DESC")
     fun getEarningsEntries(): Flow<List<ImportedEntry>>
 
+    @Query("SELECT * FROM imported_entries ORDER BY date_millis DESC")
+    suspend fun getAllEntriesByDate(): List<ImportedEntry>
+
     @Query("DELETE FROM imported_entries")
     suspend fun deleteAll()
 

@@ -1,5 +1,8 @@
 package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,12 +27,14 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -92,6 +97,23 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit = {},
 ) {
     val context = LocalContext.current
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.importFile(uri, context.contentResolver)
+        }
+    }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.importFolder(uri, context)
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.loadData(context.contentResolver)
     }
@@ -99,31 +121,33 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val entriesPagingItems = viewModel.entriesPagingData.collectAsLazyPagingItems()
 
-        HomeContent(
-            spendingData = uiState.spendingData,
-            categorySpending = uiState.categorySpending,
-            earningsData = uiState.earningsData,
-            categoryEarnings = uiState.categoryEarnings,
-            selectedPeriod = uiState.selectedPeriod,
-            totalSpending = uiState.totalSpending,
-            totalEarnings = uiState.totalEarnings,
-            patrimony = uiState.patrimony,
-            selectedCurrency = uiState.selectedCurrency,
-            customStartDate = uiState.customStartDate,
-            customEndDate = uiState.customEndDate,
-            onPeriodSelected = viewModel::onPeriodSelected,
-            onCustomDateRange = viewModel::onCustomDateRange,
-            onPatrimonyChanged = viewModel::onPatrimonyChanged,
-            debugMessage = uiState.debugMessage,
-            onNavigateToSettings = onNavigateToSettings,
-            entriesPagingItems = entriesPagingItems,
-            allCategories = uiState.allCategories,
-            selectedCategory = uiState.selectedCategory,
-            onCategorySelected = viewModel::onCategorySelected,
-            datasetMinDate = uiState.datasetMinDate,
-            datasetMaxDate = uiState.datasetMaxDate,
-            modifier = modifier
-        )
+    HomeContent(
+        spendingData = uiState.spendingData,
+        categorySpending = uiState.categorySpending,
+        earningsData = uiState.earningsData,
+        categoryEarnings = uiState.categoryEarnings,
+        selectedPeriod = uiState.selectedPeriod,
+        totalSpending = uiState.totalSpending,
+        totalEarnings = uiState.totalEarnings,
+        patrimony = uiState.patrimony,
+        selectedCurrency = uiState.selectedCurrency,
+        customStartDate = uiState.customStartDate,
+        customEndDate = uiState.customEndDate,
+        onPeriodSelected = viewModel::onPeriodSelected,
+        onCustomDateRange = viewModel::onCustomDateRange,
+        onPatrimonyChanged = viewModel::onPatrimonyChanged,
+        debugMessage = uiState.debugMessage,
+        onNavigateToSettings = onNavigateToSettings,
+        entriesPagingItems = entriesPagingItems,
+        allCategories = uiState.allCategories,
+        selectedCategory = uiState.selectedCategory,
+        onCategorySelected = viewModel::onCategorySelected,
+        datasetMinDate = uiState.datasetMinDate,
+        datasetMaxDate = uiState.datasetMaxDate,
+        onImportFile = { filePickerLauncher.launch(arrayOf("text/*", "*/*")) },
+        onImportFolder = { folderPickerLauncher.launch(null) },
+        modifier = modifier
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -151,6 +175,8 @@ private fun HomeContent(
     onCategorySelected: (String?) -> Unit,
     datasetMinDate: Long?,
     datasetMaxDate: Long?,
+    onImportFile: () -> Unit = {},
+    onImportFolder: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val currencyFormat = remember(selectedCurrency) {
@@ -160,9 +186,43 @@ private fun HomeContent(
     var showEarnings by remember { mutableStateOf(false) }
     var showEntries by remember { mutableStateOf(false) }
     var showFilterDialog by remember { mutableStateOf(false) }
+    var showImportMenu by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        floatingActionButton = {
+            Box {
+                FloatingActionButton(
+                    onClick = { showImportMenu = true },
+                    containerColor = BrutalPink,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Importar dados"
+                    )
+                }
+                DropdownMenu(
+                    expanded = showImportMenu,
+                    onDismissRequest = { showImportMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Importar arquivo") },
+                        onClick = {
+                            showImportMenu = false
+                            onImportFile()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Importar pasta") },
+                        onClick = {
+                            showImportMenu = false
+                            onImportFolder()
+                        }
+                    )
+                }
+            }
+        },
         topBar = {
             TopAppBar(
                 title = {
