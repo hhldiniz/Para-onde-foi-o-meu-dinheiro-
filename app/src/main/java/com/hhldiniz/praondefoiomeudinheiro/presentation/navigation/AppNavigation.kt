@@ -22,6 +22,11 @@ import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.settings.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/**
+ * Top-level navigation composable. Determines the start destination based on
+ * whether the database already contains imported entries, then sets up a
+ * [NavHost] for the Landing, Home and Settings screens.
+ */
 @Composable
 fun AppNavigation() {
     val context = LocalContext.current

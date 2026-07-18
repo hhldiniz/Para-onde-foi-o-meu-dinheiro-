@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 
+/** UI state for the Home screen, aggregating chart data, filters, and metadata. */
 data class HomeUiState(
     val spendingData: List<SpendingDataPoint> = emptyList(),
     val categorySpending: List<CategorySpending> = emptyList(),
@@ -23,16 +24,19 @@ data class HomeUiState(
     val datasetMaxDate: Long? = null,
 )
 
+/** A single data point for line/bar charts, with a display label and numeric value. */
 data class SpendingDataPoint(
     val label: String,
     val value: Double
 )
 
+/** Spending/earnings amount grouped by category for pie chart rendering. */
 data class CategorySpending(
     val category: String,
     val value: Double
 )
 
+/** Time period options for filtering chart data and entry lists. */
 enum class Period(@StringRes val labelRes: Int) {
     DAY(R.string.period_day),
     WEEK(R.string.period_week),
@@ -41,6 +45,7 @@ enum class Period(@StringRes val labelRes: Int) {
     CUSTOM(R.string.period_custom)
 }
 
+/** A single entry suitable for display in the entries list. */
 data class EntryDisplay(
     val dateMillis: Long,
     val description: String,

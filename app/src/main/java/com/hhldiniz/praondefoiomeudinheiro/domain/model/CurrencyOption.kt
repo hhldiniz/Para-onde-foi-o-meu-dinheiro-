@@ -2,6 +2,10 @@ package com.hhldiniz.praondefoiomeudinheiro.domain.model
 
 import java.util.Locale
 
+/**
+ * Supported currency options with their ISO code, symbol, and Java locale
+ * for number formatting.
+ */
 enum class CurrencyOption(
     val code: String,
     val symbol: String,
@@ -14,6 +18,11 @@ enum class CurrencyOption(
     ARS("ARS", "$", Locale.forLanguageTag("es-AR"));
 
     companion object {
+        /**
+         * Attempts to detect the currency from a raw amount string by looking
+         * for symbol prefixes, ISO codes, or number-format patterns (e.g.
+         * comma as decimal separator suggesting ARS/BRL vs dot suggesting USD).
+         */
         fun fromAmountString(amount: String): CurrencyOption? {
             val trimmed = amount.trim()
             return when {

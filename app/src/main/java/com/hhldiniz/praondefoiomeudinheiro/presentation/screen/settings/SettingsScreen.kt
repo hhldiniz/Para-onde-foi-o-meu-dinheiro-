@@ -32,6 +32,7 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.HardShadowBox
 
+/** Settings screen allowing the user to change the preferred currency. */
 @Composable
 fun SettingsScreen() {
     val selectedCurrency by CurrencyHolder.selectedCurrency.collectAsState()
@@ -60,6 +61,7 @@ fun SettingsScreen() {
     }
 }
 
+/** Dropdown selector for picking a [CurrencyOption] from the available list. */
 @Composable
 private fun CurrencySelector(
     selectedCurrency: CurrencyOption,

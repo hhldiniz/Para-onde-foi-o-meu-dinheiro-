@@ -49,6 +49,10 @@ import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.PraOndeFoiOMeuDinheiroTheme
 import androidx.compose.ui.res.stringResource
 
+/**
+ * Landing screen that guides the user through selecting spreadsheet files
+ * or folders, validating them, and proceeding to the Home screen.
+ */
 @Composable
 fun LandingScreen(
     onComplete: () -> Unit,
@@ -110,6 +114,7 @@ fun LandingScreen(
     }
 }
 
+/** Initial landing UI with title, instruction text and file/folder selection buttons. */
 @Composable
 private fun LandingContent(
     onPickFile: () -> Unit,
@@ -181,6 +186,7 @@ private fun LandingContent(
     }
 }
 
+/** Loading indicator shown while files are being validated. */
 @Composable
 private fun LoadingContent(modifier: Modifier = Modifier) {
     Column(
@@ -206,6 +212,7 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
     }
 }
 
+/** Displays the validation result with lists of valid/invalid files and continue/back actions. */
 @Composable
 private fun ValidationResultContent(
     report: FileValidationReport,
@@ -320,6 +327,7 @@ private fun ValidationResultContent(
     }
 }
 
+/** Card showing a valid file's name and detected columns. */
 @Composable
 private fun ValidFileCard(file: ValidSpreadsheetFile) {
     NeoCard(
@@ -372,6 +380,7 @@ private fun ValidFileCard(file: ValidSpreadsheetFile) {
     }
 }
 
+/** Card showing an invalid file's name and the reason it was rejected. */
 @Composable
 private fun InvalidFileCard(file: InvalidSpreadsheetFile) {
     NeoCard(
@@ -422,6 +431,7 @@ private fun InvalidFileCard(file: InvalidSpreadsheetFile) {
     }
 }
 
+/** Full-screen error state with an icon, message and back button. */
 @Composable
 private fun ErrorContent(
     message: String,

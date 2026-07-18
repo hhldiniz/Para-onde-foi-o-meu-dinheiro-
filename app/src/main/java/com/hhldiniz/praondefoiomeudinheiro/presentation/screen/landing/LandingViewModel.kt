@@ -16,16 +16,27 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** Possible UI states for the Landing screen. */
 sealed class LandingUiState {
+    /** Initial state waiting for user action. */
     data object Idle : LandingUiState()
+    /** Files are being validated. */
     data object Loading : LandingUiState()
+    /** Validation completed with the given [report]. */
     data class ValidationResult(
         val report: FileValidationReport,
     ) : LandingUiState()
+    /** An error occurred with a descriptive [message]. */
     data class Error(val message: String) : LandingUiState()
+    /** User confirmed the selection; navigate to Home. */
     data object ProceedToHome : LandingUiState()
 }
 
+/**
+ * ViewModel for the Landing screen. Handles file/folder picking, validation
+ * via [FileSpreadsheetRepository], and state transitions through the
+ * [LandingUiState] sealed class.
+ */
 class LandingViewModel : ViewModel() {
 
     private val repository = FileSpreadsheetRepository()
@@ -35,6 +46,7 @@ class LandingViewModel : ViewModel() {
     var validUris: List<Uri> = emptyList()
         private set
 
+    /** Validates a single file picked by the user and transitions to [LandingUiState.ValidationResult] or [LandingUiState.Error]. */
     fun onFilePicked(uri: Uri, context: Context) {
         viewModelScope.launch {
             _uiState.value = LandingUiState.Loading
@@ -57,6 +69,7 @@ class LandingViewModel : ViewModel() {
         }
     }
 
+    /** Validates all CSV/ODS files inside the picked folder. */
     fun onFolderPicked(treeUri: Uri, context: Context) {
         viewModelScope.launch {
             _uiState.value = LandingUiState.Loading
@@ -81,16 +94,19 @@ class LandingViewModel : ViewModel() {
         }
     }
 
+    /** Stores the validated URIs globally and signals navigation to Home. */
     fun onContinue() {
         CsvUriHolder.uris = validUris
         _uiState.value = LandingUiState.ProceedToHome
     }
 
+    /** Resets the ViewModel back to the Idle state. */
     fun onReset() {
         _uiState.value = LandingUiState.Idle
         validUris = emptyList()
     }
 
+    /** Enumerates CSV/ODS file URIs inside the given document tree. */
     private fun listCsvUris(context: Context, treeUri: Uri): List<Uri> {
         val documentFile = DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
         return documentFile.listFiles()

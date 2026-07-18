@@ -89,6 +89,11 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+/**
+ * Entry-point composable for the Home screen. Sets up file/folder picker
+ * launchers, collects the ViewModel state, and delegates rendering to
+ * [HomeContent].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -150,6 +155,7 @@ fun HomeScreen(
     )
 }
 
+/** Main content layout for the Home screen with summary, charts, entries and import FAB. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeContent(
@@ -484,6 +490,7 @@ private fun HomeContent(
     }
 }
 
+/** A neo-brutalist toggle button used for switching between spending and earnings views. */
 @Composable
 private fun TabButton(
     text: String,
@@ -517,6 +524,7 @@ private fun TabButton(
     }
 }
 
+/** Lazy-paginated list of entries with a scroll-to-top button. */
 @Composable
 private fun EntriesList(
     pagingItems: LazyPagingItems<EntryDisplay>,
@@ -604,6 +612,7 @@ private fun EntriesList(
     }
 }
 
+/** A single entry card showing date, description, category tag and formatted amount. */
 @Composable
 private fun EntryCard(
     entry: EntryDisplay,
@@ -675,6 +684,7 @@ private fun EntryCard(
     }
 }
 
+/** Card displaying (and allowing inline editing of) the user's net worth / patrimony. */
 @Composable
 private fun PatrimonyCard(
     patrimony: Double,
@@ -750,6 +760,7 @@ private fun PatrimonyCard(
 }
 }
 
+/** Card showing the remaining balance (patrimony + earnings - spending), colour-coded green/red. */
 @Composable
 private fun RemainingCard(
     remaining: Double,
@@ -792,6 +803,7 @@ private fun RemainingCard(
 }
 }
 
+/** Dropdown for selecting the time period (Day, Week, Month, Year, Custom). */
 @Composable
 private fun PeriodDropdown(
     selectedPeriod: Period,
@@ -845,6 +857,7 @@ private fun PeriodDropdown(
     }
 }
 
+/** Dropdown for filtering entries by category. */
 @Composable
 private fun CategoryDropdown(
     allCategories: List<String>,
@@ -912,6 +925,7 @@ private fun CategoryDropdown(
     }
 }
 
+/** Alert dialog for applying category and custom date-range filters. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterDialog(
@@ -1105,6 +1119,7 @@ private fun FilterDialog(
     }
 }
 
+/** Inline date-range selector with start/end date pickers. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateRangeSelector(
@@ -1189,6 +1204,7 @@ private fun DateRangeSelector(
     }
 }
 
+/** A clickable box displaying a date label and value, used in date-range selectors. */
 @Composable
 private fun DateBox(
     label: String,

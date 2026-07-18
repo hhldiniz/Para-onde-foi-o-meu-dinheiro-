@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+/** All shape corners are set to 0dp to achieve the sharp neo-brutalist look. */
 private val NeoShapes = Shapes(
     extraSmall = RoundedCornerShape(0.dp),
     small = RoundedCornerShape(0.dp),
@@ -43,6 +44,10 @@ private val LightColorScheme = lightColorScheme(
     outlineVariant = Color(0xFFCCCCCC)
 )
 
+/**
+ * App-wide Material 3 theme wrapping the provided content with the
+ * neo-brutalist colour scheme, typography and zero-rounded shapes.
+ */
 @Composable
 fun PraOndeFoiOMeuDinheiroTheme(
     content: @Composable () -> Unit

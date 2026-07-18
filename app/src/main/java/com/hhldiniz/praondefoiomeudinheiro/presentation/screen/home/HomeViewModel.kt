@@ -45,6 +45,11 @@ private data class LoadResult(
     val rawAmounts: List<String>,
 )
 
+/**
+ * ViewModel for the Home screen. Manages data loading from CSV/ODS files or
+ * the Room database, period/category filtering, chart data aggregation,
+ * currency detection, and paginated entry display.
+ */
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = FileSpreadsheetRepository()
@@ -86,6 +91,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()),
     )
 
+    /**
+     * Primary data-loading entry point. Reads from the URIs stored in
+     * [CsvUriHolder], parses entries, persists them via the import
+     * repository, and triggers chart/entry recalculation. Falls back to
+     * Room data or mock data when no URIs are available.
+     */
     fun loadData(contentResolver: ContentResolver) {
         val uriList = CsvUriHolder.uris
         if (rawSpending.isNotEmpty() || rawEarnings.isNotEmpty()) return
@@ -146,6 +157,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Loads previously imported entries from the Room database. */
     private fun loadFromRoom() {
         viewModelScope.launch {
             val entries = withContext(Dispatchers.IO) { app.database.importedEntryDao().getAllEntriesByDate() }
@@ -159,6 +171,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Imports a single file selected by the user, parsing it and persisting entries. */
     fun importFile(uri: Uri, contentResolver: ContentResolver) {
         viewModelScope.launch {
             val (imported, errors, rawAmounts) = withContext(Dispatchers.IO) {
@@ -198,6 +211,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Imports all CSV/ODS files found inside the given folder (tree URI). */
     fun importFolder(treeUri: Uri, context: android.content.Context) {
         viewModelScope.launch {
             val (imported, errors) = withContext(Dispatchers.IO) {
@@ -241,6 +255,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Recursively lists CSV/ODS URIs within the given document tree URI. */
     private fun listCsvUris(context: android.content.Context, treeUri: Uri): List<Uri> {
         val documentFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
         return documentFile.listFiles()
@@ -252,6 +267,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             .mapNotNull { it.uri }
     }
 
+    /** Generates synthetic spending/earnings data for demonstration when no real data exists. */
     private fun loadMockData() {
         val now = Calendar.getInstance()
         val year = now.get(Calendar.YEAR)
@@ -278,6 +294,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         loadDataForPeriod(Period.MONTH)
     }
 
+    /** Called when the user selects a new time period for filtering. */
     fun onPeriodSelected(period: Period) {
         if (period != _uiState.value.selectedPeriod) {
             if (period == Period.CUSTOM) {
@@ -290,18 +307,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Called when a custom date range is applied via the filter dialog. */
     fun onCustomDateRange(startDate: Long, endDate: Long) {
         filterByDateRange(startDate, endDate)
     }
 
+    /** Updates the patrimony (net worth) value in the UI state. */
     fun onPatrimonyChanged(value: Double) {
         _uiState.update { it.copy(patrimony = value) }
     }
 
+    /** Persists the user's currency choice via [CurrencyHolder]. */
     fun onCurrencyChanged(currency: CurrencyOption) {
         CurrencyHolder.setCurrency(currency)
     }
 
+    /** Filters the displayed entries/charts to the given category (null = all categories). */
     fun onCategorySelected(category: String?) {
         val currentState = _uiState.value
         val period = currentState.selectedPeriod
@@ -320,6 +341,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Recalculates chart data and entry list for the given [period]. */
     private fun loadDataForPeriod(period: Period) {
         val allData = rawSpending + rawEarnings
         val minDate = allData.minOfOrNull { it.dateMillis }
@@ -329,10 +351,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         filterAndEmit(period, start, end, null, null, _uiState.value.selectedCategory)
     }
 
+    /** Filters data to entries falling within [startDate]..[endDate] and updates UI state. */
     private fun filterByDateRange(startDate: Long, endDate: Long) {
         filterAndEmit(Period.CUSTOM, startDate, endDate, startDate, endDate, _uiState.value.selectedCategory)
     }
 
+    /** Core filtering logic: applies date and category filters, builds chart data and entries list. */
     private fun filterAndEmit(
         period: Period,
         startMillis: Long,
@@ -377,6 +401,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Groups entries by period/category and returns line-chart points and category-spending lists. */
     private fun buildChartData(
         entries: List<ParsedEntry>,
         period: Period,
@@ -449,12 +474,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         return lineData to categories
     }
 
+    /** Converts a raw [CsvEntry] into a typed [ParsedEntry] by parsing date and amount. */
     private fun parseEntry(entry: CsvEntry): ParsedEntry? {
         val dateMillis = parseDate(entry.date) ?: return null
         val amount = parseAmount(entry.amount) ?: return null
         return ParsedEntry(dateMillis, amount, entry.description, entry.category)
     }
 
+    /** Auto-detects the most likely currency from a list of raw amount strings using symbol and format heuristics. */
     private fun detectCurrency(rawAmounts: List<String>) {
         val detected = rawAmounts.mapNotNull { CurrencyOption.fromAmountString(it) }
         if (detected.isNotEmpty()) {
@@ -475,6 +502,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Attempts to parse a date string using multiple common formats. Returns millis or null. */
     private fun parseDate(dateStr: String): Long? {
         val trimmed = dateStr.trim()
         for (fmt in dateFormats) {
@@ -486,6 +514,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         return null
     }
 
+    /** Converts a raw amount string (possibly with currency symbols and varied separators) to a Double. */
     private fun parseAmount(amountStr: String): Double? {
         val cleaned = amountStr.trim()
             .replace("R$", "").replace("$", "").replace("€", "").replace("£", "")

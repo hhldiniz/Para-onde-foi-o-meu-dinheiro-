@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.hhldiniz.praondefoiomeudinheiro.R
 
+/** Switches between the spending and earnings pie chart based on [showEarnings]. */
 @Composable
 fun PieChartSwitcher(
     categorySpending: List<CategorySpending>,

@@ -26,6 +26,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 
+/**
+ * A container that draws a hard (offset) shadow beneath its content,
+ * mimicking a neo-brutalist design motif.
+ */
 @Composable
 fun HardShadowBox(
     offsetX: Dp = 4.dp,
@@ -57,6 +61,7 @@ fun HardShadowBox(
     }
 }
 
+/** A neo-brutalist full-width button with a hard shadow, customisable colours and enabled state. */
 @Composable
 fun NeoButton(
     onClick: () -> Unit,
@@ -97,6 +102,7 @@ fun NeoButton(
     }
 }
 
+/** A neo-brutalist card container with a hard shadow, border and padding. */
 @Composable
 fun NeoCard(
     modifier: Modifier = Modifier,
@@ -123,6 +129,7 @@ fun NeoCard(
     }
 }
 
+/** A small neo-brutalist tag/badge with a hard shadow, used for labels like "GASTO" / "RENDA". */
 @Composable
 fun NeoTag(
     text: String,

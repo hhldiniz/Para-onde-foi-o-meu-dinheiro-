@@ -13,6 +13,7 @@ import com.hhldiniz.praondefoiomeudinheiro.domain.model.ValidSpreadsheetFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.ValueRange
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 
+/** Implementation of [SpreadsheetRepository] using local file parsers and validators. */
 class FileSpreadsheetRepository : SpreadsheetRepository {
 
     override suspend fun validateFile(uri: Uri, context: Context): FileValidationReport {
@@ -27,6 +28,7 @@ class FileSpreadsheetRepository : SpreadsheetRepository {
         )
     }
 
+    /** Validates each URI in [uris] and aggregates the results. */
     override suspend fun validateFiles(uris: List<Uri>, context: Context): FileValidationReport {
         val valid = mutableListOf<ValidSpreadsheetFile>()
         val invalid = mutableListOf<InvalidSpreadsheetFile>()
@@ -43,6 +45,11 @@ class FileSpreadsheetRepository : SpreadsheetRepository {
         )
     }
 
+    /**
+     * Reads cell values from the given URI, auto-detecting ODS vs CSV from
+     * the file name extension. Returns a [ValueRange] with spending entries
+     * taken from columns 1-4 and earnings from columns 6-9.
+     */
     override suspend fun readValues(uri: Uri, contentResolver: ContentResolver): Result<ValueRange> {
         return runCatching {
             val fileName = uri.lastPathSegment ?: ""
@@ -96,6 +103,7 @@ class FileSpreadsheetRepository : SpreadsheetRepository {
         }
     }
 
+    /** Locates the header row that contains the expected column names for both spending and earnings sections. */
     private fun findHeaderRowIndex(rows: List<List<String>>): Int {
         return rows.indexOfFirst { row ->
             row.size >= 10 &&

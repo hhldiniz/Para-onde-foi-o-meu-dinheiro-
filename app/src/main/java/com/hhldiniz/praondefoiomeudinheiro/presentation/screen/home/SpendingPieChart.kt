@@ -46,6 +46,10 @@ private val chartColors = listOf(
     PinkContainer,
 )
 
+/**
+ * Custom donut (doughnut) pie chart drawn on a Canvas with a legend,
+ * colour-coded segments, and percentage labels.
+ */
 @Composable
 fun SpendingPieChart(
     data: List<CategorySpending>,

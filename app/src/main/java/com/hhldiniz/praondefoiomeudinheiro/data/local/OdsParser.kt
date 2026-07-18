@@ -5,6 +5,11 @@ import org.xmlpull.v1.XmlPullParserFactory
 import java.io.InputStream
 import java.util.zip.ZipInputStream
 
+/**
+ * Parser for OpenDocument Spreadsheet (.ods) files. Extracts the content.xml
+ * entry from the ZIP container and reads table cell values using XML pull
+ * parsing.
+ */
 object OdsParser {
 
     private const val CONTENT_XML = "content.xml"
@@ -12,6 +17,10 @@ object OdsParser {
     private const val NS_TABLE = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
     private const val NS_TEXT = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 
+    /**
+     * Opens the ZIP stream, locates content.xml and delegates to [parseXml].
+     * Returns an empty list if the content file is not found.
+     */
     fun parse(inputStream: InputStream): List<List<String>> {
         val zipStream = ZipInputStream(inputStream)
         var entry = zipStream.nextEntry
@@ -29,6 +38,7 @@ object OdsParser {
         return emptyList()
     }
 
+    /** Parses the content.xml stream using XmlPullParser, extracting table rows and cell values. */
     private fun parseXml(inputStream: InputStream): List<List<String>> {
         val rows = mutableListOf<List<String>>()
         var currentRow = mutableListOf<String>()

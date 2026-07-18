@@ -5,6 +5,11 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+/**
+ * Room entity representing a single financial entry imported from a
+ * spreadsheet. A unique index on (date, amount, description, category,
+ * is_expense) prevents duplicate imports.
+ */
 @Entity(
     tableName = "imported_entries",
     indices = [

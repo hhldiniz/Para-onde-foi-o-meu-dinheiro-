@@ -7,6 +7,10 @@ import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvalidSpreadsheetFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.ValidSpreadsheetFile
 
+/**
+ * Validates spreadsheet files (CSV/ODS) by checking extension support,
+ * file readability, row structure, and expected header presence.
+ */
 object SpreadsheetFileValidator {
 
     private val EXPECTED_HEADERS = listOf("Data", "Valor", "Descrição", "Categoria")
@@ -14,6 +18,11 @@ object SpreadsheetFileValidator {
     private const val RENDA_COL_START = 6
     private const val NUM_COLUMNS = 4
 
+    /**
+     * Validates the file at [uri]. Returns a pair where at most one side is
+     * non-null: a [ValidSpreadsheetFile] on success or an [InvalidSpreadsheetFile]
+     * describing the failure.
+     */
     fun validate(
         uri: Uri,
         context: Context
@@ -67,6 +76,7 @@ object SpreadsheetFileValidator {
         }
     }
 
+    /** Checks whether any row contains markers like "Despesas" or "Renda" indicating a structured layout. */
     private fun hasStructuredMarkers(rows: List<List<String>>): Boolean {
         return rows.any { row ->
             row.any { it.trim().equals("Despesas", ignoreCase = true) }
@@ -75,6 +85,7 @@ object SpreadsheetFileValidator {
         }
     }
 
+    /** Validates a file with a structured layout that includes "Despesas" and "Renda" sections. */
     private fun validateStructured(
         rows: List<List<String>>,
         fileName: String,
@@ -130,6 +141,7 @@ object SpreadsheetFileValidator {
         return valid to null
     }
 
+    /** Finds the row index that contains all expected headers for both Despesas and Renda sections. */
     private fun findHeaderRowIndex(rows: List<List<String>>): Int {
         return rows.indexOfFirst { row ->
             row.size >= RENDA_COL_START + NUM_COLUMNS &&
@@ -138,6 +150,7 @@ object SpreadsheetFileValidator {
         }
     }
 
+    /** Checks whether a row contains the expected header columns starting at [startIndex]. */
     private fun checkHeaders(row: List<String>, startIndex: Int): Boolean {
         if (startIndex + NUM_COLUMNS > row.size) return false
         return EXPECTED_HEADERS.indices.all { i ->
@@ -145,6 +158,7 @@ object SpreadsheetFileValidator {
         }
     }
 
+    /** Validates a simple (unstructured) file, using the first non-blank row as header. */
     private fun validateSimple(
         rows: List<List<String>>,
         fileName: String,
@@ -161,6 +175,7 @@ object SpreadsheetFileValidator {
         return valid to null
     }
 
+    /** Checks whether the file has a supported extension (.csv / .ods) or MIME type. */
     private fun hasSupportedExtension(
         uri: Uri,
         fileName: String,
@@ -172,6 +187,7 @@ object SpreadsheetFileValidator {
         return type == "text/csv" || type == "text/comma-separated-values"
     }
 
+    /** Resolves the display file name from a content URI using [OpenableColumns.DISPLAY_NAME]. */
     private fun resolveFileName(uri: Uri, contentResolver: android.content.ContentResolver, context: Context): String {
         val cursor = contentResolver.query(uri, null, null, null, null)
         return cursor?.use {

@@ -4,8 +4,13 @@ import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 
+/** Simple CSV parser that reads an [InputStream] and returns rows as lists of strings. */
 object CsvParser {
 
+    /**
+     * Parses the entire input stream into a list of rows, skipping blank lines.
+     * Each row is split into columns respecting standard CSV quoting rules.
+     */
     fun parse(inputStream: InputStream): List<List<String>> {
         val reader = BufferedReader(InputStreamReader(inputStream))
         val rows = mutableListOf<List<String>>()
@@ -18,6 +23,10 @@ object CsvParser {
         return rows
     }
 
+    /**
+     * Parses a single CSV line into columns, handling double-quoted fields
+     * and escaped quotes ("").
+     */
     private fun parseLine(line: String): List<String> {
         val columns = mutableListOf<String>()
         val current = StringBuilder()

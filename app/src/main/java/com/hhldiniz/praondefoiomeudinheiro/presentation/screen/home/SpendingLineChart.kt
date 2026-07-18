@@ -24,6 +24,10 @@ import androidx.compose.ui.unit.dp
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.HardShadowBox
 
+/**
+ * Custom line chart drawn on a Canvas with grid lines, value labels,
+ * filled area underneath the line, and data-point markers.
+ */
 @Composable
 fun SpendingLineChart(
     data: List<SpendingDataPoint>,

@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
 
+/** Switches between the spending and earnings line chart based on [showEarnings]. */
 @Composable
 fun LineChartSwitcher(
     spendingData: List<SpendingDataPoint>,

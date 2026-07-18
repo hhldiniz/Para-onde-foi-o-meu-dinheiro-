@@ -6,6 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+/** App-wide typography scale with bold/black weights for the neo-brutalist aesthetic. */
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,
