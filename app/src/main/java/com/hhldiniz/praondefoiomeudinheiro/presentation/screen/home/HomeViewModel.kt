@@ -9,6 +9,7 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
+import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CsvEntry
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
@@ -58,10 +59,27 @@ private fun ImportedEntry.toParsedEntry() = ParsedEntry(dateMillis, amount, desc
 
 private fun ImportedEntry.toEntryDisplay() = EntryDisplay(dateMillis, description, category, amount, isExpense)
 
+internal fun deriveCategoriesToInsert(
+    entries: List<ImportedEntry>,
+    existing: Set<String>,
+): List<String> {
+    return entries
+        .map { it.category }
+        .filter { it.isNotBlank() }
+        .distinct()
+        .filter { !existing.contains(it) }
+}
+
 class HomeViewModel(
     private val importRepository: ImportRepository,
     private val repository: SpreadsheetRepository,
+    private val categoryRepository: CategoryRepository,
 ) : ViewModel() {
+
+    private suspend fun saveCategoriesFromEntries(entries: List<ImportedEntry>) {
+        val existing = categoryRepository.getAllSync().map { it.name }.toSet()
+        deriveCategoriesToInsert(entries, existing).forEach { categoryRepository.insert(it) }
+    }
 
     private val _uiState = MutableStateFlow(HomeUiState(selectedCurrency = CurrencyHolder.selectedCurrency.value))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -158,6 +176,7 @@ class HomeViewModel(
                         }
                 }
                 importRepository.insertEntries(allImported)
+                saveCategoriesFromEntries(allImported)
                 LoadResult(s, e, errs, amounts)
             }
             _uiState.update { it.copy(debugMessage = result.errors.joinToString("\n")) }
@@ -199,6 +218,7 @@ class HomeViewModel(
                         addAll(ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) })
                     }
                     val inserted = importRepository.insertEntries(entries)
+                    saveCategoriesFromEntries(entries)
                     errorMessages.add("Importado: ${inserted.size} registros (${entries.size - inserted.size} duplicatas ignoradas)")
                     Triple(inserted, errorMessages, raw)
                 } else {
@@ -245,6 +265,7 @@ class HomeViewModel(
                     }
                 }
                 val inserted = importRepository.insertEntries(allEntries)
+                saveCategoriesFromEntries(allEntries)
                 errorMessages.add("Total: ${inserted.size} registros (${allEntries.size - inserted.size} duplicatas ignoradas)")
                 detectCurrency(raw)
                 inserted to errorMessages

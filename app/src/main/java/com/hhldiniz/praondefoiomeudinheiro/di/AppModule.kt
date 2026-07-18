@@ -22,7 +22,7 @@ val appModule = module {
     single { CategoryRepository(get()) }
     single<SpreadsheetRepository> { FileSpreadsheetRepository() }
 
-    viewModel { HomeViewModel(get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { LandingViewModel(get()) }
     viewModel { AddEntryViewModel(get(), get()) }
 }
