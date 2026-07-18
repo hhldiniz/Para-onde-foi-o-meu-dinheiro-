@@ -43,6 +43,18 @@ class ImportCategoriesTest {
     }
 
     @Test
+    fun derivesCategoriesFromFullFileEvenWhenAllEntriesAreDuplicates() {
+        val entries = listOf(
+            entry("Alimentacao"),
+            entry("Transporte"),
+        )
+
+        val result = deriveCategoriesToInsert(entries, existing = setOf("Alimentacao"))
+
+        assertEquals(listOf("Transporte"), result)
+    }
+
+    @Test
     fun returnsEmptyWhenNoNewCategories() {
         val entries = listOf(entry("Alimentacao"), entry(""))
 

@@ -121,6 +121,7 @@ class AddEntryViewModel(
             )
             withContext(Dispatchers.IO) {
                 importRepository.insertEntries(listOf(entry))
+                categoryRepository.insert(state.category.trim())
             }
             _uiState.value = _uiState.value.copy(isSaving = false, savedSuccessfully = true)
         }

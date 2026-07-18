@@ -76,9 +76,11 @@ class HomeViewModel(
     private val categoryRepository: CategoryRepository,
 ) : ViewModel() {
 
-    private suspend fun saveCategoriesFromEntries(entries: List<ImportedEntry>) {
+    private suspend fun saveCategoriesFromEntries(entries: List<ImportedEntry>): Int {
         val existing = categoryRepository.getAllSync().map { it.name }.toSet()
-        deriveCategoriesToInsert(entries, existing).forEach { categoryRepository.insert(it) }
+        val toInsert = deriveCategoriesToInsert(entries, existing)
+        toInsert.forEach { categoryRepository.insert(it) }
+        return toInsert.size
     }
 
     private val _uiState = MutableStateFlow(HomeUiState(selectedCurrency = CurrencyHolder.selectedCurrency.value))
@@ -176,7 +178,10 @@ class HomeViewModel(
                         }
                 }
                 importRepository.insertEntries(allImported)
-                saveCategoriesFromEntries(allImported)
+                val newCategories = saveCategoriesFromEntries(allImported)
+                if (newCategories > 0) {
+                    errs.add("$newCategories categoria(s) nova(s) salva(s) do arquivo")
+                }
                 LoadResult(s, e, errs, amounts)
             }
             _uiState.update { it.copy(debugMessage = result.errors.joinToString("\n")) }
@@ -218,8 +223,11 @@ class HomeViewModel(
                         addAll(ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) })
                     }
                     val inserted = importRepository.insertEntries(entries)
-                    saveCategoriesFromEntries(entries)
+                    val newCategories = saveCategoriesFromEntries(entries)
                     errorMessages.add("Importado: ${inserted.size} registros (${entries.size - inserted.size} duplicatas ignoradas)")
+                    if (newCategories > 0) {
+                        errorMessages.add("$newCategories categoria(s) nova(s) salva(s) do arquivo")
+                    }
                     Triple(inserted, errorMessages, raw)
                 } else {
                     val error = result.exceptionOrNull()
@@ -265,8 +273,11 @@ class HomeViewModel(
                     }
                 }
                 val inserted = importRepository.insertEntries(allEntries)
-                saveCategoriesFromEntries(allEntries)
+                val newCategories = saveCategoriesFromEntries(allEntries)
                 errorMessages.add("Total: ${inserted.size} registros (${allEntries.size - inserted.size} duplicatas ignoradas)")
+                if (newCategories > 0) {
+                    errorMessages.add("$newCategories categoria(s) nova(s) salva(s) do arquivo")
+                }
                 detectCurrency(raw)
                 inserted to errorMessages
             }
