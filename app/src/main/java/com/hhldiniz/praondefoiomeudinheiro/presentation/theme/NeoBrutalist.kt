@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 fun HardShadowBox(
     offsetX: Dp = 4.dp,
     offsetY: Dp = 4.dp,
-    shadowColor: Color = Color.Black.copy(alpha = 0.15f),
+    shadowColor: Color = BrutalBlack,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {

@@ -75,8 +75,6 @@ import kotlinx.coroutines.launch
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlack
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
-import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalLime
-import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalOrange
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalRed
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalYellow
@@ -693,7 +691,7 @@ private fun EntryCard(
                     text = currencyFormat.format(entry.amount),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Black,
-                    color = if (entry.isExpense) BrutalRed else BrutalLime,
+                    color = if (entry.isExpense) BrutalRed else BrutalCyan,
                     textAlign = TextAlign.End
                 )
             }
@@ -721,7 +719,7 @@ private fun PatrimonyCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape)
-                .background(BrutalOrange, RectangleShape)
+                .background(BrutalYellow, RectangleShape)
                 .padding(12.dp)
         ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -784,7 +782,7 @@ private fun RemainingCard(
     currencyFormat: NumberFormat,
     modifier: Modifier = Modifier
 ) {
-    val bgColor = if (remaining >= 0) BrutalLime else BrutalRed
+    val bgColor = if (remaining >= 0) BrutalCyan else BrutalRed
     val textColor = Color.Black
 
     HardShadowBox(
@@ -894,7 +892,7 @@ private fun CategoryDropdown(
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape)
-                    .background(BrutalOrange, RectangleShape)
+                    .background(BrutalCyan, RectangleShape)
                     .clickable { expanded = true }
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center
@@ -903,7 +901,7 @@ private fun CategoryDropdown(
                     text = if (selectedCategory != null) "Categoria: $selectedCategory"
                            else "Todas as categorias",
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onTertiary
                 )
             }
         }
@@ -1020,7 +1018,7 @@ private fun FilterDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape)
-                                .background(BrutalOrange, RectangleShape)
+                                .background(BrutalCyan, RectangleShape)
                                 .clickable { categoryExpanded = true }
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
@@ -1029,7 +1027,7 @@ private fun FilterDialog(
                                 text = if (tempCategory != null) tempCategory!!
                                        else "Todas as categorias",
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onTertiary
                             )
                         }
                     }

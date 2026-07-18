@@ -50,7 +50,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlack
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
-import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalOrange
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalRed
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalYellow
@@ -177,7 +176,7 @@ fun AddEntryScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(BrutalOrange, RectangleShape)
+                        .background(BrutalPink, RectangleShape)
                         .border(3.dp, MaterialTheme.colorScheme.outline, RectangleShape)
                         .clickable(enabled = !uiState.isSaving) { viewModel.save() }
                         .padding(horizontal = 24.dp, vertical = 14.dp),
@@ -185,7 +184,7 @@ fun AddEntryScreen(
                 ) {
                     Text(
                         text = if (uiState.isSaving) "Salvando..." else "SALVAR",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                     )
@@ -371,7 +370,7 @@ private fun CategoryDropdown(
                         .fillMaxWidth()
                         .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape)
                         .background(
-                            if (selectedCategory.isNotBlank()) BrutalOrange else LightBackground,
+                            if (selectedCategory.isNotBlank()) BrutalCyan else LightBackground,
                             RectangleShape,
                         )
                         .clickable { expanded = true }

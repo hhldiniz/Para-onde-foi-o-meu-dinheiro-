@@ -37,9 +37,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.FileValidationReport
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvalidSpreadsheetFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.ValidSpreadsheetFile
+import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlack
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
-import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalOrange
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
+import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalRed
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalYellow
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.NeoButton
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.NeoCard
@@ -252,7 +253,7 @@ private fun ValidationResultContent(
         if (report.hasInvalidFiles && report.hasValidFiles) {
             NeoCard(
                 modifier = Modifier.fillMaxWidth(),
-                backgroundColor = BrutalOrange,
+                backgroundColor = BrutalYellow,
                 borderColor = MaterialTheme.colorScheme.outline,
                 borderWidth = 3.dp,
                 elevation = 4.dp
@@ -261,7 +262,7 @@ private fun ValidationResultContent(
                     text = stringResource(R.string.landing_warning_invalid),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = BrutalBlack
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -385,7 +386,7 @@ private fun ValidFileCard(file: ValidSpreadsheetFile) {
 private fun InvalidFileCard(file: InvalidSpreadsheetFile) {
     NeoCard(
         modifier = Modifier.fillMaxWidth(),
-        backgroundColor = BrutalOrange,
+        backgroundColor = BrutalRed,
         borderColor = MaterialTheme.colorScheme.outline,
         borderWidth = 2.dp
     ) {
@@ -418,13 +419,13 @@ private fun InvalidFileCard(file: InvalidSpreadsheetFile) {
                     text = file.name,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onError
                 )
                 Text(
                     text = file.reason,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onError
                 )
             }
         }

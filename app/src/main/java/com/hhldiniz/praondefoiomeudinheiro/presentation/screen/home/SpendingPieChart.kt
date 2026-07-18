@@ -24,9 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.hhldiniz.praondefoiomeudinheiro.R
+import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlue
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
-import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalLime
-import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalOrange
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalRed
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalYellow
@@ -40,8 +39,7 @@ private val chartColors = listOf(
     BrutalPink,
     BrutalCyan,
     BrutalYellow,
-    BrutalLime,
-    BrutalOrange,
+    BrutalBlue,
     BrutalRed,
     PinkContainer,
 )
