@@ -1,16 +1,19 @@
 package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home
 
+import android.app.Application
 import android.content.ContentResolver
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.hhldiniz.praondefoiomeudinheiro.PraondefoiomeudinheiroApp
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.FileSpreadsheetRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CsvEntry
@@ -42,9 +45,10 @@ private data class LoadResult(
     val rawAmounts: List<String>,
 )
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = FileSpreadsheetRepository()
+    private val importRepository = (application as PraondefoiomeudinheiroApp).importRepository
     private val _uiState = MutableStateFlow(HomeUiState(selectedCurrency = CurrencyHolder.selectedCurrency.value))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -94,6 +98,7 @@ class HomeViewModel : ViewModel() {
                 val e = mutableListOf<ParsedEntry>()
                 val errs = mutableListOf<String>()
                 val amounts = mutableListOf<String>()
+                val allImported = mutableListOf<ImportedEntry>()
                 for (uri in uriList) {
                     repository.readValues(uri, contentResolver)
                         .onSuccess { range ->
@@ -103,12 +108,16 @@ class HomeViewModel : ViewModel() {
                             val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
                             s += sp
                             e += ep
+                            val fileName = uri.lastPathSegment ?: ""
+                            allImported += sp.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = true, fileName = fileName) }
+                            allImported += ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) }
                             errs.add("CSV OK: ${sp.size} gastos, ${ep.size} rendas de ${range.spendingEntries.size + range.earningsEntries.size} linhas brutas")
                         }
                         .onFailure { error ->
                             errs.add("Falha ao ler $uri: ${error.message}")
                         }
                 }
+                importRepository.insertEntries(allImported)
                 LoadResult(s, e, errs, amounts)
             }
             _uiState.update { it.copy(debugMessage = errors.joinToString("\n")) }
