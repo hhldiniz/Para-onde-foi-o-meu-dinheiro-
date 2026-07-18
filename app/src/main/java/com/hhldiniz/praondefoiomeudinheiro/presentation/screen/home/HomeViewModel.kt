@@ -294,6 +294,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         loadDataForPeriod(Period.MONTH)
     }
 
+    /** Clears cached data and reloads from the Room database. */
+    fun refreshData() {
+        rawSpending = emptyList()
+        rawEarnings = emptyList()
+        viewModelScope.launch {
+            val hasRoomData = withContext(Dispatchers.IO) { importRepository.count() > 0 }
+            if (hasRoomData) {
+                loadFromRoom()
+            } else {
+                loadMockData()
+            }
+        }
+    }
+
     /** Called when the user selects a new time period for filtering. */
     fun onPeriodSelected(period: Period) {
         if (period != _uiState.value.selectedPeriod) {

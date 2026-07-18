@@ -27,7 +27,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -100,6 +100,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToAddEntry: () -> Unit = {},
+    refreshKey: Int = 0,
 ) {
     val context = LocalContext.current
 
@@ -123,6 +125,12 @@ fun HomeScreen(
         viewModel.loadData(context.contentResolver)
     }
 
+    LaunchedEffect(refreshKey) {
+        if (refreshKey > 0) {
+            viewModel.refreshData()
+        }
+    }
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val entriesPagingItems = viewModel.entriesPagingData.collectAsLazyPagingItems()
 
@@ -143,6 +151,7 @@ fun HomeScreen(
         onPatrimonyChanged = viewModel::onPatrimonyChanged,
         debugMessage = uiState.debugMessage,
         onNavigateToSettings = onNavigateToSettings,
+        onNavigateToAddEntry = onNavigateToAddEntry,
         entriesPagingItems = entriesPagingItems,
         allCategories = uiState.allCategories,
         selectedCategory = uiState.selectedCategory,
@@ -175,6 +184,7 @@ private fun HomeContent(
     onPatrimonyChanged: (Double) -> Unit,
     debugMessage: String? = null,
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToAddEntry: () -> Unit = {},
     entriesPagingItems: LazyPagingItems<EntryDisplay>,
     allCategories: List<String>,
     selectedCategory: String?,
@@ -205,14 +215,21 @@ private fun HomeContent(
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.FileDownload,
-                            contentDescription = "Importar dados"
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Adicionar entrada"
                         )
                     }
                     DropdownMenu(
                         expanded = showImportMenu,
                         onDismissRequest = { showImportMenu = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text("Adicionar manualmente") },
+                            onClick = {
+                                showImportMenu = false
+                                onNavigateToAddEntry()
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text("Importar arquivo") },
                             onClick = {

@@ -16,23 +16,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.hhldiniz.praondefoiomeudinheiro.PraondefoiomeudinheiroApp
+import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry.AddEntryScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home.HomeScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.landing.LandingScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.settings.SettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- * Top-level navigation composable. Determines the start destination based on
- * whether the database already contains imported entries, then sets up a
- * [NavHost] for the Landing, Home and Settings screens.
- */
 @Composable
 fun AppNavigation() {
     val context = LocalContext.current
     val app = context.applicationContext as PraondefoiomeudinheiroApp
     val navController = rememberNavController()
     var startDestination by remember { mutableStateOf<String?>(null) }
+    var refreshKey by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         val count = withContext(Dispatchers.IO) {
@@ -68,12 +65,23 @@ fun AppNavigation() {
 
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToAddEntry = { navController.navigate(Screen.AddEntry.route) },
+                refreshKey = refreshKey,
             )
         }
 
         composable(Screen.Settings.route) {
             SettingsScreen()
+        }
+
+        composable(Screen.AddEntry.route) {
+            AddEntryScreen(
+                onNavigateBack = {
+                    refreshKey++
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
