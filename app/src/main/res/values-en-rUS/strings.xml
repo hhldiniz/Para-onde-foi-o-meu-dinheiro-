@@ -55,8 +55,22 @@
 
     <!-- Chart -->
     <string name="chart_spending_by_category">SPENDING BY CATEGORY</string>
+    <string name="chart_earnings_by_category">EARNINGS BY CATEGORY</string>
+    <string name="chart_tab_spending">SPENDING</string>
+    <string name="chart_tab_earnings">EARNINGS</string>
+
+    <!-- Bottom Navigation -->
+    <string name="bottom_nav_summary">Summary</string>
+    <string name="bottom_nav_entries">Entries</string>
 
     <!-- Indicators -->
     <string name="home_patrimony">TOTAL PATRIMONY</string>
     <string name="home_remaining_balance">BALANCE AFTER SPENDING</string>
+
+    <!-- Home Screen -->
+    <string name="home_total_earnings">TOTAL EARNINGS</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_placeholder">Settings coming soon</string>
 </resources>

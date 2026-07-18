@@ -55,8 +55,22 @@
 
     <!-- Chart -->
     <string name="chart_spending_by_category">GASTOS POR CATEGORÍA</string>
+    <string name="chart_earnings_by_category">INGRESOS POR CATEGORÍA</string>
+    <string name="chart_tab_spending">GASTOS</string>
+    <string name="chart_tab_earnings">INGRESOS</string>
+
+    <!-- Bottom Navigation -->
+    <string name="bottom_nav_summary">Resumen</string>
+    <string name="bottom_nav_entries">Movimientos</string>
 
     <!-- Indicators -->
     <string name="home_patrimony">PATRIMONIO TOTAL</string>
     <string name="home_remaining_balance">SALDO DESPUÉS DE GASTOS</string>
+
+    <!-- Home Screen -->
+    <string name="home_total_earnings">INGRESOS TOTALES</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Configuración</string>
+    <string name="settings_placeholder">Configuración próximamente</string>
 </resources>
