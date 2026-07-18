@@ -67,6 +67,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
 
     init {
+        CurrencyHolder.init(getApplication())
         viewModelScope.launch {
             CurrencyHolder.selectedCurrency.collect { currency ->
                 _uiState.update { it.copy(selectedCurrency = currency) }
@@ -164,11 +165,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun importFile(uri: Uri, contentResolver: ContentResolver) {
         viewModelScope.launch {
-            val (imported, errors) = withContext(Dispatchers.IO) {
+            val (imported, errors, rawAmounts) = withContext(Dispatchers.IO) {
                 val errorMessages = mutableListOf<String>()
+                val raw = mutableListOf<String>()
                 val result = repository.readValues(uri, contentResolver)
                 if (result.isSuccess) {
                     val range = result.getOrThrow()
+                    range.spendingEntries.forEach { raw.add(it.amount) }
+                    range.earningsEntries.forEach { raw.add(it.amount) }
                     val fileName = uri.lastPathSegment ?: ""
                     val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
                     val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
@@ -176,16 +180,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) }
                     val inserted = importRepository.insertEntries(entries)
                     errorMessages.add("Importado: ${inserted.size} registros (${entries.size - inserted.size} duplicatas ignoradas)")
-                    inserted to errorMessages
+                    Triple(inserted, errorMessages, raw)
                 } else {
                     val error = result.exceptionOrNull()
                     errorMessages.add("Falha ao importar: ${error?.message}")
-                    emptyList<ImportedEntry>() to errorMessages
+                    Triple(emptyList<ImportedEntry>(), errorMessages, raw)
                 }
             }
             val message = errors.joinToString("\n")
             _uiState.update { it.copy(debugMessage = message) }
             if (imported.isNotEmpty()) {
+                val detected = rawAmounts.mapNotNull { CurrencyOption.fromAmountString(it) }
+                if (detected.isNotEmpty()) {
+                    val majority = detected.groupingBy { it }.eachCount().maxByOrNull { it.value }!!.key
+                    CurrencyHolder.setCurrency(majority)
+                }
                 rawSpending += imported.filter { it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
                 rawEarnings += imported.filter { !it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
                 val allCategories = (rawSpending + rawEarnings).map { it.category }.distinct().sorted()
@@ -203,11 +212,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val csvUris = listCsvUris(context, treeUri)
                 val allEntries = mutableListOf<ImportedEntry>()
                 val errorMessages = mutableListOf<String>()
+                val raw = mutableListOf<String>()
                 for (uri in csvUris) {
                     val result = repository.readValues(uri, context.contentResolver)
                     if (result.isSuccess) {
                         val range = result.getOrThrow()
                         val fileName = uri.lastPathSegment ?: ""
+                        range.spendingEntries.forEach { raw.add(it.amount) }
+                        range.earningsEntries.forEach { raw.add(it.amount) }
                         val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
                         val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
                         allEntries += sp.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = true, fileName = fileName) }
@@ -220,6 +232,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 val inserted = importRepository.insertEntries(allEntries)
                 errorMessages.add("Total: ${inserted.size} registros (${allEntries.size - inserted.size} duplicatas ignoradas)")
+                val detected = raw.mapNotNull { CurrencyOption.fromAmountString(it) }
+                if (detected.isNotEmpty()) {
+                    val majority = detected.groupingBy { it }.eachCount().maxByOrNull { it.value }!!.key
+                    CurrencyHolder.setCurrency(majority)
+                }
                 inserted to errorMessages
             }
             val message = errors.joinToString("\n")
