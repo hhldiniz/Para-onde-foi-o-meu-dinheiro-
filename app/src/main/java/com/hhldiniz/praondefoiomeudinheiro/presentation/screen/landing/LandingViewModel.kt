@@ -101,6 +101,12 @@ class LandingViewModel(
         _uiState.value = LandingUiState.ProceedToHome
     }
 
+    /** Proceeds to Home without importing any file. */
+    fun onSkip() {
+        CsvUriHolder.uris = emptyList()
+        _uiState.value = LandingUiState.ProceedToHome
+    }
+
     /** Resets the ViewModel back to the Idle state. */
     fun onReset() {
         _uiState.value = LandingUiState.Idle

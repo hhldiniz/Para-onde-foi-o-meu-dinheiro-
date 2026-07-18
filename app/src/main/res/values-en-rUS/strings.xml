@@ -6,6 +6,7 @@
     <string name="landing_instruction">Select a CSV file or a folder with your expenses</string>
     <string name="landing_btn_select_csv">SELECT CSV FILE</string>
     <string name="landing_btn_select_folder">SELECT FOLDER</string>
+    <string name="landing_btn_skip">CONTINUE WITHOUT IMPORTING</string>
     <string name="landing_validating">VALIDATING FILES...</string>
     <string name="landing_title_valid">FILES LOADED</string>
     <string name="landing_title_invalid">VALIDATION RESULT</string>

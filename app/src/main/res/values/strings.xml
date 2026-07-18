@@ -6,6 +6,7 @@
     <string name="landing_instruction">Selecione um arquivo CSV/ODS ou uma pasta com seus gastos</string>
     <string name="landing_btn_select_csv">SELECIONAR ARQUIVO CSV/ODS</string>
     <string name="landing_btn_select_folder">SELECIONAR PASTA</string>
+    <string name="landing_btn_skip">CONTINUAR SEM IMPORTAR</string>
     <string name="landing_validating">VALIDANDO ARQUIVOS...</string>
     <string name="landing_title_valid">ARQUIVOS CARREGADOS</string>
     <string name="landing_title_invalid">RESULTADO DA VALIDAÇÃO</string>

@@ -6,6 +6,7 @@
     <string name="landing_instruction">Seleccione un archivo CSV o una carpeta con sus gastos</string>
     <string name="landing_btn_select_csv">SELECCIONAR ARCHIVO CSV</string>
     <string name="landing_btn_select_folder">SELECCIONAR CARPETA</string>
+    <string name="landing_btn_skip">CONTINUAR SIN IMPORTAR</string>
     <string name="landing_validating">VALIDANDO ARCHIVOS...</string>
     <string name="landing_title_valid">ARCHIVOS CARGADOS</string>
     <string name="landing_title_invalid">RESULTADO DE VALIDACIÓN</string>

@@ -84,6 +84,7 @@ fun LandingScreen(
                 onPickFolder = {
                     folderPickerLauncher.launch(null)
                 },
+                onSkip = { viewModel.onSkip() },
                 modifier = modifier
             )
         }
@@ -120,6 +121,7 @@ fun LandingScreen(
 private fun LandingContent(
     onPickFile: () -> Unit,
     onPickFolder: () -> Unit,
+    onSkip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -183,6 +185,16 @@ private fun LandingContent(
             backgroundColor = BrutalCyan,
             textColor = MaterialTheme.colorScheme.onTertiary,
             text = stringResource(R.string.landing_btn_select_folder)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        NeoButton(
+            onClick = onSkip,
+            modifier = Modifier.fillMaxWidth(),
+            backgroundColor = BrutalYellow,
+            textColor = MaterialTheme.colorScheme.onSecondary,
+            text = stringResource(R.string.landing_btn_skip)
         )
     }
 }
@@ -502,7 +514,8 @@ private fun LandingContentPreview() {
     PraOndeFoiOMeuDinheiroTheme {
         LandingContent(
             onPickFile = {},
-            onPickFolder = {}
+            onPickFolder = {},
+            onSkip = {}
         )
     }
 }
