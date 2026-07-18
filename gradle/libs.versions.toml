@@ -13,8 +13,9 @@ koin = "4.0.2"
 composeBom = "2026.06.01"
 documentFile = "1.1.0"
 paging = "3.3.5"
-ksp = "2.3.10"
-room = "2.7.1"
+  ksp = "2.3.10"
+  room = "2.7.1"
+  coroutines = "1.10.2"
 compileSdk = "37"
 minSdk = "31"
 targetSdk = "37"
@@ -48,8 +49,9 @@ androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", 
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
-koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
+  koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
+  koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
+  kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
