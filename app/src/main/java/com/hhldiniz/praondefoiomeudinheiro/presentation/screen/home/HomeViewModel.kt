@@ -140,11 +140,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val minDate = (spending + earnings).minOfOrNull { it.dateMillis }
                 val maxDate = (spending + earnings).maxOfOrNull { it.dateMillis }
                 _uiState.update { it.copy(allCategories = allCategories, datasetMinDate = minDate, datasetMaxDate = maxDate) }
-                val detected = rawAmounts.mapNotNull { CurrencyOption.fromAmountString(it) }
-                if (detected.isNotEmpty()) {
-                    val majority = detected.groupingBy { it }.eachCount().maxByOrNull { it.value }!!.key
-                    CurrencyHolder.setCurrency(majority)
-                }
+                detectCurrency(rawAmounts)
                 loadDataForPeriod(Period.MONTH)
             }
         }
@@ -190,11 +186,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val message = errors.joinToString("\n")
             _uiState.update { it.copy(debugMessage = message) }
             if (imported.isNotEmpty()) {
-                val detected = rawAmounts.mapNotNull { CurrencyOption.fromAmountString(it) }
-                if (detected.isNotEmpty()) {
-                    val majority = detected.groupingBy { it }.eachCount().maxByOrNull { it.value }!!.key
-                    CurrencyHolder.setCurrency(majority)
-                }
+                detectCurrency(rawAmounts)
                 rawSpending += imported.filter { it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
                 rawEarnings += imported.filter { !it.isExpense }.map { ParsedEntry(it.dateMillis, it.amount, it.description, it.category) }
                 val allCategories = (rawSpending + rawEarnings).map { it.category }.distinct().sorted()
@@ -232,11 +224,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 val inserted = importRepository.insertEntries(allEntries)
                 errorMessages.add("Total: ${inserted.size} registros (${allEntries.size - inserted.size} duplicatas ignoradas)")
-                val detected = raw.mapNotNull { CurrencyOption.fromAmountString(it) }
-                if (detected.isNotEmpty()) {
-                    val majority = detected.groupingBy { it }.eachCount().maxByOrNull { it.value }!!.key
-                    CurrencyHolder.setCurrency(majority)
-                }
+                detectCurrency(raw)
                 inserted to errorMessages
             }
             val message = errors.joinToString("\n")
@@ -465,6 +453,26 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val dateMillis = parseDate(entry.date) ?: return null
         val amount = parseAmount(entry.amount) ?: return null
         return ParsedEntry(dateMillis, amount, entry.description, entry.category)
+    }
+
+    private fun detectCurrency(rawAmounts: List<String>) {
+        val detected = rawAmounts.mapNotNull { CurrencyOption.fromAmountString(it) }
+        if (detected.isNotEmpty()) {
+            val majority = detected.groupingBy { it }.eachCount().maxByOrNull { it.value }!!.key
+            CurrencyHolder.setCurrency(majority)
+            return
+        }
+        val commaCount = rawAmounts.count { it.contains(",") }
+        val dotCount = rawAmounts.count { it.contains(".") && !it.contains(",") }
+        if (commaCount > dotCount && commaCount > rawAmounts.size / 2) {
+            val locale = java.util.Locale.getDefault()
+            val country = locale.country
+            CurrencyHolder.setCurrency(
+                if (country == "AR") CurrencyOption.ARS else CurrencyOption.BRL
+            )
+        } else if (dotCount > commaCount && dotCount > rawAmounts.size / 2) {
+            CurrencyHolder.setCurrency(CurrencyOption.USD)
+        }
     }
 
     private fun parseDate(dateStr: String): Long? {

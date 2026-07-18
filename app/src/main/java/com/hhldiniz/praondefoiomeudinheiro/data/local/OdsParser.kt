@@ -33,6 +33,8 @@ object OdsParser {
         val rows = mutableListOf<List<String>>()
         var currentRow = mutableListOf<String>()
         var cellText: String? = null
+        var cellAttrValue: String? = null
+        var cellAttrCurrency: String? = null
         var insideCell = false
         var insideTextP = false
         var columnRepeatCount = 1
@@ -55,6 +57,8 @@ object OdsParser {
                         ns == NS_TABLE && name == "table-cell" -> {
                             insideCell = true
                             cellText = null
+                            cellAttrValue = null
+                            cellAttrCurrency = null
                             columnRepeatCount = 1
 
                             val repeats = parser.getAttributeValue(NS_TABLE, "number-columns-repeated")
@@ -63,15 +67,15 @@ object OdsParser {
                             }
 
                             val valueType = parser.getAttributeValue(NS_OFFICE, "value-type")
-                            val rawValue = when (valueType) {
-                                "float", "currency" -> parser.getAttributeValue(NS_OFFICE, "value")
-                                "date" -> parser.getAttributeValue(NS_OFFICE, "date-value")
-                                "time" -> parser.getAttributeValue(NS_OFFICE, "time-value")
-                                "boolean" -> parser.getAttributeValue(NS_OFFICE, "boolean-value")
-                                else -> null
-                            }
-                            if (rawValue != null) {
-                                cellText = rawValue
+                            when (valueType) {
+                                "float" -> cellAttrValue = parser.getAttributeValue(NS_OFFICE, "value")
+                                "currency" -> {
+                                    cellAttrValue = parser.getAttributeValue(NS_OFFICE, "value")
+                                    cellAttrCurrency = parser.getAttributeValue(NS_OFFICE, "currency")
+                                }
+                                "date" -> cellAttrValue = parser.getAttributeValue(NS_OFFICE, "date-value")
+                                "time" -> cellAttrValue = parser.getAttributeValue(NS_OFFICE, "time-value")
+                                "boolean" -> cellAttrValue = parser.getAttributeValue(NS_OFFICE, "boolean-value")
                             }
                         }
                         ns == NS_TEXT && name == "p" -> {
@@ -81,8 +85,7 @@ object OdsParser {
                 }
                 XmlPullParser.TEXT -> {
                     if (insideTextP && insideCell) {
-                        val text = parser.text
-                        cellText = if (cellText == null) text else cellText + text
+                        cellText = parser.text
                     }
                 }
                 XmlPullParser.END_TAG -> {
@@ -90,13 +93,20 @@ object OdsParser {
                     val name = parser.name
                     when {
                         ns == NS_TABLE && name == "table-cell" -> {
-                            val value = cellText?.trim() ?: ""
+                            val value = when {
+                                cellText != null -> cellText.trim()
+                                cellAttrCurrency != null -> "$cellAttrCurrency ${cellAttrValue ?: ""}"
+                                cellAttrValue != null -> cellAttrValue
+                                else -> ""
+                            }
                             for (i in 0 until columnRepeatCount) {
                                 currentRow.add(value)
                             }
                             insideCell = false
                             insideTextP = false
                             cellText = null
+                            cellAttrValue = null
+                            cellAttrCurrency = null
                             columnRepeatCount = 1
                         }
                         ns == NS_TEXT && name == "p" -> {

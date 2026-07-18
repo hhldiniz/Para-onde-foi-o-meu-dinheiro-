@@ -17,11 +17,11 @@ enum class CurrencyOption(
         fun fromAmountString(amount: String): CurrencyOption? {
             val trimmed = amount.trim()
             return when {
-                trimmed.contains("R$") -> BRL
+                trimmed.contains("R\$") -> BRL
                 trimmed.contains("\u20AC") -> EUR
                 trimmed.contains("\u00A3") -> GBP
-                trimmed.contains("$") -> {
-                    val cleaned = trimmed.replace("$", "").trim()
+                trimmed.contains("\$") -> {
+                    val cleaned = trimmed.replace("\$", "").trim()
                     if (cleaned.contains(",") && cleaned.contains(".")) {
                         val dotLast = cleaned.lastIndexOf('.')
                         val commaLast = cleaned.lastIndexOf(',')
@@ -32,6 +32,11 @@ enum class CurrencyOption(
                         USD
                     }
                 }
+                trimmed.uppercase().contains("BRL") -> BRL
+                trimmed.uppercase().contains("USD") -> USD
+                trimmed.uppercase().contains("EUR") -> EUR
+                trimmed.uppercase().contains("GBP") -> GBP
+                trimmed.uppercase().contains("ARS") -> ARS
                 else -> null
             }
         }
