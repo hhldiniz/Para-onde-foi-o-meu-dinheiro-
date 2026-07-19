@@ -1,5 +1,7 @@
 name: CI
 
+# Test results are published via the permission-free Step Summary (no
+# check-run API), so no 'checks: write' token grant is required.
 on:
   pull_request:
     branches: [ master, main ]
