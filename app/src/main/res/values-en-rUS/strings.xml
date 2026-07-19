@@ -68,6 +68,12 @@
     <string name="home_patrimony">TOTAL PATRIMONY</string>
     <string name="home_remaining_balance">BALANCE AFTER SPENDING</string>
 
+    <!-- Import Progress -->
+    <string name="import_loading_title">IMPORTING FILES</string>
+    <string name="import_loading_current">Importing: %s</string>
+    <string name="import_loading_progress">%1$d of %2$d files</string>
+    <string name="import_loading_done">Done: %s</string>
+
     <!-- Home Screen -->
     <string name="home_total_earnings">TOTAL EARNINGS</string>
 

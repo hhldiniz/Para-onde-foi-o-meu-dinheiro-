@@ -22,6 +22,10 @@ data class HomeUiState(
     val selectedCategory: String? = null,
     val datasetMinDate: Long? = null,
     val datasetMaxDate: Long? = null,
+    val isImporting: Boolean = false,
+    val importingFileName: String? = null,
+    val importedFiles: List<String> = emptyList(),
+    val importingTotal: Int = 0,
 )
 
 /** A single data point for line/bar charts, with a display label and numeric value. */

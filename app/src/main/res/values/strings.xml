@@ -69,6 +69,12 @@
     <string name="home_patrimony">PATRIMONIO TOTAL</string>
     <string name="home_remaining_balance">SALDO APOS GASTOS</string>
 
+    <!-- Import Progress -->
+    <string name="import_loading_title">IMPORTANDO ARQUIVOS</string>
+    <string name="import_loading_current">Importando: %s</string>
+    <string name="import_loading_progress">%1$d de %2$d arquivos</string>
+    <string name="import_loading_done">Concluído: %s</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Configurações</string>
     <string name="settings_placeholder">Configurações em breve</string>

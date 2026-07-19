@@ -158,6 +158,10 @@ fun HomeScreen(
         datasetMaxDate = uiState.datasetMaxDate,
         onImportFile = { filePickerLauncher.launch(arrayOf("text/*", "*/*")) },
         onImportFolder = { folderPickerLauncher.launch(null) },
+        isImporting = uiState.isImporting,
+        importingFileName = uiState.importingFileName,
+        importedFiles = uiState.importedFiles,
+        importingTotal = uiState.importingTotal,
         modifier = modifier
     )
 }
@@ -191,6 +195,10 @@ private fun HomeContent(
     datasetMaxDate: Long?,
     onImportFile: () -> Unit = {},
     onImportFolder: () -> Unit = {},
+    isImporting: Boolean = false,
+    importingFileName: String? = null,
+    importedFiles: List<String> = emptyList(),
+    importingTotal: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val currencyFormat = remember(selectedCurrency) {
@@ -501,6 +509,14 @@ private fun HomeContent(
             onDismiss = { showFilterDialog = false },
             onApplyCategory = onCategorySelected,
             onApplyDateRange = onCustomDateRange,
+        )
+    }
+
+    if (isImporting) {
+        ImportProgressOverlay(
+            importingFileName = importingFileName,
+            importedFiles = importedFiles,
+            importingTotal = importingTotal,
         )
     }
 }

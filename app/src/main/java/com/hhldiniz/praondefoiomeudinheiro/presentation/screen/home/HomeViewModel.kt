@@ -158,6 +158,7 @@ class HomeViewModel(
             return
         }
         viewModelScope.launch {
+            setImporting(fileName = null, total = uriList.size)
             val result = withContext(ioDispatcher) {
                 val s = mutableListOf<ParsedEntry>()
                 val e = mutableListOf<ParsedEntry>()
@@ -165,6 +166,8 @@ class HomeViewModel(
                 val amounts = mutableListOf<String>()
                 val allImported = mutableListOf<ImportedEntry>()
                 for (uri in uriList) {
+                    val fileName = uri.lastPathSegment ?: ""
+                    _uiState.update { it.copy(importingFileName = fileName) }
                     repository.readValues(uri, contentResolver)
                         .onSuccess { range ->
                             range.spendingEntries.forEach { amounts.add(it.amount) }
@@ -173,7 +176,6 @@ class HomeViewModel(
                             val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
                             s.addAll(sp)
                             e.addAll(ep)
-                            val fileName = uri.lastPathSegment ?: ""
                             sp.forEach { parsed ->
                                 allImported.add(ImportedEntry(dateMillis = parsed.dateMillis, amount = parsed.amount, description = parsed.description, category = parsed.category, isExpense = true, fileName = fileName))
                             }
@@ -185,6 +187,7 @@ class HomeViewModel(
                         .onFailure { error ->
                             errs.add("Falha ao ler $uri: ${error.message}")
                         }
+                    markImported(fileName)
                 }
                 importRepository.insertEntries(allImported)
                 val newCategories = saveCategoriesFromEntries(allImported)
@@ -205,6 +208,7 @@ class HomeViewModel(
                 updateDerivedState()
                 loadDataForPeriod(Period.MONTH)
             }
+            clearImporting()
         }
     }
 
@@ -217,6 +221,8 @@ class HomeViewModel(
 
     fun importFile(uri: Uri, contentResolver: ContentResolver) {
         viewModelScope.launch {
+            val fileName = uri.lastPathSegment ?: ""
+            setImporting(fileName = fileName, total = 1)
             val (imported, errors, rawAmounts) = withContext(ioDispatcher) {
                 val errorMessages = mutableListOf<String>()
                 val raw = mutableListOf<String>()
@@ -252,21 +258,24 @@ class HomeViewModel(
                 updateDerivedState()
                 loadDataForPeriod(_uiState.value.selectedPeriod)
             }
+            markImported(fileName)
         }
     }
 
     fun importFolder(treeUri: Uri, context: android.content.Context) {
         viewModelScope.launch {
+            val csvUris = listCsvUris(context, treeUri)
+            setImporting(fileName = null, total = csvUris.size)
             val (imported, errors) = withContext(ioDispatcher) {
-                val csvUris = listCsvUris(context, treeUri)
                 val allEntries = mutableListOf<ImportedEntry>()
                 val errorMessages = mutableListOf<String>()
                 val raw = mutableListOf<String>()
                 for (uri in csvUris) {
+                    val fileName = uri.lastPathSegment ?: ""
+                    _uiState.update { it.copy(importingFileName = fileName) }
                     val result = repository.readValues(uri, context.contentResolver)
                     if (result.isSuccess) {
                         val range = result.getOrThrow()
-                        val fileName = uri.lastPathSegment ?: ""
                         range.spendingEntries.forEach { raw.add(it.amount) }
                         range.earningsEntries.forEach { raw.add(it.amount) }
                         val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
@@ -282,6 +291,7 @@ class HomeViewModel(
                         val error = result.exceptionOrNull()
                         errorMessages.add("Falha ao ler $uri: ${error?.message}")
                     }
+                    markImported(fileName)
                 }
                 val inserted = importRepository.insertEntries(allEntries)
                 val newCategories = saveCategoriesFromEntries(allEntries)
@@ -298,6 +308,7 @@ class HomeViewModel(
                 updateDerivedState()
                 loadDataForPeriod(_uiState.value.selectedPeriod)
             }
+            clearImporting()
         }
     }
 
@@ -320,6 +331,35 @@ class HomeViewModel(
             } else {
                 showZeroedState()
             }
+        }
+    }
+
+    private fun setImporting(fileName: String?, total: Int) {
+        _uiState.update {
+            it.copy(
+                isImporting = true,
+                importingFileName = fileName,
+                importingTotal = total,
+                importedFiles = emptyList(),
+            )
+        }
+    }
+
+    private fun markImported(fileName: String) {
+        _uiState.update {
+            val updated = (it.importedFiles + fileName).distinct()
+            it.copy(importedFiles = updated, importingFileName = null)
+        }
+    }
+
+    private fun clearImporting() {
+        _uiState.update {
+            it.copy(
+                isImporting = false,
+                importingFileName = null,
+                importedFiles = emptyList(),
+                importingTotal = 0,
+            )
         }
     }
 
