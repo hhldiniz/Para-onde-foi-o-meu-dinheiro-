@@ -16,6 +16,8 @@ paging = "3.3.5"
   ksp = "2.3.10"
   room = "2.7.1"
   coroutines = "1.10.2"
+mockitoKotlin = "5.4.0"
+archCoreTesting = "2.2.0"
 compileSdk = "37"
 minSdk = "31"
 targetSdk = "37"
@@ -52,6 +54,8 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
   koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
   koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
   kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+  mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
+  androidx-arch-core-testing = { group = "androidx.arch.core", name = "core-testing", version.ref = "archCoreTesting" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
