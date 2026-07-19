@@ -14,6 +14,7 @@ import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CsvEntry
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -75,6 +76,7 @@ class HomeViewModel(
     private val importRepository: ImportRepository,
     private val repository: SpreadsheetRepository,
     private val categoryRepository: CategoryRepository,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
     private suspend fun saveCategoriesFromEntries(entries: List<ImportedEntry>): Int {
@@ -98,7 +100,7 @@ class HomeViewModel(
     val entriesPagingData: Flow<PagingData<EntryDisplay>> = _filterParams
         .flatMapLatest { params ->
             flow {
-                val entries = withContext(Dispatchers.IO) {
+                val entries = withContext(ioDispatcher) {
                     val spending = importRepository.getEntriesByDateRange(
                         isExpense = true, category = params.selectedCategory,
                         startMillis = params.startMillis, endMillis = params.endMillis,
@@ -146,7 +148,7 @@ class HomeViewModel(
         val uriList = CsvUriHolder.uris
         if (uriList.isEmpty() || DataClearedHolder.cleared.value) {
             viewModelScope.launch {
-                val hasRoomData = withContext(Dispatchers.IO) { importRepository.count() > 0 }
+                val hasRoomData = withContext(ioDispatcher) { importRepository.count() > 0 }
                 if (hasRoomData && !DataClearedHolder.cleared.value) {
                     loadFromRoom()
                 } else {
@@ -156,7 +158,7 @@ class HomeViewModel(
             return
         }
         viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) {
+            val result = withContext(ioDispatcher) {
                 val s = mutableListOf<ParsedEntry>()
                 val e = mutableListOf<ParsedEntry>()
                 val errs = mutableListOf<String>()
@@ -215,7 +217,7 @@ class HomeViewModel(
 
     fun importFile(uri: Uri, contentResolver: ContentResolver) {
         viewModelScope.launch {
-            val (imported, errors, rawAmounts) = withContext(Dispatchers.IO) {
+            val (imported, errors, rawAmounts) = withContext(ioDispatcher) {
                 val errorMessages = mutableListOf<String>()
                 val raw = mutableListOf<String>()
                 val result = repository.readValues(uri, contentResolver)
@@ -255,7 +257,7 @@ class HomeViewModel(
 
     fun importFolder(treeUri: Uri, context: android.content.Context) {
         viewModelScope.launch {
-            val (imported, errors) = withContext(Dispatchers.IO) {
+            val (imported, errors) = withContext(ioDispatcher) {
                 val csvUris = listCsvUris(context, treeUri)
                 val allEntries = mutableListOf<ImportedEntry>()
                 val errorMessages = mutableListOf<String>()
@@ -312,7 +314,7 @@ class HomeViewModel(
 
     fun refreshData() {
         viewModelScope.launch {
-            val hasRoomData = withContext(Dispatchers.IO) { importRepository.count() > 0 }
+            val hasRoomData = withContext(ioDispatcher) { importRepository.count() > 0 }
             if (hasRoomData && !DataClearedHolder.cleared.value) {
                 loadFromRoom()
             } else {
@@ -377,7 +379,7 @@ class HomeViewModel(
             )
         } else {
             viewModelScope.launch {
-                val (start, end) = withContext(Dispatchers.IO) {
+                val (start, end) = withContext(ioDispatcher) {
                     val min = importRepository.getMinDate() ?: System.currentTimeMillis()
                     val max = importRepository.getMaxDate() ?: min
                     min to max
@@ -389,7 +391,7 @@ class HomeViewModel(
 
     private fun updateDerivedState() {
         viewModelScope.launch {
-            val (allCategories, minDate, maxDate) = withContext(Dispatchers.IO) {
+            val (allCategories, minDate, maxDate) = withContext(ioDispatcher) {
                 val categories = importRepository.getCategoryTotals(
                     isExpense = true, category = null,
                     startMillis = Long.MIN_VALUE, endMillis = Long.MAX_VALUE,
@@ -408,7 +410,7 @@ class HomeViewModel(
 
     private fun loadDataForPeriod(period: Period) {
         viewModelScope.launch {
-            val (start, end) = withContext(Dispatchers.IO) {
+            val (start, end) = withContext(ioDispatcher) {
                 val min = importRepository.getMinDate() ?: System.currentTimeMillis()
                 val max = importRepository.getMaxDate() ?: min
                 min to max
@@ -432,7 +434,7 @@ class HomeViewModel(
         _filterParams.value = FilterParams(kPeriod, startMillis, endMillis, customStart, customEnd, selectedCategory)
         viewModelScope.launch {
             val (spendingData, spendingCategories, earningsData, earningsCategories, totalSpending, totalEarnings) =
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     val monthNames = listOf("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
 
                     val spendingCatTotals = importRepository.getCategoryTotals(

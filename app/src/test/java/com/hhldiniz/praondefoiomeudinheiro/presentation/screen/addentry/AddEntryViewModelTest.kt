@@ -1,10 +1,12 @@
 package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.viewModelScope
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -54,11 +56,12 @@ class AddEntryViewModelTest {
 
     @After
     fun tearDown() {
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
         Dispatchers.resetMain()
     }
 
     private fun buildViewModel(): AddEntryViewModel {
-        return AddEntryViewModel(importRepository, categoryRepository)
+        return AddEntryViewModel(importRepository, categoryRepository, testDispatcher)
     }
 
     // -------------------------------------------------------------------------

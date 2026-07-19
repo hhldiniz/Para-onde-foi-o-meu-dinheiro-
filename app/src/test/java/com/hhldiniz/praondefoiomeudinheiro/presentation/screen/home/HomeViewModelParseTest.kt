@@ -2,6 +2,7 @@ package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home
 
 import android.content.ContentResolver
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.viewModelScope
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
@@ -13,6 +14,7 @@ import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.ValueRange
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -52,6 +54,7 @@ class HomeViewModelParseTest {
     private lateinit var spreadsheetRepository: SpreadsheetRepository
     private lateinit var categoryRepository: CategoryRepository
     private lateinit var contentResolver: ContentResolver
+    private lateinit var viewModel: HomeViewModel
 
     @Before
     fun setUp() {
@@ -70,6 +73,7 @@ class HomeViewModelParseTest {
 
     @After
     fun tearDown() {
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
         Dispatchers.resetMain()
         CsvUriHolder.uris = emptyList()
         CurrencyHolder.setCurrency(CurrencyOption.BRL)
@@ -87,7 +91,10 @@ class HomeViewModelParseTest {
         }
     }
 
-    private fun buildViewModel() = HomeViewModel(importRepository, spreadsheetRepository, categoryRepository)
+    private fun buildViewModel(): HomeViewModel {
+        viewModel = HomeViewModel(importRepository, spreadsheetRepository, categoryRepository, testDispatcher)
+        return viewModel
+    }
 
     private fun entry(date: String, amount: String, desc: String = "d", cat: String = "c") =
         CsvEntry(date, amount, desc, cat)

@@ -4,12 +4,14 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.viewModelScope
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.FileValidationReport
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvalidSpreadsheetFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.ValidSpreadsheetFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -56,11 +58,12 @@ class LandingViewModelTest {
         context = mock()
         val contentResolver = mock<ContentResolver>()
         whenever(context.contentResolver).thenReturn(contentResolver)
-        viewModel = LandingViewModel(repository)
+        viewModel = LandingViewModel(repository, testDispatcher)
     }
 
     @After
     fun tearDown() {
+        viewModel.viewModelScope.cancel()
         Dispatchers.resetMain()
         CsvUriHolder.uris = emptyList()
     }
@@ -163,9 +166,11 @@ class LandingViewModelTest {
         whenever(repository.validateFile(any(), any())).thenReturn(report)
 
         viewModel.onFilePicked(fileUri, context)
-        // Before advancing scheduler, loading state should be set
-        assertEquals(LandingUiState.Loading, viewModel.uiState.value)
+        // The validation coroutine is dispatched onto the test scheduler, so the
+        // Loading state is set only once the scheduler is advanced.
         testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value is LandingUiState.ValidationResult)
     }
 
     // -------------------------------------------------------------------------

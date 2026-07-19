@@ -9,6 +9,7 @@ import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.FileValidationReport
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +40,7 @@ sealed class LandingUiState {
  */
 class LandingViewModel(
     private val repository: SpreadsheetRepository,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LandingUiState>(LandingUiState.Idle)
@@ -74,7 +76,7 @@ class LandingViewModel(
     fun onFolderPicked(treeUri: Uri, context: Context) {
         viewModelScope.launch {
             _uiState.value = LandingUiState.Loading
-            val csvUris = withContext(Dispatchers.IO) {
+            val csvUris = withContext(ioDispatcher) {
                 listCsvUris(context, treeUri)
             }
             if (csvUris.isEmpty()) {

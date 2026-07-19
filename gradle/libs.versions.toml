@@ -18,6 +18,7 @@ paging = "3.3.5"
   coroutines = "1.10.2"
 mockitoKotlin = "5.4.0"
 archCoreTesting = "2.2.0"
+kxml2 = "2.3.0"
 compileSdk = "37"
 minSdk = "31"
 targetSdk = "37"
@@ -56,6 +57,7 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
   kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
   mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
   androidx-arch-core-testing = { group = "androidx.arch.core", name = "core-testing", version.ref = "archCoreTesting" }
+  kxml2 = { group = "net.sf.kxml", name = "kxml2", version.ref = "kxml2" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

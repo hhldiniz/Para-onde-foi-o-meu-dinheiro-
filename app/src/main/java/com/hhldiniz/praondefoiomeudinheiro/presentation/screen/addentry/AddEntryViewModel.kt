@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +30,7 @@ data class AddEntryUiState(
 class AddEntryViewModel(
     private val importRepository: ImportRepository,
     private val categoryRepository: CategoryRepository,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEntryUiState())
@@ -80,7 +82,7 @@ class AddEntryViewModel(
         if (name.isBlank()) return
         _uiState.value = _uiState.value.copy(isSaving = true)
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 categoryRepository.insert(name)
             }
             _uiState.value = _uiState.value.copy(
@@ -119,7 +121,7 @@ class AddEntryViewModel(
                 isExpense = state.isExpense,
                 fileName = "manual",
             )
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 importRepository.insertEntries(listOf(entry))
                 categoryRepository.insert(state.category.trim())
             }

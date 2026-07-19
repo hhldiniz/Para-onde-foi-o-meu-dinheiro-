@@ -1,6 +1,7 @@
 package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.viewModelScope
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryTotal
@@ -11,6 +12,7 @@ import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -69,6 +71,7 @@ class HomeViewModelTest {
 
     @After
     fun tearDown() {
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
         Dispatchers.resetMain()
         DataClearedHolder.reset()
         // Reset currency back to default
@@ -87,7 +90,7 @@ class HomeViewModelTest {
         }
     }
 
-    private fun buildViewModel() = HomeViewModel(importRepository, spreadsheetRepository, categoryRepository)
+    private fun buildViewModel() = HomeViewModel(importRepository, spreadsheetRepository, categoryRepository, testDispatcher)
 
     // -------------------------------------------------------------------------
     // Initial state
