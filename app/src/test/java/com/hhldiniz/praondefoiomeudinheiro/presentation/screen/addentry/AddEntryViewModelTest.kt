@@ -6,10 +6,11 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -38,7 +39,7 @@ class AddEntryViewModelTest {
     @get:Rule
     val instantTaskRule = InstantTaskExecutorRule()
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     private lateinit var importRepository: ImportRepository
     private lateinit var categoryRepository: CategoryRepository

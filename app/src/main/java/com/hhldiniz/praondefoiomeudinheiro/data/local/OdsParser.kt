@@ -20,13 +20,25 @@ object OdsParser {
     /**
      * Opens the ZIP stream, locates content.xml and delegates to [parseXml].
      * Returns an empty list if the content file is not found.
+     *
+     * [parserFactory] builds the underlying [XmlPullParser]; it defaults to the
+     * platform factory so behaviour is unchanged in production, but can be
+     * supplied by callers (e.g. tests) to avoid Android framework stubs on the
+     * JVM unit-test runtime.
      */
-    fun parse(inputStream: InputStream): List<List<String>> {
+    fun parse(
+        inputStream: InputStream,
+        parserFactory: () -> XmlPullParser = {
+            val factory = XmlPullParserFactory.newInstance()
+            factory.isNamespaceAware = true
+            factory.newPullParser()
+        },
+    ): List<List<String>> {
         val zipStream = ZipInputStream(inputStream)
         var entry = zipStream.nextEntry
         while (entry != null) {
             if (entry.name == CONTENT_XML) {
-                val rows = parseXml(zipStream)
+                val rows = parseXml(zipStream, parserFactory)
                 zipStream.closeEntry()
                 zipStream.close()
                 return rows
@@ -39,7 +51,7 @@ object OdsParser {
     }
 
     /** Parses the content.xml stream using XmlPullParser, extracting table rows and cell values. */
-    private fun parseXml(inputStream: InputStream): List<List<String>> {
+    private fun parseXml(inputStream: InputStream, parserFactory: () -> XmlPullParser): List<List<String>> {
         val rows = mutableListOf<List<String>>()
         var currentRow = mutableListOf<String>()
         var cellText: String? = null
@@ -49,9 +61,7 @@ object OdsParser {
         var insideTextP = false
         var columnRepeatCount = 1
 
-        val factory = XmlPullParserFactory.newInstance()
-        factory.isNamespaceAware = true
-        val parser = factory.newPullParser()
+        val parser = parserFactory()
         parser.setInput(inputStream, "UTF-8")
 
         var eventType = parser.eventType

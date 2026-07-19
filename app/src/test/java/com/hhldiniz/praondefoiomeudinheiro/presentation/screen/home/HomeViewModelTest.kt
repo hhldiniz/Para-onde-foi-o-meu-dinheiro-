@@ -12,11 +12,11 @@ import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -50,7 +50,7 @@ class HomeViewModelTest {
     @get:Rule
     val instantTaskRule = InstantTaskExecutorRule()
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     private lateinit var importRepository: ImportRepository
     private lateinit var spreadsheetRepository: SpreadsheetRepository

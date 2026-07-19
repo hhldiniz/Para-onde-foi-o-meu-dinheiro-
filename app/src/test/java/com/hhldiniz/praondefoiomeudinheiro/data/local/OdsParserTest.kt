@@ -33,7 +33,11 @@ class OdsParserTest {
     }
 
     private fun parse(xml: String) =
-        OdsParser.parse(buildOds(xml).inputStream())
+        OdsParser.parse(buildOds(xml).inputStream()) {
+            org.kxml2.io.KXmlParser().apply {
+                setFeature(org.xmlpull.v1.XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+            }
+        }
 
     /** Minimal content.xml wrapper for a table with given [bodyXml]. */
     private fun wrap(bodyXml: String) = """<?xml version="1.0" encoding="UTF-8"?>

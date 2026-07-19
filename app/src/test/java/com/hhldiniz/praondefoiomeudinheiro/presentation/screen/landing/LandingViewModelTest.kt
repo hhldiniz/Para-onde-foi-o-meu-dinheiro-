@@ -11,10 +11,11 @@ import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvalidSpreadsheetFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.ValidSpreadsheetFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -40,7 +41,7 @@ class LandingViewModelTest {
     @get:Rule
     val instantTaskRule = InstantTaskExecutorRule()
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     private lateinit var repository: SpreadsheetRepository
     private lateinit var context: Context
