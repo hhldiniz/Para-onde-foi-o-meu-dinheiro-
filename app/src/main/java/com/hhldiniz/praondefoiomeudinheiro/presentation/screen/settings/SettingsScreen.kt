@@ -229,7 +229,7 @@ private fun CurrencySelector(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Moeda: ${selectedCurrency.code} (${selectedCurrency.symbol})",
+                    text = stringResource(R.string.settings_currency_label, selectedCurrency.code, selectedCurrency.symbol),
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
@@ -245,7 +245,7 @@ private fun CurrencySelector(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = "${currency.code} (${currency.symbol})",
+                            text = stringResource(R.string.settings_currency_option_format, currency.code, currency.symbol),
                             fontWeight = if (currency == selectedCurrency) FontWeight.Black else FontWeight.Medium
                         )
                     },

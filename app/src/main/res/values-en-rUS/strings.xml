@@ -90,4 +90,44 @@
     <string name="settings_danger_confirm_text">All entries and categories will be permanently deleted. This action cannot be undone.</string>
     <string name="settings_danger_confirm_button">DELETE EVERYTHING</string>
     <string name="settings_danger_cancel_button">CANCEL</string>
+
+    <!-- Settings: Currency -->
+    <string name="settings_currency_label">Currency: %1$s (%2$s)</string>
+    <string name="settings_currency_option_format">%1$s (%2$s)</string>
+
+    <!-- Common actions and tags -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_add">Add</string>
+    <string name="tag_expense">EXPENSE</string>
+    <string name="tag_income">INCOME</string>
+    <string name="category_all">All categories</string>
+
+    <!-- Add Entry Screen -->
+    <string name="add_entry_title">Add Entry</string>
+    <string name="add_entry_saving">Saving...</string>
+    <string name="add_entry_save">SAVE</string>
+    <string name="add_entry_label_date">Date</string>
+    <string name="add_entry_label_amount">Amount</string>
+    <string name="add_entry_amount_placeholder">0.00</string>
+    <string name="add_entry_label_description">Description</string>
+    <string name="add_entry_description_placeholder">Entry description</string>
+    <string name="add_entry_label_category">Category</string>
+    <string name="add_entry_select_category">Select a category</string>
+    <string name="add_entry_add_new_category">Add new category...</string>
+    <string name="add_entry_new_category_title">New category</string>
+    <string name="add_entry_new_category_placeholder">Category name</string>
+    <string name="add_entry_label_type">Type</string>
+
+    <!-- Home Screen: import menu, filter and entries list -->
+    <string name="home_add_entry_fab_content_description">Add entry</string>
+    <string name="home_menu_add_manually">Add manually</string>
+    <string name="home_menu_import_file">Import file</string>
+    <string name="home_menu_import_folder">Import folder</string>
+    <string name="home_filter_content_description">Filter</string>
+    <string name="home_no_entries_found">No entries found</string>
+    <string name="home_scroll_to_top_content_description">Scroll to top</string>
+    <string name="home_category_filter_label">Category: %1$s</string>
+    <string name="home_filter_period_label">Period</string>
+    <string name="home_filter_apply">Apply</string>
+    <string name="home_filter_clear">Clear</string>
 </resources>

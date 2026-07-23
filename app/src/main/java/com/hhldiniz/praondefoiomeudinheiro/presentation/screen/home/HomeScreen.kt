@@ -222,7 +222,7 @@ private fun HomeContent(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Add,
-                            contentDescription = "Adicionar entrada"
+                            contentDescription = stringResource(R.string.home_add_entry_fab_content_description)
                         )
                     }
                     DropdownMenu(
@@ -230,21 +230,21 @@ private fun HomeContent(
                         onDismissRequest = { showImportMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Adicionar manualmente") },
+                            text = { Text(stringResource(R.string.home_menu_add_manually)) },
                             onClick = {
                                 showImportMenu = false
                                 onNavigateToAddEntry()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Importar arquivo") },
+                            text = { Text(stringResource(R.string.home_menu_import_file)) },
                             onClick = {
                                 showImportMenu = false
                                 onImportFile()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Importar pasta") },
+                            text = { Text(stringResource(R.string.home_menu_import_folder)) },
                             onClick = {
                                 showImportMenu = false
                                 onImportFolder()
@@ -267,7 +267,7 @@ private fun HomeContent(
                     IconButton(onClick = { showFilterDialog = true }) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "Filtrar"
+                            contentDescription = stringResource(R.string.home_filter_content_description)
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
@@ -586,7 +586,7 @@ private fun EntriesList(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Nenhuma entrada encontrada",
+                    text = stringResource(R.string.home_no_entries_found),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = BrutalBlack
@@ -634,7 +634,7 @@ private fun EntriesList(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowUp,
-                        contentDescription = "Ir para o topo",
+                        contentDescription = stringResource(R.string.home_scroll_to_top_content_description),
                         tint = BrutalBlack
                     )
                 }
@@ -689,7 +689,7 @@ private fun EntryCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val tagBg = if (entry.isExpense) BrutalPink else BrutalCyan
-                        val tagText = if (entry.isExpense) "GASTO" else "RENDA"
+                        val tagText = stringResource(if (entry.isExpense) R.string.tag_expense else R.string.tag_income)
                         NeoTag(
                             text = tagText,
                             backgroundColor = tagBg,
@@ -914,8 +914,8 @@ private fun CategoryDropdown(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (selectedCategory != null) "Categoria: $selectedCategory"
-                           else "Todas as categorias",
+                    text = if (selectedCategory != null) stringResource(R.string.home_category_filter_label, selectedCategory)
+                           else stringResource(R.string.category_all),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onTertiary
                 )
@@ -929,7 +929,7 @@ private fun CategoryDropdown(
             DropdownMenuItem(
                 text = {
                     Text(
-                        text = "Todas as categorias",
+                        text = stringResource(R.string.category_all),
                         fontWeight = if (selectedCategory == null) FontWeight.Black else FontWeight.Medium
                     )
                 },
@@ -985,7 +985,7 @@ private fun FilterDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Filtrar",
+                text = stringResource(R.string.home_filter_content_description),
                 fontWeight = FontWeight.Black,
                 style = MaterialTheme.typography.titleLarge
             )
@@ -995,7 +995,7 @@ private fun FilterDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Período",
+                    text = stringResource(R.string.home_filter_period_label),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -1020,7 +1020,7 @@ private fun FilterDialog(
                 }
 
                 Text(
-                    text = "Categoria",
+                    text = stringResource(R.string.add_entry_label_category),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -1041,7 +1041,7 @@ private fun FilterDialog(
                         ) {
                             Text(
                                 text = if (tempCategory != null) tempCategory!!
-                                       else "Todas as categorias",
+                                       else stringResource(R.string.category_all),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onTertiary
                             )
@@ -1055,7 +1055,7 @@ private fun FilterDialog(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = "Todas as categorias",
+                                    text = stringResource(R.string.category_all),
                                     fontWeight = if (tempCategory == null) FontWeight.Black else FontWeight.Medium
                                 )
                             },
@@ -1090,7 +1090,7 @@ private fun FilterDialog(
                 }
                 onDismiss()
             }) {
-                Text("Aplicar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.home_filter_apply), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -1100,7 +1100,7 @@ private fun FilterDialog(
                 tempEndDate = null
                 onApplyCategory(null)
             }) {
-                Text("Limpar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.home_filter_clear), fontWeight = FontWeight.Bold)
             }
         }
     )

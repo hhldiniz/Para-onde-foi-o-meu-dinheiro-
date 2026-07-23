@@ -88,4 +88,44 @@
     <string name="settings_danger_confirm_text">Todos os movimentos e categorias serão apagados permanentemente. Esta ação não pode ser desfeita.</string>
     <string name="settings_danger_confirm_button">APAGAR TUDO</string>
     <string name="settings_danger_cancel_button">CANCELAR</string>
+
+    <!-- Settings: Currency -->
+    <string name="settings_currency_label">Moeda: %1$s (%2$s)</string>
+    <string name="settings_currency_option_format">%1$s (%2$s)</string>
+
+    <!-- Common actions and tags -->
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_add">Adicionar</string>
+    <string name="tag_expense">GASTO</string>
+    <string name="tag_income">RENDA</string>
+    <string name="category_all">Todas as categorias</string>
+
+    <!-- Add Entry Screen -->
+    <string name="add_entry_title">Adicionar Movimentacao</string>
+    <string name="add_entry_saving">Salvando...</string>
+    <string name="add_entry_save">SALVAR</string>
+    <string name="add_entry_label_date">Data</string>
+    <string name="add_entry_label_amount">Valor</string>
+    <string name="add_entry_amount_placeholder">0,00</string>
+    <string name="add_entry_label_description">Descricao</string>
+    <string name="add_entry_description_placeholder">Descricao da movimentacao</string>
+    <string name="add_entry_label_category">Categoria</string>
+    <string name="add_entry_select_category">Selecione uma categoria</string>
+    <string name="add_entry_add_new_category">Adicionar nova categoria...</string>
+    <string name="add_entry_new_category_title">Nova categoria</string>
+    <string name="add_entry_new_category_placeholder">Nome da categoria</string>
+    <string name="add_entry_label_type">Tipo</string>
+
+    <!-- Home Screen: import menu, filter and entries list -->
+    <string name="home_add_entry_fab_content_description">Adicionar entrada</string>
+    <string name="home_menu_add_manually">Adicionar manualmente</string>
+    <string name="home_menu_import_file">Importar arquivo</string>
+    <string name="home_menu_import_folder">Importar pasta</string>
+    <string name="home_filter_content_description">Filtrar</string>
+    <string name="home_no_entries_found">Nenhuma entrada encontrada</string>
+    <string name="home_scroll_to_top_content_description">Ir para o topo</string>
+    <string name="home_category_filter_label">Categoria: %1$s</string>
+    <string name="home_filter_period_label">Período</string>
+    <string name="home_filter_apply">Aplicar</string>
+    <string name="home_filter_clear">Limpar</string>
 </resources>

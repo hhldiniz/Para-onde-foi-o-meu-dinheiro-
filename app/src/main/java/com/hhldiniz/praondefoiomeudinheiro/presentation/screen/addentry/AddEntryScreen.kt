@@ -43,11 +43,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
+import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlack
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
@@ -77,7 +79,7 @@ fun AddEntryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Adicionar Movimentacao",
+                        text = stringResource(R.string.add_entry_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Black,
                     )
@@ -86,7 +88,7 @@ fun AddEntryScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar"
+                            contentDescription = stringResource(R.string.settings_back_content_description)
                         )
                     }
                 },
@@ -183,7 +185,7 @@ fun AddEntryScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (uiState.isSaving) "Salvando..." else "SALVAR",
+                        text = if (uiState.isSaving) stringResource(R.string.add_entry_saving) else stringResource(R.string.add_entry_save),
                         color = MaterialTheme.colorScheme.onPrimary,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
@@ -205,7 +207,7 @@ private fun DateField(
 
     Column {
         Text(
-            text = "Data",
+            text = stringResource(R.string.add_entry_label_date),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = BrutalBlack,
@@ -243,12 +245,12 @@ private fun DateField(
                     pickerState.selectedDateMillis?.let { onDateChanged(it) }
                     showPicker = false
                 }) {
-                    Text("OK", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.home_date_ok), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showPicker = false }) {
-                    Text("Cancelar", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_cancel), fontWeight = FontWeight.Bold)
                 }
             }
         ) {
@@ -264,7 +266,7 @@ private fun AmountField(
 ) {
     Column {
         Text(
-            text = "Valor",
+            text = stringResource(R.string.add_entry_label_amount),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = BrutalBlack,
@@ -280,7 +282,7 @@ private fun AmountField(
                 onValueChange = onValueChanged,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
-                placeholder = { Text("0,00") },
+                placeholder = { Text(stringResource(R.string.add_entry_amount_placeholder)) },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = BrutalBlack,
@@ -307,7 +309,7 @@ private fun DescriptionField(
 ) {
     Column {
         Text(
-            text = "Descricao",
+            text = stringResource(R.string.add_entry_label_description),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = BrutalBlack,
@@ -322,7 +324,7 @@ private fun DescriptionField(
                 value = value,
                 onValueChange = onValueChanged,
                 singleLine = true,
-                placeholder = { Text("Descricao da movimentacao") },
+                placeholder = { Text(stringResource(R.string.add_entry_description_placeholder)) },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = BrutalBlack,
@@ -353,7 +355,7 @@ private fun CategoryDropdown(
 
     Column {
         Text(
-            text = "Categoria",
+            text = stringResource(R.string.add_entry_label_category),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = BrutalBlack,
@@ -378,7 +380,7 @@ private fun CategoryDropdown(
                 ) {
                     Text(
                         text = if (selectedCategory.isNotBlank()) selectedCategory
-                               else "Selecione uma categoria",
+                               else stringResource(R.string.add_entry_select_category),
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Bold,
                             color = if (selectedCategory.isNotBlank()) Color.White else BrutalBlack,
@@ -407,7 +409,7 @@ private fun CategoryDropdown(
                     DropdownMenuItem(
                         text = {
                             Text(
-                                text = "Adicionar nova categoria...",
+                                text = stringResource(R.string.add_entry_add_new_category),
                                 fontWeight = FontWeight.Bold,
                                 color = BrutalPink,
                             )
@@ -434,7 +436,7 @@ private fun AddCategoryDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Nova categoria",
+                text = stringResource(R.string.add_entry_new_category_title),
                 fontWeight = FontWeight.Black,
                 style = MaterialTheme.typography.titleLarge,
             )
@@ -444,7 +446,7 @@ private fun AddCategoryDialog(
                 value = newCategoryName,
                 onValueChange = onNameChanged,
                 singleLine = true,
-                placeholder = { Text("Nome da categoria") },
+                placeholder = { Text(stringResource(R.string.add_entry_new_category_placeholder)) },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = BrutalBlack,
@@ -464,12 +466,12 @@ private fun AddCategoryDialog(
                 onClick = onConfirm,
                 enabled = newCategoryName.isNotBlank(),
             ) {
-                Text("Adicionar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.action_add), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.action_cancel), fontWeight = FontWeight.Bold)
             }
         }
     )
@@ -482,7 +484,7 @@ private fun TypeToggle(
 ) {
     Column {
         Text(
-            text = "Tipo",
+            text = stringResource(R.string.add_entry_label_type),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = BrutalBlack,
@@ -507,7 +509,7 @@ private fun TypeToggle(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "GASTO",
+                        text = stringResource(R.string.tag_expense),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = if (isExpense) FontWeight.Black else FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -529,7 +531,7 @@ private fun TypeToggle(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "RENDA",
+                        text = stringResource(R.string.tag_income),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = if (!isExpense) FontWeight.Black else FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onTertiary,
