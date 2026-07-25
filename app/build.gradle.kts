@@ -65,6 +65,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
+    implementation(libs.pdfbox.android)
+    androidTestImplementation(libs.pdfbox.android)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 

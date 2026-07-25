@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-"Pra onde foi o meu dinheiro" (Portuguese for "Where did my money go") is a native Android personal-finance app. Users import a CSV/ODS spreadsheet of income and expenses, and the app stores the parsed entries in a local Room database and visualizes them with pie/line charts. There is no backend — everything is on-device.
+"Pra onde foi o meu dinheiro" (Portuguese for "Where did my money go") is a native Android personal-finance app. Users import a CSV/ODS/PDF file of income and expenses, and the app stores the parsed entries in a local Room database and visualizes them with pie/line charts. There is no backend — everything is on-device.
 
 - Language: Kotlin, UI: Jetpack Compose (Material 3)
 - Package/namespace: `com.hhldiniz.praondefoiomeudinheiro`
@@ -41,7 +41,7 @@ Unit test reports land in `app/build/reports/tests/testDebugUnitTest/` and JUnit
 Standard layered structure under `app/src/main/java/com/hhldiniz/praondefoiomeudinheiro/`:
 
 - **`data/local/`** — Room `AppDatabase` (entities: `ImportedEntry`, `Category`), DAOs, and file parsing:
-  - `CsvParser` / `OdsParser` turn a raw file `InputStream` into `List<List<String>>` rows; format is auto-detected in `FileSpreadsheetRepository` by file extension (`.ods` vs everything else treated as CSV).
+  - `CsvParser` / `OdsParser` / `PdfParser` turn a raw file `InputStream` into `List<List<String>>` rows; format is auto-detected by file extension in both `SpreadsheetFileValidator` and `FileSpreadsheetRepository` (`.ods` → OdsParser, `.pdf` → PdfParser, everything else treated as CSV). `PdfParser` extracts text via PDFBox-Android and splits each line into columns on runs of 2+ whitespace characters; it requires `PdfParser.init(context)` to be called once (done in `PraondefoiomeudinheiroApp.onCreate`) so PDFBox can load its bundled font/glyph resources from the APK's assets.
   - `SpreadsheetFileValidator` checks a `Uri` before it's parsed.
   - `CsvUriHolder`, `CurrencyHolder`, `DataClearedHolder` are process-wide singleton `StateFlow` holders (not DI-managed) used to pass small bits of state across screens/lifecycle boundaries — e.g. `DataClearedHolder` tells screens to show zeroed data instead of stale/mocked values right after a "clear all data" action, `CurrencyHolder` persists the selected currency to `SharedPreferences` and must have `init(context)` called once (`PraondefoiomeudinheiroApp.onCreate`) before use.
 - **`data/repository/`** — `ImportRepository` (imported entries/categories CRUD + aggregation queries used by charts) and `FileSpreadsheetRepository` (implements `domain.repository.SpreadsheetRepository`, orchestrates validate → parse → map rows to spending/earnings entries).

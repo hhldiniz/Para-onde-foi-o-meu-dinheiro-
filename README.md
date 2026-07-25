@@ -2,7 +2,7 @@
 
 *("Where did my money go?")*
 
-A native Android personal-finance app. Import a CSV/ODS spreadsheet of income and expenses, and the app stores the parsed entries in a local database and visualizes them with pie and line charts. There's no backend — everything runs on-device.
+A native Android personal-finance app. Import a CSV/ODS/PDF file of income and expenses, and the app stores the parsed entries in a local database and visualizes them with pie and line charts. There's no backend — everything runs on-device.
 
 - **Language:** Kotlin · **UI:** Jetpack Compose (Material 3)
 - **Persistence:** Room (local, unsynced)
@@ -44,7 +44,7 @@ CI (`.github/workflows/ci.yml`) runs `testDebugUnitTest` on every push/PR to `ma
 
 Standard layered structure under `app/src/main/java/com/hhldiniz/praondefoiomeudinheiro/`:
 
-- **`data/local/`** — Room database, DAOs, and CSV/ODS parsing.
+- **`data/local/`** — Room database, DAOs, and CSV/ODS/PDF parsing.
 - **`data/repository/`** — imported-entries CRUD/aggregation and the spreadsheet import pipeline.
 - **`domain/`** — plain models with no Android/Room dependency.
 - **`di/AppModule.kt`** — the single Koin module.

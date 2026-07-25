@@ -19,6 +19,7 @@ paging = "3.3.5"
 mockitoKotlin = "5.4.0"
 archCoreTesting = "2.2.0"
 kxml2 = "2.3.0"
+pdfboxAndroid = "2.0.27.0"
 compileSdk = "37"
 minSdk = "31"
 targetSdk = "37"
@@ -58,6 +59,7 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
   mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
   androidx-arch-core-testing = { group = "androidx.arch.core", name = "core-testing", version.ref = "archCoreTesting" }
   kxml2 = { group = "net.sf.kxml", name = "kxml2", version.ref = "kxml2" }
+  pdfbox-android = { group = "com.tom-roush", name = "PdfBox-Android", version.ref = "pdfboxAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

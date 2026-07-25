@@ -72,7 +72,7 @@ class LandingViewModel(
         }
     }
 
-    /** Validates all CSV/ODS files inside the picked folder. */
+    /** Validates all CSV/ODS/PDF files inside the picked folder. */
     fun onFolderPicked(treeUri: Uri, context: Context) {
         viewModelScope.launch {
             _uiState.value = LandingUiState.Loading
@@ -115,14 +115,15 @@ class LandingViewModel(
         validUris = emptyList()
     }
 
-    /** Enumerates CSV/ODS file URIs inside the given document tree. */
+    /** Enumerates CSV/ODS/PDF file URIs inside the given document tree. */
     private fun listCsvUris(context: Context, treeUri: Uri): List<Uri> {
         val documentFile = DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
         return documentFile.listFiles()
             .filter { file ->
                 val n = file.name
                 n?.endsWith(".csv", ignoreCase = true) == true ||
-                n?.endsWith(".ods", ignoreCase = true) == true
+                n?.endsWith(".ods", ignoreCase = true) == true ||
+                n?.endsWith(".pdf", ignoreCase = true) == true
             }
             .mapNotNull { it.uri }
     }

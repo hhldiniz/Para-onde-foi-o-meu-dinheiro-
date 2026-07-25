@@ -8,7 +8,7 @@ import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvalidSpreadsheetFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.ValidSpreadsheetFile
 
 /**
- * Validates spreadsheet files (CSV/ODS) by checking extension support,
+ * Validates spreadsheet files (CSV/ODS/PDF) by checking extension support,
  * file readability, row structure, and expected header presence.
  */
 object SpreadsheetFileValidator {
@@ -38,10 +38,9 @@ object SpreadsheetFileValidator {
             )
         }
 
-        val isOds = fileName.endsWith(".ods", ignoreCase = true)
         val rows = try {
             contentResolver.openInputStream(uri)?.use { stream ->
-                if (isOds) OdsParser.parse(stream) else CsvParser.parse(stream)
+                parseByExtension(fileName, stream)
             }
         } catch (e: Exception) {
             return null to InvalidSpreadsheetFile(
@@ -175,7 +174,7 @@ object SpreadsheetFileValidator {
         return valid to null
     }
 
-    /** Checks whether the file has a supported extension (.csv / .ods) or MIME type. */
+    /** Checks whether the file has a supported extension (.csv / .ods / .pdf) or MIME type. */
     private fun hasSupportedExtension(
         uri: Uri,
         fileName: String,
@@ -183,8 +182,18 @@ object SpreadsheetFileValidator {
     ): Boolean {
         if (fileName.endsWith(".csv", ignoreCase = true)) return true
         if (fileName.endsWith(".ods", ignoreCase = true)) return true
+        if (fileName.endsWith(".pdf", ignoreCase = true)) return true
         val type = contentResolver.getType(uri)
-        return type == "text/csv" || type == "text/comma-separated-values"
+        return type == "text/csv" || type == "text/comma-separated-values" || type == "application/pdf"
+    }
+
+    /** Picks the parser matching [fileName]'s extension (.ods / .pdf / else CSV). */
+    private fun parseByExtension(fileName: String, stream: java.io.InputStream): List<List<String>> {
+        return when {
+            fileName.endsWith(".ods", ignoreCase = true) -> OdsParser.parse(stream)
+            fileName.endsWith(".pdf", ignoreCase = true) -> PdfParser.parse(stream)
+            else -> CsvParser.parse(stream)
+        }
     }
 
     /** Resolves the display file name from a content URI using [OpenableColumns.DISPLAY_NAME]. */
