@@ -34,7 +34,7 @@ Build tooling is the Gradle wrapper (`./gradlew`); there is no separate lint/for
 ./gradlew connectedDebugAndroidTest
 ```
 
-Unit test reports land in `app/build/reports/tests/testDebugUnitTest/` and JUnit XML in `app/build/test-results/testDebugUnitTest/`. CI (`.github/workflows/ci.yml`) runs `testDebugUnitTest` on every push/PR to `master`/`main` and publishes a pass/fail summary; there is no separate lint or instrumented-test job.
+Unit test reports land in `app/build/reports/tests/testDebugUnitTest/` and JUnit XML in `app/build/test-results/testDebugUnitTest/`. CI (`.github/workflows/ci.yml`) runs `testDebugUnitTest` on every push/PR to `master`/`main` and publishes a pass/fail summary; there is no separate lint job. A second `instrumented-tests` job boots a cached AVD (API 34, `google_apis`, x86_64) via `reactivecircus/android-emulator-runner` and runs `connectedDebugAndroidTest`, publishing its own pass/fail summary from `app/build/outputs/androidTest-results/connected/`.
 
 ## Architecture
 

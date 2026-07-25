@@ -83,3 +83,112 @@ jobs:
               fh.write(summary)
           print(summary)
           PY
+
+  instrumented-tests:
+    name: Instrumented Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-google_apis-x86_64
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Run instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest --continue
+
+      - name: Upload instrumented test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-test-report
+          path: app/build/reports/androidTests/connected/**
+          if-no-files-found: warn
+
+      - name: Upload instrumented test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-test-results
+          path: app/build/outputs/androidTest-results/connected/**
+          if-no-files-found: warn
+
+      - name: Publish test summary
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET, os
+          files = glob.glob("app/build/outputs/androidTest-results/connected/**/*.xml", recursive=True)
+          total=skipped=failed=errored=0
+          failures=[]
+          for f in files:
+              root = ET.parse(f).getroot()
+              suites = root.findall(".//testsuite") if root.tag == "testsuites" else [root]
+              for s in suites:
+                  total   += int(s.get("tests", 0))
+                  skipped += int(s.get("skipped", 0))
+                  failed  += int(s.get("failures", 0))
+                  errored += int(s.get("errors", 0))
+                  for c in s.findall("testcase"):
+                      if c.find("failure") is not None or c.find("error") is not None:
+                          cls = c.get("classname", "")
+                          msg = (c.find("failure") or c.find("error")).get("message", "")
+                          failures.append(f"{cls}.{c.get('name')}: {msg}")
+          summary = f"## Instrumented Test Results\n\n"
+          summary += f"- Total: **{total}**\n- Skipped: {skipped}\n- Failed: **{failed}**\n- Errors: **{errored}**\n\n"
+          if failures:
+              summary += "### Failures\n\n"
+              for fl in failures[:50]:
+                  summary += f"- {fl}\n"
+          else:
+              summary += "All tests passed :white_check_mark:\n"
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+              fh.write(summary)
+          print(summary)
+          PY
