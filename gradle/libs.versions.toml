@@ -59,7 +59,7 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
   mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
   androidx-arch-core-testing = { group = "androidx.arch.core", name = "core-testing", version.ref = "archCoreTesting" }
   kxml2 = { group = "net.sf.kxml", name = "kxml2", version.ref = "kxml2" }
-  pdfbox-android = { group = "com.tom-roush", name = "PdfBox-Android", version.ref = "pdfboxAndroid" }
+  pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
