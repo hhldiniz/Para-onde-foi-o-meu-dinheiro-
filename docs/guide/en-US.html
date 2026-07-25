@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where Did My Money Go? — App Guide</title>
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --paper: #fff5e6;
+    --paper-raised: #ffffff;
+    --pink: #ff0080;
+    --yellow: #eab308;
+    --cyan: #00c2d4;
+    --red: #dc2626;
+    --muted: #6b6558;
+    --border: 3px;
+    --shadow-ink: #0a0a0a;
+  }
+
+  :root[data-theme="dark"] {
+    --ink: #f5f1e8;
+    --paper: #131110;
+    --paper-raised: #1c1a17;
+    --pink: #ff3d94;
+    --yellow: #f5c518;
+    --cyan: #22d3ee;
+    --red: #f87171;
+    --muted: #a89f8e;
+    --shadow-ink: #000000;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #f5f1e8;
+      --paper: #131110;
+      --paper-raised: #1c1a17;
+      --pink: #ff3d94;
+      --yellow: #f5c518;
+      --cyan: #22d3ee;
+      --red: #f87171;
+      --muted: #a89f8e;
+      --shadow-ink: #000000;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+
+  .display {
+    font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 20px 96px;
+  }
+
+  .hero {
+    padding: 56px 0 36px;
+    border-bottom: var(--border) solid var(--ink);
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .eyebrow .dot {
+    width: 8px; height: 8px;
+    background: var(--pink);
+    display: inline-block;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5.4vw, 3.1rem);
+    line-height: 0.98;
+    margin: 0 0 18px;
+  }
+  .hero p.sub {
+    font-size: 1.05rem;
+    max-width: 62ch;
+    color: var(--muted);
+    margin: 0;
+    font-weight: 500;
+  }
+  .hero p.sub strong { color: var(--ink); }
+
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 28px;
+    font-size: 0.78rem;
+  }
+  .flow a {
+    text-decoration: none;
+    color: var(--ink);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 7px 12px;
+    border: 2px solid var(--ink);
+    background: var(--paper-raised);
+    white-space: nowrap;
+  }
+  .flow a:hover, .flow a:focus-visible { background: var(--yellow); outline: none; }
+  .flow .arrow { color: var(--muted); font-weight: 700; }
+
+  section.block {
+    padding: 46px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+    scroll-margin-top: 24px;
+  }
+  section.block:last-of-type { border-bottom: none; }
+
+  .kicker {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .kicker .num {
+    font-family: "Arial Black", Arial, sans-serif;
+    font-weight: 900;
+    font-size: 0.85rem;
+    color: var(--paper);
+    background: var(--ink);
+    padding: 2px 8px;
+  }
+  .kicker .tag {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  h2.title {
+    font-size: clamp(1.4rem, 3.2vw, 1.9rem);
+    margin: 4px 0 14px;
+  }
+
+  .lead {
+    font-size: 1rem;
+    color: var(--ink);
+    max-width: 68ch;
+    margin: 0 0 20px;
+  }
+
+  .card {
+    position: relative;
+    background: var(--paper-raised);
+    border: var(--border) solid var(--ink);
+    padding: 18px 20px;
+    margin: 0 6px 22px 0;
+    box-shadow: 6px 6px 0 var(--shadow-ink);
+  }
+  .card.tight { padding: 14px 16px; box-shadow: 4px 4px 0 var(--shadow-ink); }
+  .card + .card { margin-top: 4px; }
+
+  .card h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 8px;
+    font-size: 1.02rem;
+    font-weight: 800;
+  }
+  .card h3 .icon {
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 2px solid var(--ink);
+    background: var(--yellow);
+    font-size: 1rem;
+    flex: none;
+  }
+  .card p { margin: 0 0 10px; font-size: 0.94rem; }
+  .card p:last-child { margin-bottom: 0; }
+  .card ul { margin: 8px 0 0; padding-left: 1.1em; font-size: 0.92rem; }
+  .card li { margin-bottom: 6px; }
+  .card li:last-child { margin-bottom: 0; }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 18px;
+  }
+  @media (max-width: 620px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .ui-label {
+    display: inline-block;
+    font-family: "Arial Black", Arial, sans-serif;
+    font-weight: 900;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    padding: 2px 7px;
+    border: 2px solid var(--ink);
+    color: var(--ink);
+    background: var(--chip, var(--yellow));
+    white-space: nowrap;
+  }
+  .ui-label.pink { --chip: var(--pink); color: #fff; }
+  .ui-label.cyan { --chip: var(--cyan); color: #05262b; }
+  .ui-label.red  { --chip: var(--red); color: #fff; }
+  .ui-label.ink  { --chip: var(--ink); color: var(--paper); }
+
+  code.field {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.86em;
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+  }
+  .legend .item {
+    display: flex; align-items: center; gap: 10px;
+    border: 2px solid var(--ink);
+    background: var(--paper-raised);
+    padding: 10px 12px;
+    box-shadow: 3px 3px 0 var(--shadow-ink);
+  }
+  .legend .glyph {
+    width: 32px; height: 32px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ink); color: var(--paper);
+    font-size: 1rem;
+  }
+  .legend .txt { font-size: 0.86rem; }
+  .legend .txt b { display: block; font-size: 0.88rem; }
+  .legend .txt span { color: var(--muted); }
+
+  .note {
+    border-left: 4px solid var(--pink);
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    background: color-mix(in srgb, var(--pink) 7%, var(--paper-raised));
+    margin: 4px 0 20px;
+  }
+  .note b { color: var(--pink); }
+
+  .danger-note {
+    border-left: 4px solid var(--red);
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    background: color-mix(in srgb, var(--red) 8%, var(--paper-raised));
+  }
+  .danger-note b { color: var(--red); }
+
+  .lang-switch {
+    display: flex; gap: 8px; margin-bottom: 18px; font-size: 0.78rem;
+  }
+  .lang-switch a, .lang-switch span {
+    padding: 4px 10px; border: 2px solid var(--ink); font-weight: 800;
+    text-decoration: none; color: var(--ink);
+  }
+  .lang-switch span { background: var(--ink); color: var(--paper); }
+  .lang-switch a:hover { background: var(--yellow); }
+
+  footer {
+    padding-top: 40px;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  footer .display { font-size: 1rem; color: var(--ink); margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lang-switch">
+    <span>EN</span><a href="pt-BR.html">PT-BR</a><a href="es-ES.html">ES</a>
+  </div>
+
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span>App guide</div>
+    <h1 class="display">Where Did<br>My Money Go?</h1>
+    <p class="sub">A walkthrough of every screen in the app — <strong>what it's for, what's on it, and how the pieces connect.</strong> Everything here is on-device: there's no account and no server, just your spreadsheet and this app.</p>
+
+    <nav class="flow" aria-label="App flow">
+      <a href="#onboarding">First run</a><span class="arrow">→</span>
+      <a href="#import">Import</a><span class="arrow">→</span>
+      <a href="#summary">Summary</a><span class="arrow">→</span>
+      <a href="#entries">Entries</a><span class="arrow">→</span>
+      <a href="#add-entry">Add entry</a><span class="arrow">→</span>
+      <a href="#settings">Settings</a>
+    </nav>
+  </header>
+
+  <section class="block" id="onboarding">
+    <div class="kicker"><span class="num">1</span><span class="tag">Only on first launch</span></div>
+    <h2 class="title display">First-run setup</h2>
+    <p class="lead">Before you ever see a chart, the app asks two quick questions. This only happens once — from then on it opens straight to the Summary screen.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="icon">1</span>Starting balance</h3>
+        <p><span class="ui-label">LET'S GET STARTED!</span></p>
+        <p>Enter what you currently own — your net worth. This becomes the baseline every later balance is calculated from: as spending and earnings come in, the app adds and subtracts from this number rather than starting at zero.</p>
+      </div>
+      <div class="card">
+        <h3><span class="icon">2</span>Starting categories</h3>
+        <p><span class="ui-label">STARTING CATEGORIES</span></p>
+        <p>Pick which of the built-in categories (Food, Transportation, Leisure, Health, Education…) you actually want, or type your own and add it to the list. Everything is pre-selected — tap a chip to drop it. You can still add or remove categories later from the entry form.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="import">
+    <div class="kicker"><span class="num">2</span><span class="tag">Also first run only</span></div>
+    <h2 class="title display">Importing your spreadsheet</h2>
+    <p class="lead">The screen titled <strong>“Where Did My Money Go?”</strong> is where you hand the app your existing records — a bank export, a budget spreadsheet, whatever you've been tracking in .csv or .ods.</p>
+
+    <div class="card">
+      <h3><span class="icon">📄</span>Three ways to start</h3>
+      <ul>
+        <li><span class="ui-label pink">SELECT CSV/ODS FILE</span> — pick a single .csv/.ods file.</li>
+        <li><span class="ui-label cyan">SELECT FOLDER</span> — pick a whole folder; every valid spreadsheet inside gets imported at once.</li>
+        <li><span class="ui-label">CONTINUE WITHOUT IMPORTING</span> — skip straight to an empty app and add entries by hand instead.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">✓</span>What counts as valid</h3>
+      <p>Each file needs two tables side by side on one sheet: a spending table and an earnings table. Note that the app looks for the column headers written in Portuguese — <code class="field">Data</code>, <code class="field">Valor</code>, <code class="field">Descrição</code>, <code class="field">Categoria</code> — regardless of the app's display language, since that's how it recognizes the two tables. After picking a file or folder, the app shows a report — files that matched are listed under <span class="ui-label">FILES LOADED</span>, anything rejected shows up with the reason why (wrong format, empty file, missing columns). Rejected files are simply skipped; they don't block the valid ones.</p>
+    </div>
+
+    <div class="note"><b>Re-importing is safe.</b> Each row is de-duplicated by date, amount, description, category and type, so importing the same file twice — or a folder you've already imported once — won't create duplicate entries.</div>
+  </section>
+
+  <section class="block" id="summary">
+    <div class="kicker"><span class="tag">Home · Summary tab</span></div>
+    <h2 class="title display">The Summary screen</h2>
+    <p class="lead">This is the app's home base — a dashboard of where you stand, for whatever period you're looking at.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="icon">💰</span>Total assets</h3>
+        <p><span class="ui-label">TOTAL PATRIMONY</span></p>
+        <p>Your starting balance from onboarding. Tap the number to edit it directly, any time.</p>
+      </div>
+      <div class="card">
+        <h3><span class="icon">⚖️</span>Balance after spending</h3>
+        <p><span class="ui-label">BALANCE AFTER SPENDING</span></p>
+        <p>Assets + earnings − spending for the selected period. Cyan when positive, red when you're in the hole.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">📅</span>Period selector</h3>
+      <p>A dropdown (Day / Week / Month / Year / Custom) that filters every chart and total on the screen. Choosing <em>Custom</em> reveals a date-range picker so you can look at, say, a specific trip or billing cycle.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">📈</span>Charts, split by type</h3>
+      <p>Two tabs — <span class="ui-label pink">SPENDING</span> and <span class="ui-label cyan">EARNINGS</span> — switch what the charts below them show:</p>
+      <ul>
+        <li>A <strong>line chart</strong> of amounts over time for the selected period.</li>
+        <li>A <strong>pie chart</strong> breaking the same period down by category.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">Σ</span>Totals</h3>
+      <p>Two bold cards, <span class="ui-label pink">TOTAL SPENDING</span> and <span class="ui-label cyan">TOTAL EARNINGS</span>, showing the sum for whatever period and category filter are currently active — the same numbers the charts above are visualizing.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">⋮</span>Filtering by category or date</h3>
+      <p>The <strong>⋮</strong> icon in the top bar opens <span class="ui-label">FILTER</span>, a dialog to narrow everything on the Summary screen down to one category and/or a custom date range — useful for answering “how much did I spend on Leisure this year?” without leaving the dashboard.</p>
+    </div>
+  </section>
+
+  <section class="block" id="entries">
+    <div class="kicker"><span class="tag">Home · Entries tab</span></div>
+    <h2 class="title display">The Entries list</h2>
+    <p class="lead">Switch to <span class="ui-label">ENTRIES</span> in the bottom navigation to leave the charts behind and see every individual transaction.</p>
+    <div class="card">
+      <h3><span class="icon">📋</span>A scrollable ledger</h3>
+      <p>Entries load a page at a time as you scroll, newest first. Each row shows the date, description, a pink or cyan tag for expense vs. income, the category, and the amount in your chosen currency. A jump-to-top button appears once you've scrolled a way down.</p>
+    </div>
+  </section>
+
+  <section class="block" id="add-entry">
+    <div class="kicker"><span class="tag">The + button</span></div>
+    <h2 class="title display">Adding entries</h2>
+    <p class="lead">The pink <strong>+</strong> button, floating on the Summary tab, opens a menu with three ways to add data after the initial import.</p>
+
+    <div class="card tight">
+      <h3><span class="icon">＋</span>Add manually</h3>
+      <p>Opens <span class="ui-label">ADD ENTRY</span>: date, amount, description, a category dropdown (with an inline “add new category” option), and an Expense/Income toggle. One tap of <span class="ui-label ink">SAVE</span> and it's in the ledger.</p>
+    </div>
+    <div class="card tight">
+      <h3><span class="icon">📄</span>Import a file</h3>
+      <p>The same single-file picker from onboarding — for adding a new statement later on.</p>
+    </div>
+    <div class="card tight">
+      <h3><span class="icon">🗂️</span>Import a folder</h3>
+      <p>The same folder picker — bulk-import a batch of new files at once.</p>
+    </div>
+  </section>
+
+  <section class="block" id="settings">
+    <div class="kicker"><span class="tag">The ⚙ icon</span></div>
+    <h2 class="title display">Settings</h2>
+    <p class="lead">Reached via the gear icon on the Summary screen's top bar.</p>
+
+    <div class="card">
+      <h3><span class="icon">💱</span>Currency</h3>
+      <p>Every amount in the app — cards, charts, the ledger — is formatted using whatever currency you pick here: BRL (R$), USD ($), EUR (€), GBP (£) or ARS ($).</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">⚠️</span><span style="color:var(--red)">Danger zone</span></h3>
+      <p><span class="ui-label red">DANGER ZONE</span></p>
+      <div class="danger-note"><b>Irreversible.</b> This wipes every imported and manually-added entry plus your custom categories, resetting the app to its empty state. There's a confirmation dialog, and no undo after that — it's a full local reset, not an archive.</div>
+    </div>
+  </section>
+
+  <section class="block" style="border-bottom:none; padding-bottom:0;">
+    <div class="kicker"><span class="tag">Quick reference</span></div>
+    <h2 class="title display">Icon legend</h2>
+    <p class="lead">The symbols you'll run into across the top bar, bottom nav, and floating button.</p>
+    <div class="legend">
+      <div class="item"><span class="glyph">🏠</span><span class="txt"><b>Home icon</b><span>Bottom nav → Summary</span></span></div>
+      <div class="item"><span class="glyph">☰</span><span class="txt"><b>List icon</b><span>Bottom nav → Entries list</span></span></div>
+      <div class="item"><span class="glyph">⋮</span><span class="txt"><b>Three dots</b><span>Top bar → open the Filter dialog</span></span></div>
+      <div class="item"><span class="glyph">⚙</span><span class="txt"><b>Gear</b><span>Top bar → Settings</span></span></div>
+      <div class="item"><span class="glyph">＋</span><span class="txt"><b>Pink circle</b><span>Add / import menu</span></span></div>
+      <div class="item"><span class="glyph">↑</span><span class="txt"><b>Up arrow</b><span>Jump to top of the entries list</span></span></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="display">Where Did My Money Go?</div>
+    Local-only personal finance tracker. Import a spreadsheet, or add entries by hand — everything above lives entirely on your device.
+  </footer>
+
+</div>
+</body>
+</html>

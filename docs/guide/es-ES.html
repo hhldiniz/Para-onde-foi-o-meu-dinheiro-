@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿A Dónde Fue Mi Dinero? — Guía de la App</title>
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --paper: #fff5e6;
+    --paper-raised: #ffffff;
+    --pink: #ff0080;
+    --yellow: #eab308;
+    --cyan: #00c2d4;
+    --red: #dc2626;
+    --muted: #6b6558;
+    --border: 3px;
+    --shadow-ink: #0a0a0a;
+  }
+
+  :root[data-theme="dark"] {
+    --ink: #f5f1e8;
+    --paper: #131110;
+    --paper-raised: #1c1a17;
+    --pink: #ff3d94;
+    --yellow: #f5c518;
+    --cyan: #22d3ee;
+    --red: #f87171;
+    --muted: #a89f8e;
+    --shadow-ink: #000000;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #f5f1e8;
+      --paper: #131110;
+      --paper-raised: #1c1a17;
+      --pink: #ff3d94;
+      --yellow: #f5c518;
+      --cyan: #22d3ee;
+      --red: #f87171;
+      --muted: #a89f8e;
+      --shadow-ink: #000000;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+
+  .display {
+    font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 20px 96px;
+  }
+
+  .hero {
+    padding: 56px 0 36px;
+    border-bottom: var(--border) solid var(--ink);
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .eyebrow .dot {
+    width: 8px; height: 8px;
+    background: var(--pink);
+    display: inline-block;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5.4vw, 3.1rem);
+    line-height: 0.98;
+    margin: 0 0 18px;
+  }
+  .hero p.sub {
+    font-size: 1.05rem;
+    max-width: 62ch;
+    color: var(--muted);
+    margin: 0;
+    font-weight: 500;
+  }
+  .hero p.sub strong { color: var(--ink); }
+
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 28px;
+    font-size: 0.78rem;
+  }
+  .flow a {
+    text-decoration: none;
+    color: var(--ink);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 7px 12px;
+    border: 2px solid var(--ink);
+    background: var(--paper-raised);
+    white-space: nowrap;
+  }
+  .flow a:hover, .flow a:focus-visible { background: var(--yellow); outline: none; }
+  .flow .arrow { color: var(--muted); font-weight: 700; }
+
+  section.block {
+    padding: 46px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+    scroll-margin-top: 24px;
+  }
+  section.block:last-of-type { border-bottom: none; }
+
+  .kicker {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .kicker .num {
+    font-family: "Arial Black", Arial, sans-serif;
+    font-weight: 900;
+    font-size: 0.85rem;
+    color: var(--paper);
+    background: var(--ink);
+    padding: 2px 8px;
+  }
+  .kicker .tag {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  h2.title {
+    font-size: clamp(1.4rem, 3.2vw, 1.9rem);
+    margin: 4px 0 14px;
+  }
+
+  .lead {
+    font-size: 1rem;
+    color: var(--ink);
+    max-width: 68ch;
+    margin: 0 0 20px;
+  }
+
+  .card {
+    position: relative;
+    background: var(--paper-raised);
+    border: var(--border) solid var(--ink);
+    padding: 18px 20px;
+    margin: 0 6px 22px 0;
+    box-shadow: 6px 6px 0 var(--shadow-ink);
+  }
+  .card.tight { padding: 14px 16px; box-shadow: 4px 4px 0 var(--shadow-ink); }
+  .card + .card { margin-top: 4px; }
+
+  .card h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 8px;
+    font-size: 1.02rem;
+    font-weight: 800;
+  }
+  .card h3 .icon {
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 2px solid var(--ink);
+    background: var(--yellow);
+    font-size: 1rem;
+    flex: none;
+  }
+  .card p { margin: 0 0 10px; font-size: 0.94rem; }
+  .card p:last-child { margin-bottom: 0; }
+  .card ul { margin: 8px 0 0; padding-left: 1.1em; font-size: 0.92rem; }
+  .card li { margin-bottom: 6px; }
+  .card li:last-child { margin-bottom: 0; }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 18px;
+  }
+  @media (max-width: 620px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .ui-label {
+    display: inline-block;
+    font-family: "Arial Black", Arial, sans-serif;
+    font-weight: 900;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    padding: 2px 7px;
+    border: 2px solid var(--ink);
+    color: var(--ink);
+    background: var(--chip, var(--yellow));
+    white-space: nowrap;
+  }
+  .ui-label.pink { --chip: var(--pink); color: #fff; }
+  .ui-label.cyan { --chip: var(--cyan); color: #05262b; }
+  .ui-label.red  { --chip: var(--red); color: #fff; }
+  .ui-label.ink  { --chip: var(--ink); color: var(--paper); }
+
+  code.field {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.86em;
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+  }
+  .legend .item {
+    display: flex; align-items: center; gap: 10px;
+    border: 2px solid var(--ink);
+    background: var(--paper-raised);
+    padding: 10px 12px;
+    box-shadow: 3px 3px 0 var(--shadow-ink);
+  }
+  .legend .glyph {
+    width: 32px; height: 32px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ink); color: var(--paper);
+    font-size: 1rem;
+  }
+  .legend .txt { font-size: 0.86rem; }
+  .legend .txt b { display: block; font-size: 0.88rem; }
+  .legend .txt span { color: var(--muted); }
+
+  .note {
+    border-left: 4px solid var(--pink);
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    background: color-mix(in srgb, var(--pink) 7%, var(--paper-raised));
+    margin: 4px 0 20px;
+  }
+  .note b { color: var(--pink); }
+
+  .danger-note {
+    border-left: 4px solid var(--red);
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    background: color-mix(in srgb, var(--red) 8%, var(--paper-raised));
+  }
+  .danger-note b { color: var(--red); }
+
+  .lang-switch {
+    display: flex; gap: 8px; margin-bottom: 18px; font-size: 0.78rem;
+  }
+  .lang-switch a, .lang-switch span {
+    padding: 4px 10px; border: 2px solid var(--ink); font-weight: 800;
+    text-decoration: none; color: var(--ink);
+  }
+  .lang-switch span { background: var(--ink); color: var(--paper); }
+  .lang-switch a:hover { background: var(--yellow); }
+
+  footer {
+    padding-top: 40px;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  footer .display { font-size: 1rem; color: var(--ink); margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lang-switch">
+    <a href="en-US.html">EN</a><a href="pt-BR.html">PT-BR</a><span>ES</span>
+  </div>
+
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span>Guía de la app</div>
+    <h1 class="display">¿A Dónde Fue<br>Mi Dinero?</h1>
+    <p class="sub">Un recorrido por cada pantalla de la app — <strong>para qué sirve, qué contiene y cómo se conectan las partes.</strong> Todo funciona en el dispositivo: no hay cuenta ni servidor, solo su planilla y esta app.</p>
+
+    <nav class="flow" aria-label="Flujo de la app">
+      <a href="#onboarding">Primer uso</a><span class="arrow">→</span>
+      <a href="#import">Importar</a><span class="arrow">→</span>
+      <a href="#summary">Resumen</a><span class="arrow">→</span>
+      <a href="#entries">Movimientos</a><span class="arrow">→</span>
+      <a href="#add-entry">Agregar</a><span class="arrow">→</span>
+      <a href="#settings">Configuración</a>
+    </nav>
+  </header>
+
+  <section class="block" id="onboarding">
+    <div class="kicker"><span class="num">1</span><span class="tag">Solo la primera vez que se abre la app</span></div>
+    <h2 class="title display">Configuración inicial</h2>
+    <p class="lead">Antes de ver cualquier gráfico, la app hace dos preguntas rápidas. Esto ocurre una sola vez — después, se abre directo en la pantalla de Resumen.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="icon">1</span>Patrimonio inicial</h3>
+        <p><span class="ui-label">¡VAMOS A EMPEZAR!</span></p>
+        <p>Ingrese lo que posee hoy — su patrimonio. Este valor se convierte en la base para calcular el saldo de ahí en adelante: a medida que entran gastos e ingresos, la app suma y resta a partir de este número, en lugar de empezar desde cero.</p>
+      </div>
+      <div class="card">
+        <h3><span class="icon">2</span>Categorías iniciales</h3>
+        <p><span class="ui-label">CATEGORÍAS INICIALES</span></p>
+        <p>Elija cuáles de las categorías predeterminadas (Alimentación, Transporte, Ocio, Salud, Educación…) realmente quiere usar, o escriba las suyas y agréguelas a la lista. Todo viene preseleccionado — toque un chip para quitarlo. Puede agregar o quitar categorías más tarde desde el formulario de nuevo movimiento.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="import">
+    <div class="kicker"><span class="num">2</span><span class="tag">También solo en el primer uso</span></div>
+    <h2 class="title display">Importando su planilla</h2>
+    <p class="lead">La pantalla titulada <strong>“¿A Dónde Fue Mi Dinero?”</strong> es donde le entrega a la app sus registros existentes — un extracto bancario, una planilla de presupuesto, lo que ya venía controlando en .csv o .ods.</p>
+
+    <div class="card">
+      <h3><span class="icon">📄</span>Tres formas de empezar</h3>
+      <ul>
+        <li><span class="ui-label pink">SELECCIONAR ARCHIVO CSV/ODS</span> — elija un único archivo .csv/.ods.</li>
+        <li><span class="ui-label cyan">SELECCIONAR CARPETA</span> — elija una carpeta entera; cada planilla válida dentro se importa de una vez.</li>
+        <li><span class="ui-label">CONTINUAR SIN IMPORTAR</span> — vaya directo a la app vacía y agregue movimientos a mano.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">✓</span>Qué cuenta como válido</h3>
+      <p>Cada archivo necesita dos tablas una junto a la otra en la misma hoja: una de gastos y una de ingresos. Tenga en cuenta que la app busca los encabezados de columna escritos en portugués — <code class="field">Data</code>, <code class="field">Valor</code>, <code class="field">Descrição</code>, <code class="field">Categoria</code> — sin importar el idioma de la app, porque así es como reconoce las dos tablas. Después de elegir un archivo o carpeta, la app muestra un informe: los archivos reconocidos aparecen bajo <span class="ui-label">ARCHIVOS CARGADOS</span>; los rechazados muestran el motivo (formato incorrecto, archivo vacío, columnas faltantes). Los archivos rechazados simplemente se omiten — no bloquean a los válidos.</p>
+    </div>
+
+    <div class="note"><b>Reimportar es seguro.</b> Cada fila se filtra por fecha, monto, descripción, categoría y tipo, así que importar el mismo archivo dos veces — o una carpeta ya importada — no crea movimientos duplicados.</div>
+  </section>
+
+  <section class="block" id="summary">
+    <div class="kicker"><span class="tag">Inicio · pestaña Resumen</span></div>
+    <h2 class="title display">La pantalla de Resumen</h2>
+    <p class="lead">Esta es la base de la app — un panel de dónde está usted parado, para el período que esté mirando.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="icon">💰</span>Patrimonio total</h3>
+        <p><span class="ui-label">PATRIMONIO TOTAL</span></p>
+        <p>Su saldo inicial, definido en la configuración inicial. Toque el número para editarlo directamente, en cualquier momento.</p>
+      </div>
+      <div class="card">
+        <h3><span class="icon">⚖️</span>Saldo después de gastos</h3>
+        <p><span class="ui-label">SALDO DESPUÉS DE GASTOS</span></p>
+        <p>Patrimonio + ingresos − gastos del período seleccionado. Se ve cian cuando es positivo, rojo cuando está en números rojos.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">📅</span>Selector de período</h3>
+      <p>Un menú desplegable (Día / Semana / Mes / Año / Personalizado) que filtra todo gráfico y total de la pantalla. Elegir <em>Personalizado</em> muestra un selector de rango de fechas, útil para mirar, por ejemplo, un viaje puntual o un ciclo de facturación.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">📈</span>Gráficos, por tipo</h3>
+      <p>Dos pestañas — <span class="ui-label pink">GASTOS</span> e <span class="ui-label cyan">INGRESOS</span> — cambian lo que muestran los gráficos debajo de ellas:</p>
+      <ul>
+        <li>Un <strong>gráfico de líneas</strong> con los montos a lo largo del tiempo, para el período seleccionado.</li>
+        <li>Un <strong>gráfico circular</strong> con ese mismo período desglosado por categoría.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">Σ</span>Totales</h3>
+      <p>Dos tarjetas destacadas, <span class="ui-label pink">GASTOS TOTALES</span> e <span class="ui-label cyan">INGRESOS TOTALES</span>, con la suma para el período y la categoría filtrados en ese momento — los mismos números que visualizan los gráficos de arriba.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">⋮</span>Filtrar por categoría o fecha</h3>
+      <p>El ícono <strong>⋮</strong> de la barra superior abre <span class="ui-label">FILTRAR</span>, un diálogo para acotar todo en la pantalla de Resumen a una categoría y/o un rango de fechas personalizado — útil para responder “¿cuánto gasté en Ocio este año?” sin salir del panel.</p>
+    </div>
+  </section>
+
+  <section class="block" id="entries">
+    <div class="kicker"><span class="tag">Inicio · pestaña Movimientos</span></div>
+    <h2 class="title display">La lista de Movimientos</h2>
+    <p class="lead">Cambie a <span class="ui-label">MOVIMIENTOS</span> en la navegación inferior para dejar los gráficos de lado y ver cada transacción individual.</p>
+    <div class="card">
+      <h3><span class="icon">📋</span>Un extracto desplazable</h3>
+      <p>Los movimientos se cargan de a poco al desplazarse, del más reciente al más antiguo. Cada fila muestra la fecha, la descripción, una etiqueta rosa o cian para gasto/ingreso, la categoría y el monto en la moneda elegida. Aparece un botón para volver arriba después de desplazarse un poco.</p>
+    </div>
+  </section>
+
+  <section class="block" id="add-entry">
+    <div class="kicker"><span class="tag">El botón +</span></div>
+    <h2 class="title display">Agregando movimientos</h2>
+    <p class="lead">El botón rosa <strong>+</strong> flotante en la pestaña Resumen abre un menú con tres formas de agregar datos después de la importación inicial.</p>
+
+    <div class="card tight">
+      <h3><span class="icon">＋</span>Agregar manualmente</h3>
+      <p>Abre <span class="ui-label">AGREGAR MOVIMIENTO</span>: fecha, monto, descripción, un menú de categoría (con la opción de crear una nueva ahí mismo) y un interruptor Gasto/Ingreso. Un toque en <span class="ui-label ink">GUARDAR</span> y ya queda en el extracto.</p>
+    </div>
+    <div class="card tight">
+      <h3><span class="icon">📄</span>Importar un archivo</h3>
+      <p>El mismo selector de archivo único de la configuración inicial — para agregar un nuevo extracto más adelante.</p>
+    </div>
+    <div class="card tight">
+      <h3><span class="icon">🗂️</span>Importar una carpeta</h3>
+      <p>El mismo selector de carpeta — para importar varios archivos nuevos de una vez.</p>
+    </div>
+  </section>
+
+  <section class="block" id="settings">
+    <div class="kicker"><span class="tag">El ícono ⚙</span></div>
+    <h2 class="title display">Configuración</h2>
+    <p class="lead">Se accede desde el ícono de engranaje en la barra superior de la pantalla de Resumen.</p>
+
+    <div class="card">
+      <h3><span class="icon">💱</span>Moneda</h3>
+      <p>Todo monto de la app — tarjetas, gráficos, extracto — se formatea con la moneda elegida aquí: BRL (R$), USD ($), EUR (€), GBP (£) o ARS ($).</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="icon">⚠️</span><span style="color:var(--red)">Zona de peligro</span></h3>
+      <p><span class="ui-label red">ZONA DE PELIGRO</span></p>
+      <div class="danger-note"><b>Irreversible.</b> Esto borra todo movimiento importado o agregado manualmente, además de sus categorías personalizadas, dejando la app en su estado vacío. Hay una confirmación, pero después de eso no hay forma de deshacerlo — es un reinicio local completo, no un archivo.</div>
+    </div>
+  </section>
+
+  <section class="block" style="border-bottom:none; padding-bottom:0;">
+    <div class="kicker"><span class="tag">Referencia rápida</span></div>
+    <h2 class="title display">Leyenda de íconos</h2>
+    <p class="lead">Los símbolos que va a encontrar en la barra superior, la navegación inferior y el botón flotante.</p>
+    <div class="legend">
+      <div class="item"><span class="glyph">🏠</span><span class="txt"><b>Ícono de casa</b><span>Navegación inferior → Resumen</span></span></div>
+      <div class="item"><span class="glyph">☰</span><span class="txt"><b>Ícono de lista</b><span>Navegación inferior → Movimientos</span></span></div>
+      <div class="item"><span class="glyph">⋮</span><span class="txt"><b>Tres puntos</b><span>Barra superior → abre el diálogo Filtrar</span></span></div>
+      <div class="item"><span class="glyph">⚙</span><span class="txt"><b>Engranaje</b><span>Barra superior → Configuración</span></span></div>
+      <div class="item"><span class="glyph">＋</span><span class="txt"><b>Círculo rosa</b><span>Menú de agregar/importar</span></span></div>
+      <div class="item"><span class="glyph">↑</span><span class="txt"><b>Flecha arriba</b><span>Volver arriba en la lista de movimientos</span></span></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="display">¿A Dónde Fue Mi Dinero?</div>
+    Control financiero personal, totalmente local. Importe una planilla o agregue movimientos a mano — todo funciona enteramente en su dispositivo.
+  </footer>
+
+</div>
+</body>
+</html>
