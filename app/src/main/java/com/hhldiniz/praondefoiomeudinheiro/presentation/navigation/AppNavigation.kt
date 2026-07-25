@@ -18,6 +18,8 @@ import androidx.navigation.compose.rememberNavController
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry.AddEntryScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home.HomeScreen
+import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro.IntroCategoriesScreen
+import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro.IntroPatrimonyScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.landing.LandingScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.settings.SettingsScreen
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +37,7 @@ fun AppNavigation() {
         val count = withContext(Dispatchers.IO) {
             importRepository.count()
         }
-        startDestination = if (count > 0) Screen.Home.route else Screen.Landing.route
+        startDestination = if (count > 0) Screen.Home.route else Screen.IntroPatrimony.route
     }
 
     val destination = startDestination
@@ -53,6 +55,26 @@ fun AppNavigation() {
         navController = navController,
         startDestination = destination
     ) {
+        composable(Screen.IntroPatrimony.route) {
+            IntroPatrimonyScreen(
+                onContinue = {
+                    navController.navigate(Screen.IntroCategories.route) {
+                        popUpTo(Screen.IntroPatrimony.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.IntroCategories.route) {
+            IntroCategoriesScreen(
+                onContinue = {
+                    navController.navigate(Screen.Landing.route) {
+                        popUpTo(Screen.IntroCategories.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Screen.Landing.route) {
             LandingScreen(
                 onComplete = {

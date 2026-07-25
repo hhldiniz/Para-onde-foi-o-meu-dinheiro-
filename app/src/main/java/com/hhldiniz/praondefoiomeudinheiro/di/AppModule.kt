@@ -7,6 +7,8 @@ import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry.AddEntryViewModel
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home.HomeViewModel
+import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro.IntroCategoriesViewModel
+import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro.IntroPatrimonyViewModel
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.landing.LandingViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
@@ -25,4 +27,6 @@ val appModule = module {
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { LandingViewModel(get()) }
     viewModel { AddEntryViewModel(get(), get()) }
+    viewModel { IntroPatrimonyViewModel() }
+    viewModel { IntroCategoriesViewModel(get()) }
 }

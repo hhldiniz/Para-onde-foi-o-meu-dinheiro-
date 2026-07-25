@@ -29,7 +29,7 @@ class HomeUiStateTest {
         assertEquals(0.0, state.totalEarnings, 0.0)
         assertNull(state.customStartDate)
         assertNull(state.customEndDate)
-        assertEquals(100_000.0, state.patrimony, 0.0)
+        assertEquals(0.0, state.patrimony, 0.0)
         assertEquals(CurrencyOption.BRL, state.selectedCurrency)
         assertNull(state.debugMessage)
         assertTrue(state.allCategories.isEmpty())
@@ -52,7 +52,7 @@ class HomeUiStateTest {
         assertEquals(Period.YEAR, updated.selectedPeriod)
         assertEquals(CurrencyOption.USD, updated.selectedCurrency)
         // unchanged fields
-        assertEquals(100_000.0, updated.patrimony, 0.0)
+        assertEquals(0.0, updated.patrimony, 0.0)
     }
 
     @Test

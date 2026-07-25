@@ -11,6 +11,7 @@ import androidx.paging.cachedIn
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.PatrimonyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
@@ -141,6 +142,11 @@ class HomeViewModel(
                 if (cleared) {
                     showZeroedState()
                 }
+            }
+        }
+        viewModelScope.launch {
+            PatrimonyHolder.patrimony.collect { value ->
+                _uiState.update { it.copy(patrimony = value) }
             }
         }
     }
@@ -399,7 +405,7 @@ class HomeViewModel(
     }
 
     fun onPatrimonyChanged(value: Double) {
-        _uiState.update { it.copy(patrimony = value) }
+        PatrimonyHolder.setPatrimony(value)
     }
 
     fun onCurrencyChanged(currency: CurrencyOption) {

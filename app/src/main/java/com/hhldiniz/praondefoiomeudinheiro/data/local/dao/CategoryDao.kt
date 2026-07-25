@@ -25,4 +25,8 @@ interface CategoryDao {
     /** Deletes every row from the table. */
     @Query("DELETE FROM categories")
     suspend fun deleteAll()
+
+    /** Deletes the category with the given [name], if any. */
+    @Query("DELETE FROM categories WHERE name = :name")
+    suspend fun deleteByName(name: String)
 }

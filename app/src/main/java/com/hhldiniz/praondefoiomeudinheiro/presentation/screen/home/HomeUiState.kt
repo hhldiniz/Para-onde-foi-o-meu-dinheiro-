@@ -15,7 +15,7 @@ data class HomeUiState(
     val totalEarnings: Double = 0.0,
     val customStartDate: Long? = null,
     val customEndDate: Long? = null,
-    val patrimony: Double = 100000.0,
+    val patrimony: Double = 0.0,
     val selectedCurrency: CurrencyOption = CurrencyOption.BRL,
     val debugMessage: String? = null,
     val allCategories: List<String> = emptyList(),

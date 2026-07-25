@@ -84,6 +84,7 @@ private class FakeCategoryDao(initial: List<String> = emptyList()) : CategoryDao
         stored.addAll(categories.map { it.name })
     }
     override suspend fun deleteAll() = stored.clear()
+    override suspend fun deleteByName(name: String) { stored.remove(name) }
 }
 
 class SaveCategoriesTest {
