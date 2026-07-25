@@ -37,14 +37,9 @@
     <string name="error_cannot_read_file">No se pudo leer el archivo: %s</string>
     <string name="error_empty_file">Archivo vacío.</string>
     <string name="error_no_header_or_data">El archivo debe contener un encabezado y al menos una fila de datos.</string>
-    <string name="error_header_not_found">Formato inválido. No se encontró la línea de encabezado con las columnas esperadas: Fecha, Valor, Descripción, Categoría.</string>
-    <string name="error_invalid_header">Formato inválido. El encabezado debe contener las columnas: Fecha, Valor, Descripción, Categoría.</string>
+    <string name="error_header_not_found">Formato inválido. No se pudieron identificar las columnas de fecha y valor en la hoja de cálculo.</string>
     <string name="error_no_data_rows">El archivo debe contener al menos una fila de datos después del encabezado.</string>
     <string name="error_cannot_open_file">No se pudo abrir el archivo</string>
-
-    <!-- File headers -->
-    <string name="header_expenses">Gastos: Fecha, Valor, Descripción, Categoría</string>
-    <string name="header_income">Ingresos: Fecha, Valor, Descripción, Categoría</string>
 
     <!-- General -->
     <string name="unknown_file">desconocido</string>
