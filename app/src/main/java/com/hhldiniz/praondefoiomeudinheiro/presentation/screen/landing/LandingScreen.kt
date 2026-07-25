@@ -550,7 +550,7 @@ private fun ValidationResultMixedPreview() {
                     ValidSpreadsheetFile("receitas.csv", Uri.EMPTY, listOf("Data", "Valor"))
                 ),
                 invalidFiles = listOf(
-                    InvalidSpreadsheetFile("notas.txt", Uri.EMPTY, "Formato não suportado. Apenas arquivos .csv e .ods são aceitos."),
+                    InvalidSpreadsheetFile("notas.txt", Uri.EMPTY, "Formato não suportado. Apenas arquivos .csv, .ods e .pdf são aceitos."),
                     InvalidSpreadsheetFile("vazio.csv", Uri.EMPTY, "Arquivo vazio.")
                 )
             ),
@@ -587,8 +587,8 @@ private fun ValidationResultAllInvalidPreview() {
             report = FileValidationReport(
                 validFiles = emptyList(),
                 invalidFiles = listOf(
-                    InvalidSpreadsheetFile("foto.jpg", Uri.EMPTY, "Formato não suportado. Apenas arquivos .csv e .ods são aceitos."),
-                    InvalidSpreadsheetFile("documento.pdf", Uri.EMPTY, "Formato não suportado. Apenas arquivos .csv e .ods são aceitos.")
+                    InvalidSpreadsheetFile("foto.jpg", Uri.EMPTY, "Formato não suportado. Apenas arquivos .csv, .ods e .pdf são aceitos."),
+                    InvalidSpreadsheetFile("documento.docx", Uri.EMPTY, "Formato não suportado. Apenas arquivos .csv, .ods e .pdf são aceitos.")
                 )
             ),
             onContinue = {},
@@ -619,7 +619,7 @@ private fun InvalidFileCardPreview() {
             file = InvalidSpreadsheetFile(
                 name = "arquivo_errado.xlsx",
                 uri = Uri.EMPTY,
-                reason = "Formato não suportado. Apenas arquivos .csv e .ods são aceitos."
+                reason = "Formato não suportado. Apenas arquivos .csv, .ods e .pdf são aceitos."
             )
         )
     }

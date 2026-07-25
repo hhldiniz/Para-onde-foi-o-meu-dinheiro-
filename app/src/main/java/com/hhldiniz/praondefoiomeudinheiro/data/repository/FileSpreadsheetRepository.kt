@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvParser
 import com.hhldiniz.praondefoiomeudinheiro.data.local.OdsParser
+import com.hhldiniz.praondefoiomeudinheiro.data.local.PdfParser
 import com.hhldiniz.praondefoiomeudinheiro.data.local.SpreadsheetFileValidator
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CsvEntry
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.FileValidationReport
@@ -46,16 +47,19 @@ class FileSpreadsheetRepository : SpreadsheetRepository {
     }
 
     /**
-     * Reads cell values from the given URI, auto-detecting ODS vs CSV from
+     * Reads cell values from the given URI, auto-detecting ODS/PDF/CSV from
      * the file name extension. Returns a [ValueRange] with spending entries
      * taken from columns 1-4 and earnings from columns 6-9.
      */
     override suspend fun readValues(uri: Uri, contentResolver: ContentResolver): Result<ValueRange> {
         return runCatching {
             val fileName = uri.lastPathSegment ?: ""
-            val isOds = fileName.endsWith(".ods", ignoreCase = true)
             val rows = contentResolver.openInputStream(uri)?.use { stream ->
-                if (isOds) OdsParser.parse(stream) else CsvParser.parse(stream)
+                when {
+                    fileName.endsWith(".ods", ignoreCase = true) -> OdsParser.parse(stream)
+                    fileName.endsWith(".pdf", ignoreCase = true) -> PdfParser.parse(stream)
+                    else -> CsvParser.parse(stream)
+                }
             } ?: throw IllegalStateException("Cannot open file")
 
             val headerRowIndex = findHeaderRowIndex(rows)

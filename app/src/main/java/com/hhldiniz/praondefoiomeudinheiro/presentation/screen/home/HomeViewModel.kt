@@ -325,7 +325,8 @@ class HomeViewModel(
             .filter { file ->
                 val n = file.name
                 n?.endsWith(".csv", ignoreCase = true) == true ||
-                n?.endsWith(".ods", ignoreCase = true) == true
+                n?.endsWith(".ods", ignoreCase = true) == true ||
+                n?.endsWith(".pdf", ignoreCase = true) == true
             }
             .mapNotNull { it.uri }
     }

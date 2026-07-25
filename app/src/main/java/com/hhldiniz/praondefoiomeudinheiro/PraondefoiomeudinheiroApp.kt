@@ -3,6 +3,7 @@ package com.hhldiniz.praondefoiomeudinheiro
 import android.app.Application
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.PatrimonyHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.PdfParser
 import com.hhldiniz.praondefoiomeudinheiro.di.appModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -13,6 +14,7 @@ class PraondefoiomeudinheiroApp : Application() {
         super.onCreate()
         CurrencyHolder.init(this)
         PatrimonyHolder.init(this)
+        PdfParser.init(this)
         startKoin {
             androidContext(this@PraondefoiomeudinheiroApp)
             modules(appModule)

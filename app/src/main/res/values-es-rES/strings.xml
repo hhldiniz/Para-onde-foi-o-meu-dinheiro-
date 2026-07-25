@@ -15,8 +15,8 @@
 
     <!-- Landing Screen -->
     <string name="landing_title">¿A Dónde Fue\nMi Dinero?</string>
-    <string name="landing_instruction">Seleccione un archivo CSV/ODS o una carpeta con sus gastos</string>
-    <string name="landing_btn_select_csv">SELECCIONAR ARCHIVO CSV/ODS</string>
+    <string name="landing_instruction">Seleccione un archivo CSV/ODS/PDF o una carpeta con sus gastos</string>
+    <string name="landing_btn_select_csv">SELECCIONAR ARCHIVO CSV/ODS/PDF</string>
     <string name="landing_btn_select_folder">SELECCIONAR CARPETA</string>
     <string name="landing_btn_skip">CONTINUAR SIN IMPORTAR</string>
     <string name="landing_validating">VALIDANDO ARCHIVOS...</string>
@@ -31,9 +31,9 @@
 
     <!-- Error Messages -->
     <string name="error_no_valid_files">No se encontró ningún archivo válido.</string>
-    <string name="error_no_csv_in_folder">No se encontró ningún archivo .csv o .ods en la carpeta.</string>
-    <string name="error_no_valid_csv_in_folder">No se encontró ningún archivo .csv o .ods válido en la carpeta.</string>
-    <string name="error_unsupported_format">Formato no soportado. Solo se aceptan archivos .csv y .ods.</string>
+    <string name="error_no_csv_in_folder">No se encontró ningún archivo .csv, .ods o .pdf en la carpeta.</string>
+    <string name="error_no_valid_csv_in_folder">No se encontró ningún archivo .csv, .ods o .pdf válido en la carpeta.</string>
+    <string name="error_unsupported_format">Formato no soportado. Solo se aceptan archivos .csv, .ods y .pdf.</string>
     <string name="error_cannot_read_file">No se pudo leer el archivo: %s</string>
     <string name="error_empty_file">Archivo vacío.</string>
     <string name="error_no_header_or_data">El archivo debe contener un encabezado y al menos una fila de datos.</string>
