@@ -7,6 +7,7 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvParser
 import com.hhldiniz.praondefoiomeudinheiro.data.local.OdsParser
 import com.hhldiniz.praondefoiomeudinheiro.data.local.PdfParser
 import com.hhldiniz.praondefoiomeudinheiro.data.local.SpreadsheetFileValidator
+import com.hhldiniz.praondefoiomeudinheiro.data.local.TransactionColumnMapper
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CsvEntry
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.FileValidationReport
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvalidSpreadsheetFile
@@ -48,8 +49,11 @@ class FileSpreadsheetRepository : SpreadsheetRepository {
 
     /**
      * Reads cell values from the given URI, auto-detecting ODS/PDF/CSV from
-     * the file name extension. Returns a [ValueRange] with spending entries
-     * taken from columns 1-4 and earnings from columns 6-9.
+     * the file name extension. The header row is scanned by
+     * [TransactionColumnMapper] to locate date/amount/description/category
+     * columns regardless of language or column order; each recognized table
+     * within that row becomes a spending or earnings group by position (see
+     * [TransactionColumnMapper.ColumnGroup]).
      */
     override suspend fun readValues(uri: Uri, contentResolver: ContentResolver): Result<ValueRange> {
         return runCatching {
@@ -62,7 +66,7 @@ class FileSpreadsheetRepository : SpreadsheetRepository {
                 }
             } ?: throw IllegalStateException("Cannot open file")
 
-            val headerRowIndex = findHeaderRowIndex(rows)
+            val headerRowIndex = TransactionColumnMapper.findHeaderRowIndex(rows)
             val dataRows = if (headerRowIndex >= 0) {
                 rows.drop(headerRowIndex + 1).filter { row ->
                     row.any { it.isNotBlank() }
@@ -71,30 +75,22 @@ class FileSpreadsheetRepository : SpreadsheetRepository {
                 rows.drop(1)
             }
 
-            val spendingEntries = dataRows.mapNotNull { row ->
-                if (row.size > 4) {
-                    CsvEntry(
-                        date = row[1].trim(),
-                        amount = row[2].trim(),
-                        description = row[3].trim(),
-                        category = row[4].trim(),
-                    )
-                } else null
+            val groups = if (headerRowIndex >= 0) {
+                TransactionColumnMapper.findColumnGroups(rows[headerRowIndex])
+            } else {
+                // No recognizable header anywhere: fall back to the canonical
+                // date/amount/description/category column order, all treated
+                // as spending, so a plain unlabeled table still imports.
+                listOf(TransactionColumnMapper.ColumnGroup(0, 1, 2, 3, isExpense = true))
             }
 
-            val earningsEntries = if (dataRows.any { it.size > 9 }) {
-                dataRows.mapNotNull { row ->
-                    if (row.size > 9) {
-                        CsvEntry(
-                            date = row[6].trim(),
-                            amount = row[7].trim(),
-                            description = row[8].trim(),
-                            category = row[9].trim(),
-                        )
-                    } else null
+            val spendingEntries = mutableListOf<CsvEntry>()
+            val earningsEntries = mutableListOf<CsvEntry>()
+            for (row in dataRows) {
+                for (group in groups) {
+                    val entry = TransactionColumnMapper.extractEntry(row, group) ?: continue
+                    if (group.isExpense) spendingEntries.add(entry) else earningsEntries.add(entry)
                 }
-            } else {
-                emptyList()
             }
 
             val range = uri.lastPathSegment?.let { "$it!A1:Z${dataRows.size}" } ?: "A1:Z${dataRows.size}"
@@ -104,21 +100,6 @@ class FileSpreadsheetRepository : SpreadsheetRepository {
                 spendingEntries = spendingEntries,
                 earningsEntries = earningsEntries,
             )
-        }
-    }
-
-    /** Locates the header row that contains the expected column names for both spending and earnings sections. */
-    private fun findHeaderRowIndex(rows: List<List<String>>): Int {
-        return rows.indexOfFirst { row ->
-            row.size >= 10 &&
-            row[1].trim().equals("Data", ignoreCase = true) &&
-            row[2].trim().equals("Valor", ignoreCase = true) &&
-            row[3].trim().equals("Descrição", ignoreCase = true) &&
-            row[4].trim().equals("Categoria", ignoreCase = true) &&
-            row[6].trim().equals("Data", ignoreCase = true) &&
-            row[7].trim().equals("Valor", ignoreCase = true) &&
-            row[8].trim().equals("Descrição", ignoreCase = true) &&
-            row[9].trim().equals("Categoria", ignoreCase = true)
         }
     }
 }

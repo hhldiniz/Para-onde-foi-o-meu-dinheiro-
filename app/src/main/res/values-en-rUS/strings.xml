@@ -37,14 +37,9 @@
     <string name="error_cannot_read_file">Could not read file: %s</string>
     <string name="error_empty_file">Empty file.</string>
     <string name="error_no_header_or_data">File must contain a header and at least one data row.</string>
-    <string name="error_header_not_found">Invalid format. Header line with expected columns not found: Date, Amount, Description, Category.</string>
-    <string name="error_invalid_header">Invalid format. Header must contain columns: Date, Amount, Description, Category.</string>
+    <string name="error_header_not_found">Invalid format. Could not identify date and amount columns in the spreadsheet.</string>
     <string name="error_no_data_rows">File must contain at least one data row after the header.</string>
     <string name="error_cannot_open_file">Could not open file</string>
-
-    <!-- File headers -->
-    <string name="header_expenses">Expenses: Date, Amount, Description, Category</string>
-    <string name="header_income">Income: Date, Amount, Description, Category</string>
 
     <!-- General -->
     <string name="unknown_file">unknown</string>

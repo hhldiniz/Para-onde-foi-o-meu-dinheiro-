@@ -94,7 +94,8 @@ class PdfParserTest {
         // Mirrors the app's real spreadsheet layout: a "Despesas" section label in
         // column 0, then Data/Valor/Descricao/Categoria for spending (index 1-4), a
         // "Renda" label in column 5, then the same four headers again for earnings
-        // (index 6-9) — matching SpreadsheetFileValidator.DESPESA_COL_START/RENDA_COL_START.
+        // (index 6-9) — the two-table layout TransactionColumnMapper detects by
+        // finding a second "Data" column further along the row.
         val header = "Despesas      Data      Valor      Descricao      Categoria" +
             "      Renda      Data      Valor      Descricao      Categoria"
         val pdf = buildPdf(listOf(header))

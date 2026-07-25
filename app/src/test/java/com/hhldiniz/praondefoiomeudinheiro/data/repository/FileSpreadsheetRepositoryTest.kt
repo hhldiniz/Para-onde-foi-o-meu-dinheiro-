@@ -97,7 +97,7 @@ class FileSpreadsheetRepositoryTest {
     }
 
     @Test
-    fun readValues_simpleCsv_skipsFirstRowAndReturnsOnlySpending() = runTest {
+    fun readValues_simpleCsvWithNamedHeaders_mapsColumnsByName() = runTest {
         val uri = uri("simple.csv")
         val csv = listOf(
             csvRow("ignored", "date", "amount", "description", "category"),
@@ -110,6 +110,87 @@ class FileSpreadsheetRepositoryTest {
         assertEquals("simple.csv!A1:Z1", result.range)
         assertEquals(listOf(CsvEntry("01/02/2026", "42", "Book", "Education")), result.spendingEntries)
         assertTrue(result.earningsEntries.isEmpty())
+    }
+
+    @Test
+    fun readValues_columnsInNonCanonicalOrder_stillMapsByName() = runTest {
+        // Category first, then date, then description, then amount — an order
+        // none of the fixed-index code ever supported.
+        val uri = uri("reordered.csv")
+        val csv = listOf(
+            csvRow("Categoria", "Data", "Descrição", "Valor"),
+            csvRow("Alimentação", "01/01/2026", "Café", "10,50"),
+        ).joinToString("\n")
+        whenever(contentResolver.openInputStream(uri)).thenReturn(csvStream(csv))
+
+        val result = repository.readValues(uri, contentResolver).getOrThrow()
+
+        assertEquals(
+            listOf(CsvEntry("01/01/2026", "10,50", "Café", "Alimentação")),
+            result.spendingEntries,
+        )
+    }
+
+    @Test
+    fun readValues_englishHeadersRepeatedTwice_splitsIntoSpendingAndEarningsByPosition() = runTest {
+        // Two side-by-side tables in English, with no "Despesas"/"Renda"
+        // marker words anywhere — the old implementation required those
+        // literal Portuguese markers to even attempt the two-table layout.
+        val uri = uri("english.csv")
+        val csv = listOf(
+            csvRow("Date", "Amount", "Description", "Category", "Date", "Amount", "Description", "Category"),
+            csvRow("01/01/2026", "10", "Coffee", "Food", "02/01/2026", "1000", "Salary", "Income"),
+        ).joinToString("\n")
+        whenever(contentResolver.openInputStream(uri)).thenReturn(csvStream(csv))
+
+        val result = repository.readValues(uri, contentResolver).getOrThrow()
+
+        assertEquals(listOf(CsvEntry("01/01/2026", "10", "Coffee", "Food")), result.spendingEntries)
+        assertEquals(listOf(CsvEntry("02/01/2026", "1000", "Salary", "Income")), result.earningsEntries)
+    }
+
+    @Test
+    fun readValues_missingCategoryColumn_defaultsToBlank() = runTest {
+        val uri = uri("no-category.csv")
+        val csv = listOf(
+            csvRow("Fecha", "Valor", "Descripción"),
+            csvRow("01/01/2026", "10", "Café"),
+        ).joinToString("\n")
+        whenever(contentResolver.openInputStream(uri)).thenReturn(csvStream(csv))
+
+        val result = repository.readValues(uri, contentResolver).getOrThrow()
+
+        assertEquals(listOf(CsvEntry("01/01/2026", "10", "Café", "")), result.spendingEntries)
+    }
+
+    @Test
+    fun validateFile_headerNamesInDifferentLanguageAndOrder_isRecognized() = runTest {
+        val uri = uri("spanish.csv")
+        whenever(contentResolver.openInputStream(uri)).thenReturn(
+            csvStream("Categoría,Fecha,Descripción,Valor\nComida,01/01/2026,Café,10")
+        )
+
+        val report = repository.validateFile(uri, context)
+
+        assertEquals(1, report.validFiles.size)
+        assertEquals(
+            listOf("Categoría", "Fecha", "Descripción", "Valor"),
+            report.validFiles.single().headerColumns,
+        )
+    }
+
+    @Test
+    fun validateFile_noRecognizableDateOrAmountColumn_isInvalid() = runTest {
+        val uri = uri("garbage.csv")
+        whenever(contentResolver.openInputStream(uri)).thenReturn(
+            csvStream("Foo,Bar,Baz\n1,2,3")
+        )
+        whenever(context.getString(R.string.error_header_not_found)).thenReturn("No header found")
+
+        val report = repository.validateFile(uri, context)
+
+        assertTrue(report.validFiles.isEmpty())
+        assertEquals("No header found", report.invalidFiles.single().reason)
     }
 
     @Test
