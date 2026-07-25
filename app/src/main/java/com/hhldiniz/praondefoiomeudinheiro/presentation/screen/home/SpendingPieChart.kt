@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.hhldiniz.praondefoiomeudinheiro.R
+import com.hhldiniz.praondefoiomeudinheiro.presentation.components.localizedCategoryName
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlue
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
@@ -151,7 +152,7 @@ fun SpendingPieChart(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = item.category,
+                            text = localizedCategoryName(item.category),
                             modifier = Modifier.weight(1f),
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium,

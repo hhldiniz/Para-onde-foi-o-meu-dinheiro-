@@ -150,4 +150,16 @@
     <string name="settings_danger_confirm_text">All entries and categories will be permanently deleted. This action cannot be undone.</string>
     <string name="settings_danger_confirm_button">DELETE EVERYTHING</string>
     <string name="settings_danger_cancel_button">CANCEL</string>
+
+    <!-- Default category names -->
+    <string name="category_alimentacao">Food</string>
+    <string name="category_transporte">Transportation</string>
+    <string name="category_lazer">Leisure</string>
+    <string name="category_saude">Health</string>
+    <string name="category_educacao">Education</string>
+    <string name="category_moradia">Housing</string>
+    <string name="category_salario">Salary</string>
+    <string name="category_freelance">Freelance</string>
+    <string name="category_investimentos">Investments</string>
+    <string name="category_outros">Other</string>
 </resources>

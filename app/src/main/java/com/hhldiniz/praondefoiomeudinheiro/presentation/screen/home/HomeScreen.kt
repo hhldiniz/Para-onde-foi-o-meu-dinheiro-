@@ -75,6 +75,7 @@ import androidx.paging.compose.itemKey
 import com.hhldiniz.praondefoiomeudinheiro.R
 import kotlinx.coroutines.launch
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
+import com.hhldiniz.praondefoiomeudinheiro.presentation.components.localizedCategoryName
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlack
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
@@ -708,7 +709,7 @@ private fun EntryCard(
                             textColor = MaterialTheme.colorScheme.onPrimary,
                         )
                         Text(
-                            text = entry.category,
+                            text = localizedCategoryName(entry.category),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium,
                             color = BrutalBlack.copy(alpha = 0.5f)
@@ -939,7 +940,7 @@ private fun CategoryDropdown(
             ) {
                 Text(
                     text = if (selectedCategory != null)
-                        stringResource(R.string.filter_category_selected, selectedCategory)
+                        stringResource(R.string.filter_category_selected, localizedCategoryName(selectedCategory))
                     else stringResource(R.string.filter_category_all),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onTertiary
@@ -967,7 +968,7 @@ private fun CategoryDropdown(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = category,
+                            text = localizedCategoryName(category),
                             fontWeight = if (category == selectedCategory) FontWeight.Black else FontWeight.Medium
                         )
                     },
@@ -1065,7 +1066,8 @@ private fun FilterDialog(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = tempCategory ?: stringResource(R.string.filter_category_all),
+                                text = tempCategory?.let { localizedCategoryName(it) }
+                                    ?: stringResource(R.string.filter_category_all),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onTertiary
                             )
@@ -1092,7 +1094,7 @@ private fun FilterDialog(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        text = category,
+                                        text = localizedCategoryName(category),
                                         fontWeight = if (category == tempCategory) FontWeight.Black else FontWeight.Medium
                                     )
                                 },

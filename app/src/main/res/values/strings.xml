@@ -148,4 +148,16 @@
     <string name="settings_danger_confirm_text">Todos os movimentos e categorias serão apagados permanentemente. Esta ação não pode ser desfeita.</string>
     <string name="settings_danger_confirm_button">APAGAR TUDO</string>
     <string name="settings_danger_cancel_button">CANCELAR</string>
+
+    <!-- Default category names -->
+    <string name="category_alimentacao">Alimentação</string>
+    <string name="category_transporte">Transporte</string>
+    <string name="category_lazer">Lazer</string>
+    <string name="category_saude">Saúde</string>
+    <string name="category_educacao">Educação</string>
+    <string name="category_moradia">Moradia</string>
+    <string name="category_salario">Salário</string>
+    <string name="category_freelance">Freelance</string>
+    <string name="category_investimentos">Investimentos</string>
+    <string name="category_outros">Outros</string>
 </resources>
