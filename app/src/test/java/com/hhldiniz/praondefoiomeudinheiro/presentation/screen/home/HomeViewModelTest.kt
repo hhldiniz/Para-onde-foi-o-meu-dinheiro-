@@ -87,6 +87,7 @@ class HomeViewModelTest {
                 .thenReturn(emptyList())
             whenever(importRepository.getEntriesByDateRange(any(), anyOrNull(), any(), any()))
                 .thenReturn(emptyList())
+            whenever(importRepository.getDistinctCategories()).thenReturn(emptyList())
         }
     }
 

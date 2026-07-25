@@ -16,7 +16,11 @@ import androidx.room.PrimaryKey
         Index(
             value = ["date_millis", "amount", "description", "category", "is_expense"],
             unique = true
-        )
+        ),
+        // Supports WHERE is_expense = ? AND date_millis BETWEEN ? AND ? (category totals, chart data).
+        Index(value = ["is_expense", "date_millis"]),
+        // Supports WHERE date_millis BETWEEN ? AND ? without an is_expense filter (entries list paging).
+        Index(value = ["date_millis"]),
     ]
 )
 data class ImportedEntry(

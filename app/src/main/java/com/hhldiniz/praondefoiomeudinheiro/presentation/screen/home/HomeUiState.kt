@@ -56,4 +56,5 @@ data class EntryDisplay(
     val category: String,
     val amount: Double,
     val isExpense: Boolean,
+    val id: Long = 0L,
 )

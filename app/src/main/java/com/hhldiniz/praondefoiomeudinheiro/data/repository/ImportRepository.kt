@@ -59,4 +59,14 @@ class ImportRepository(private val dao: ImportedEntryDao) {
     suspend fun getMinDate(): Long? = dao.getMinDate()
 
     suspend fun getMaxDate(): Long? = dao.getMaxDate()
+
+    suspend fun getDistinctCategories(): List<String> = dao.getDistinctCategories()
+
+    suspend fun getEntriesPage(
+        category: String?,
+        startMillis: Long,
+        endMillis: Long,
+        limit: Int,
+        offset: Int,
+    ): List<ImportedEntry> = dao.getEntriesPage(category, startMillis, endMillis, limit, offset)
 }

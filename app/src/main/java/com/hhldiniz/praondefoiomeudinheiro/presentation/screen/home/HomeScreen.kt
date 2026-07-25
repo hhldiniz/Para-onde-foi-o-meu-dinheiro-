@@ -70,6 +70,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.hhldiniz.praondefoiomeudinheiro.R
 import kotlinx.coroutines.launch
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
@@ -601,7 +602,10 @@ private fun EntriesList(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(pagingItems.itemCount) { index ->
+            items(
+                count = pagingItems.itemCount,
+                key = pagingItems.itemKey { it.id },
+            ) { index ->
                 pagingItems[index]?.let { entry ->
                     EntryCard(
                         entry = entry,
