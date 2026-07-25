@@ -1,7 +1,9 @@
 package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
@@ -21,7 +23,7 @@ data class AddEntryUiState(
     val isExpense: Boolean = true,
     val isSaving: Boolean = false,
     val savedSuccessfully: Boolean = false,
-    val errorMessage: String? = null,
+    @StringRes val errorMessageRes: Int? = null,
     val categories: List<String> = emptyList(),
     val showAddCategoryDialog: Boolean = false,
     val newCategoryName: String = "",
@@ -98,19 +100,19 @@ class AddEntryViewModel(
         val state = _uiState.value
         val amount = state.amountText.replace(",", ".").toDoubleOrNull()
         if (amount == null) {
-            _uiState.value = state.copy(errorMessage = "Valor invalido")
+            _uiState.value = state.copy(errorMessageRes = R.string.add_entry_error_invalid_amount)
             return
         }
         if (state.description.isBlank()) {
-            _uiState.value = state.copy(errorMessage = "Descricao obrigatoria")
+            _uiState.value = state.copy(errorMessageRes = R.string.add_entry_error_description_required)
             return
         }
         if (state.category.isBlank()) {
-            _uiState.value = state.copy(errorMessage = "Categoria obrigatoria")
+            _uiState.value = state.copy(errorMessageRes = R.string.add_entry_error_category_required)
             return
         }
 
-        _uiState.value = state.copy(isSaving = true, errorMessage = null)
+        _uiState.value = state.copy(isSaving = true, errorMessageRes = null)
 
         viewModelScope.launch {
             val entry = ImportedEntry(
@@ -130,6 +132,6 @@ class AddEntryViewModel(
     }
 
     fun clearError() {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
+        _uiState.value = _uiState.value.copy(errorMessageRes = null)
     }
 }

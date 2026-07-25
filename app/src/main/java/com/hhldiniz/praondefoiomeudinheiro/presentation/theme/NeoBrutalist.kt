@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,9 +29,18 @@ fun HardShadowBox(
     offsetY: Dp = 4.dp,
     shadowColor: Color = BrutalBlack,
     modifier: Modifier = Modifier,
+    fillHeight: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    Box(modifier = modifier) {
+    // wrapContentHeight(unbounded = true) keeps the shadow sized to the content's own
+    // height even when the caller's modifier forces a taller region (e.g. Modifier.weight(1f)
+    // in a Column) than the content actually needs - otherwise matchParentSize below would
+    // stretch the shadow to fill that whole forced region instead of hugging the content.
+    // Callers that DO want the shadow (and content) to stretch to match a sibling's height
+    // (e.g. two cards in a Row(Modifier.height(IntrinsicSize.Min))) pass fillHeight = true
+    // to opt out of that hugging behaviour.
+    val heightModifier = if (fillHeight) modifier else modifier.wrapContentHeight(align = Alignment.Top, unbounded = true)
+    Box(modifier = heightModifier) {
         Box(
             modifier = Modifier
                 .matchParentSize()

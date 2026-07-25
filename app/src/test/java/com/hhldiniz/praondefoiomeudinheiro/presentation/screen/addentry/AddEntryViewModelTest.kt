@@ -2,6 +2,7 @@ package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.viewModelScope
+import com.hhldiniz.praondefoiomeudinheiro.R
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
@@ -81,7 +82,7 @@ class AddEntryViewModelTest {
         assertTrue(state.isExpense)
         assertFalse(state.isSaving)
         assertFalse(state.savedSuccessfully)
-        assertNull(state.errorMessage)
+        assertNull(state.errorMessageRes)
         assertFalse(state.showAddCategoryDialog)
         assertEquals("", state.newCategoryName)
     }
@@ -203,7 +204,7 @@ class AddEntryViewModelTest {
         viewModel.onCategoryChanged("Food")
         viewModel.save()
 
-        assertEquals("Valor invalido", viewModel.uiState.value.errorMessage)
+        assertEquals(R.string.add_entry_error_invalid_amount, viewModel.uiState.value.errorMessageRes)
     }
 
     @Test
@@ -213,7 +214,7 @@ class AddEntryViewModelTest {
         viewModel.onCategoryChanged("Food")
         viewModel.save()
 
-        assertEquals("Valor invalido", viewModel.uiState.value.errorMessage)
+        assertEquals(R.string.add_entry_error_invalid_amount, viewModel.uiState.value.errorMessageRes)
     }
 
     @Test
@@ -223,7 +224,7 @@ class AddEntryViewModelTest {
         viewModel.onCategoryChanged("Food")
         viewModel.save()
 
-        assertEquals("Descricao obrigatoria", viewModel.uiState.value.errorMessage)
+        assertEquals(R.string.add_entry_error_description_required, viewModel.uiState.value.errorMessageRes)
     }
 
     @Test
@@ -233,7 +234,7 @@ class AddEntryViewModelTest {
         viewModel.onDescriptionChanged("Coffee")
         viewModel.save()
 
-        assertEquals("Categoria obrigatoria", viewModel.uiState.value.errorMessage)
+        assertEquals(R.string.add_entry_error_category_required, viewModel.uiState.value.errorMessageRes)
     }
 
     // -------------------------------------------------------------------------
@@ -268,7 +269,7 @@ class AddEntryViewModelTest {
 
         // The amount "1.234,56" → after replace(",", ".") → "1.234.56" which is not a valid Double
         // so it sets error message
-        assertNotNull(viewModel.uiState.value.errorMessage)
+        assertNotNull(viewModel.uiState.value.errorMessageRes)
     }
 
     @Test
@@ -294,9 +295,9 @@ class AddEntryViewModelTest {
         viewModel = buildViewModel()
         viewModel.onAmountChanged("bad")
         viewModel.save()
-        assertNotNull(viewModel.uiState.value.errorMessage)
+        assertNotNull(viewModel.uiState.value.errorMessageRes)
 
         viewModel.clearError()
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.errorMessageRes)
     }
 }
