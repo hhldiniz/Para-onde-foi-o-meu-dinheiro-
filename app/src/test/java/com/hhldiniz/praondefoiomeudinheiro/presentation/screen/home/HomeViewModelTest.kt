@@ -4,6 +4,7 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.viewModelScope
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.PatrimonyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryTotal
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
@@ -76,6 +77,7 @@ class HomeViewModelTest {
         DataClearedHolder.reset()
         // Reset currency back to default
         CurrencyHolder.setCurrency(CurrencyOption.BRL)
+        PatrimonyHolder.setPatrimony(0.0)
     }
 
     private fun stubRepositoryDefaults() {

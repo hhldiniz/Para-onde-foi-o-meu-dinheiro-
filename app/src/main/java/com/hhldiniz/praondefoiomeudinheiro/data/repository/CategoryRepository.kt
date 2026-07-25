@@ -17,4 +17,8 @@ class CategoryRepository(private val dao: CategoryDao) {
     suspend fun insertAll(names: List<String>) {
         dao.insertAll(names.map { Category(name = it) })
     }
+
+    suspend fun deleteByName(name: String) {
+        dao.deleteByName(name)
+    }
 }

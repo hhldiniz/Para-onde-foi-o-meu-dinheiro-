@@ -1,6 +1,18 @@
 <resources>
     <string name="app_name">¿A dónde fue mi dinero?</string>
 
+    <!-- Intro Patrimony Screen -->
+    <string name="intro_patrimony_title">¡Vamos a Empezar!</string>
+    <string name="intro_patrimony_instruction">¿Cuál es su patrimonio actual? Este valor será el punto de partida para seguir su saldo.</string>
+    <string name="intro_patrimony_amount_placeholder">0,00</string>
+    <string name="intro_patrimony_btn_continue">CONTINUAR</string>
+
+    <!-- Intro Categories Screen -->
+    <string name="intro_categories_title">Categorías Iniciales</string>
+    <string name="intro_categories_instruction">Elija las categorías que desea usar para organizar sus gastos e ingresos. Puede agregar o quitar otras más tarde.</string>
+    <string name="intro_categories_add_placeholder">Nueva categoría</string>
+    <string name="intro_categories_btn_continue">CONTINUAR</string>
+
     <!-- Landing Screen -->
     <string name="landing_title">¿A Dónde Fue\nMi Dinero?</string>
     <string name="landing_instruction">Seleccione un archivo CSV/ODS o una carpeta con sus gastos</string>

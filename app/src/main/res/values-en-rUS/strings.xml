@@ -1,6 +1,18 @@
 <resources>
     <string name="app_name">Where Did My Money Go</string>
 
+    <!-- Intro Patrimony Screen -->
+    <string name="intro_patrimony_title">Let\'s Get Started!</string>
+    <string name="intro_patrimony_instruction">What is your current net worth? This value will be the starting point for tracking your balance.</string>
+    <string name="intro_patrimony_amount_placeholder">0.00</string>
+    <string name="intro_patrimony_btn_continue">CONTINUE</string>
+
+    <!-- Intro Categories Screen -->
+    <string name="intro_categories_title">Starting Categories</string>
+    <string name="intro_categories_instruction">Choose the categories you want to use to organize your expenses and income. You can add or remove more later.</string>
+    <string name="intro_categories_add_placeholder">New category</string>
+    <string name="intro_categories_btn_continue">CONTINUE</string>
+
     <!-- Landing Screen -->
     <string name="landing_title">Where Did\nMy Money Go?</string>
     <string name="landing_instruction">Select a CSV/ODS file or a folder with your expenses</string>
