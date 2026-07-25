@@ -150,4 +150,16 @@
     <string name="settings_danger_confirm_text">Todos los movimientos y categorías se eliminarán permanentemente. Esta acción no se puede deshacer.</string>
     <string name="settings_danger_confirm_button">ELIMINAR TODO</string>
     <string name="settings_danger_cancel_button">CANCELAR</string>
+
+    <!-- Default category names -->
+    <string name="category_alimentacao">Alimentación</string>
+    <string name="category_transporte">Transporte</string>
+    <string name="category_lazer">Ocio</string>
+    <string name="category_saude">Salud</string>
+    <string name="category_educacao">Educación</string>
+    <string name="category_moradia">Vivienda</string>
+    <string name="category_salario">Salario</string>
+    <string name="category_freelance">Freelance</string>
+    <string name="category_investimentos">Inversiones</string>
+    <string name="category_outros">Otros</string>
 </resources>

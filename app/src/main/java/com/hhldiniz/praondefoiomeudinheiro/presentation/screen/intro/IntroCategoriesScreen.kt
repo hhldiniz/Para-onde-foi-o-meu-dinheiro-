@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hhldiniz.praondefoiomeudinheiro.R
+import com.hhldiniz.praondefoiomeudinheiro.presentation.components.localizedCategoryName
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlack
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
@@ -226,7 +227,7 @@ private fun CategoryChip(
                 .padding(horizontal = 14.dp, vertical = 10.dp),
         ) {
             Text(
-                text = name,
+                text = localizedCategoryName(name),
                 fontWeight = if (selected) FontWeight.Black else FontWeight.Medium,
                 color = if (selected) MaterialTheme.colorScheme.onTertiary else BrutalBlack,
             )
