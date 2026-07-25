@@ -80,4 +80,68 @@ class PdfParserTest {
 
         assertTrue(result.isEmpty())
     }
+
+    @Test
+    fun parse_singleSpacesWithinColumn_keepWordsTogether() {
+        val pdf = buildPdf(listOf("01/01/2024      Compra no Mercado      Alimentacao"))
+        val result = PdfParser.parse(pdf)
+
+        assertEquals(listOf("01/01/2024", "Compra no Mercado", "Alimentacao"), result[0])
+    }
+
+    @Test
+    fun parse_structuredTwoTableHeader_matchesExpectedColumnPositions() {
+        // Mirrors the app's real spreadsheet layout: a "Despesas" section label in
+        // column 0, then Data/Valor/Descricao/Categoria for spending (index 1-4), a
+        // "Renda" label in column 5, then the same four headers again for earnings
+        // (index 6-9) — matching SpreadsheetFileValidator.DESPESA_COL_START/RENDA_COL_START.
+        val header = "Despesas      Data      Valor      Descricao      Categoria" +
+            "      Renda      Data      Valor      Descricao      Categoria"
+        val pdf = buildPdf(listOf(header))
+        val result = PdfParser.parse(pdf)
+
+        assertEquals(1, result.size)
+        val row = result[0]
+        assertTrue("expected at least 10 columns, got ${row.size}: $row", row.size >= 10)
+        assertEquals("Data", row[1])
+        assertEquals("Valor", row[2])
+        assertEquals("Descricao", row[3])
+        assertEquals("Categoria", row[4])
+        assertEquals("Data", row[6])
+        assertEquals("Valor", row[7])
+        assertEquals("Descricao", row[8])
+        assertEquals("Categoria", row[9])
+    }
+
+    @Test
+    fun parse_multiPageDocument_returnsRowsFromAllPages() {
+        val document = PDDocument()
+        val firstPage = PDPage()
+        val secondPage = PDPage()
+        document.addPage(firstPage)
+        document.addPage(secondPage)
+
+        writeLine(document, firstPage, "Data      Valor      Descricao      Categoria")
+        writeLine(document, secondPage, "02/02/2024      50      Farmacia      Saude")
+
+        val output = ByteArrayOutputStream()
+        document.save(output)
+        document.close()
+
+        val result = PdfParser.parse(ByteArrayInputStream(output.toByteArray()))
+
+        assertEquals(2, result.size)
+        assertEquals(listOf("Data", "Valor", "Descricao", "Categoria"), result[0])
+        assertEquals(listOf("02/02/2024", "50", "Farmacia", "Saude"), result[1])
+    }
+
+    private fun writeLine(document: PDDocument, page: PDPage, line: String) {
+        PDPageContentStream(document, page).use { stream ->
+            stream.beginText()
+            stream.setFont(PDType1Font.HELVETICA, 12f)
+            stream.newLineAtOffset(50f, 700f)
+            stream.showText(line)
+            stream.endText()
+        }
+    }
 }
