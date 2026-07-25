@@ -13,4 +13,8 @@ class CategoryRepository(private val dao: CategoryDao) {
     suspend fun insert(name: String): Long {
         return dao.insert(Category(name = name))
     }
+
+    suspend fun insertAll(names: List<String>) {
+        dao.insertAll(names.map { Category(name = it) })
+    }
 }

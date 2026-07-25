@@ -4,7 +4,10 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CsvUriHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
@@ -22,7 +25,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -59,8 +61,6 @@ private data class LoadResult(
 
 private fun ImportedEntry.toParsedEntry() = ParsedEntry(dateMillis, amount, description, category)
 
-private fun ImportedEntry.toEntryDisplay() = EntryDisplay(dateMillis, description, category, amount, isExpense)
-
 internal fun deriveCategoriesToInsert(
     entries: List<ImportedEntry>,
     existing: Set<String>,
@@ -82,7 +82,7 @@ class HomeViewModel(
     private suspend fun saveCategoriesFromEntries(entries: List<ImportedEntry>): Int {
         val existing = categoryRepository.getAllSync().map { it.name }.toSet()
         val toInsert = deriveCategoriesToInsert(entries, existing)
-        toInsert.forEach { categoryRepository.insert(it) }
+        if (toInsert.isNotEmpty()) categoryRepository.insertAll(toInsert)
         return toInsert.size
     }
 
@@ -99,34 +99,35 @@ class HomeViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val entriesPagingData: Flow<PagingData<EntryDisplay>> = _filterParams
         .flatMapLatest { params ->
-            flow {
-                val entries = withContext(ioDispatcher) {
-                    val spending = importRepository.getEntriesByDateRange(
-                        isExpense = true, category = params.selectedCategory,
-                        startMillis = params.startMillis, endMillis = params.endMillis,
+            Pager(
+                config = PagingConfig(pageSize = ENTRIES_PAGE_SIZE, enablePlaceholders = false),
+                pagingSourceFactory = {
+                    EntriesPagingSource(
+                        importRepository = importRepository,
+                        category = params.selectedCategory,
+                        startMillis = params.startMillis,
+                        endMillis = params.endMillis,
                     )
-                    val earnings = importRepository.getEntriesByDateRange(
-                        isExpense = false, category = params.selectedCategory,
-                        startMillis = params.startMillis, endMillis = params.endMillis,
-                    )
-                    (spending + earnings).sortedByDescending { it.dateMillis }
-                }
-                emit(PagingData.from(entries.map { it.toEntryDisplay() }))
-            }
+                },
+            ).flow
         }
+        .cachedIn(viewModelScope)
 
     private val zoneId = ZoneId.systemDefault()
     private val weekFields = WeekFields.of(Locale.getDefault())
 
+    // Each pattern is paired with a shape regex so parseDate only attempts formatters whose
+    // shape the string could plausibly match, instead of throwing (and catching) a
+    // DateTimeParseException per mismatched formatter on every row of every import.
     private val dateFormats = listOf(
-        DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-        DateTimeFormatter.ofPattern("dd/MM/yy"),
-        DateTimeFormatter.ofPattern("d/M/yyyy"),
-        DateTimeFormatter.ofPattern("d/MM/yyyy"),
-        DateTimeFormatter.ofPattern("dd/M/yyyy"),
-        DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-        DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-        DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+        DateTimeFormatter.ofPattern("dd/MM/yyyy") to Regex("""^\d{2}/\d{2}/\d{4}$"""),
+        DateTimeFormatter.ofPattern("dd/MM/yy") to Regex("""^\d{2}/\d{2}/\d{2}$"""),
+        DateTimeFormatter.ofPattern("d/M/yyyy") to Regex("""^\d{1,2}/\d{1,2}/\d{4}$"""),
+        DateTimeFormatter.ofPattern("d/MM/yyyy") to Regex("""^\d{1,2}/\d{2}/\d{4}$"""),
+        DateTimeFormatter.ofPattern("dd/M/yyyy") to Regex("""^\d{2}/\d{1,2}/\d{4}$"""),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd") to Regex("""^\d{4}-\d{2}-\d{2}$"""),
+        DateTimeFormatter.ofPattern("yyyy/MM/dd") to Regex("""^\d{4}/\d{2}/\d{2}$"""),
+        DateTimeFormatter.ofPattern("MM/dd/yyyy") to Regex("""^\d{2}/\d{2}/\d{4}$"""),
     )
 
     init {
@@ -432,17 +433,10 @@ class HomeViewModel(
     private fun updateDerivedState() {
         viewModelScope.launch {
             val (allCategories, minDate, maxDate) = withContext(ioDispatcher) {
-                val categories = importRepository.getCategoryTotals(
-                    isExpense = true, category = null,
-                    startMillis = Long.MIN_VALUE, endMillis = Long.MAX_VALUE,
-                ).map { it.category } +
-                    importRepository.getCategoryTotals(
-                        isExpense = false, category = null,
-                        startMillis = Long.MIN_VALUE, endMillis = Long.MAX_VALUE,
-                    ).map { it.category }
+                val categories = importRepository.getDistinctCategories().sorted()
                 val minDate = importRepository.getMinDate()
                 val maxDate = importRepository.getMaxDate()
-                Triple(categories.distinct().sorted(), minDate, maxDate)
+                Triple(categories, minDate, maxDate)
             }
             _uiState.update { it.copy(allCategories = allCategories, datasetMinDate = minDate, datasetMaxDate = maxDate) }
         }
@@ -628,7 +622,8 @@ class HomeViewModel(
 
     private fun parseDate(dateStr: String): Long? {
         val trimmed = dateStr.trim()
-        for (fmt in dateFormats) {
+        for ((fmt, shape) in dateFormats) {
+            if (!shape.matches(trimmed)) continue
             try {
                 val localDate = java.time.LocalDate.parse(trimmed, fmt)
                 return localDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
@@ -654,5 +649,9 @@ class HomeViewModel(
             cleaned.contains(",") -> cleaned.replace(",", ".").toDoubleOrNull()
             else -> cleaned.toDoubleOrNull()
         }
+    }
+
+    private companion object {
+        const val ENTRIES_PAGE_SIZE = 30
     }
 }

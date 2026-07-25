@@ -79,4 +79,24 @@ interface ImportedEntryDao {
 
     @Query("SELECT MAX(date_millis) FROM imported_entries")
     suspend fun getMaxDate(): Long?
+
+    /** Distinct category names across all entries, for filter dropdowns. Cheap compared to aggregating totals. */
+    @Query("SELECT DISTINCT category FROM imported_entries WHERE category != ''")
+    suspend fun getDistinctCategories(): List<String>
+
+    /** One page of entries (both spending and earnings) within a date range, for the entries list. */
+    @Query("""
+        SELECT * FROM imported_entries
+        WHERE (:category IS NULL OR category = :category)
+        AND date_millis BETWEEN :startMillis AND :endMillis
+        ORDER BY date_millis DESC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getEntriesPage(
+        category: String?,
+        startMillis: Long,
+        endMillis: Long,
+        limit: Int,
+        offset: Int,
+    ): List<ImportedEntry>
 }

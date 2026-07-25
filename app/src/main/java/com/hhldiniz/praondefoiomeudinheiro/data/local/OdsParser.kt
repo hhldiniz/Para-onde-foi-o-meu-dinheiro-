@@ -18,6 +18,16 @@ object OdsParser {
     private const val NS_TEXT = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 
     /**
+     * Upper bound on how many times a single cell is physically expanded when it
+     * carries a `number-columns-repeated` attribute. ODS writers (e.g. LibreOffice)
+     * commonly pad trailing blank cells out to the sheet's full column count
+     * (1024, 16384, ...); expanding that literally would allocate tens of
+     * thousands of empty-string entries per row for no benefit, since no caller
+     * reads past a handful of columns.
+     */
+    private const val MAX_CELL_REPEAT = 64
+
+    /**
      * Opens the ZIP stream, locates content.xml and delegates to [parseXml].
      * Returns an empty list if the content file is not found.
      *
@@ -83,7 +93,7 @@ object OdsParser {
 
                             val repeats = parser.getAttributeValue(NS_TABLE, "number-columns-repeated")
                             if (repeats != null) {
-                                columnRepeatCount = repeats.toIntOrNull() ?: 1
+                                columnRepeatCount = (repeats.toIntOrNull() ?: 1).coerceAtMost(MAX_CELL_REPEAT)
                             }
 
                             val valueType = parser.getAttributeValue(NS_OFFICE, "value-type")
