@@ -229,7 +229,11 @@ private fun CurrencySelector(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Moeda: ${selectedCurrency.code} (${selectedCurrency.symbol})",
+                    text = stringResource(
+                        R.string.settings_currency_label,
+                        selectedCurrency.code,
+                        selectedCurrency.symbol,
+                    ),
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface

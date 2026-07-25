@@ -11,9 +11,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -223,7 +224,7 @@ private fun HomeContent(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Add,
-                            contentDescription = "Adicionar entrada"
+                            contentDescription = stringResource(R.string.home_add_entry_content_description)
                         )
                     }
                     DropdownMenu(
@@ -231,21 +232,21 @@ private fun HomeContent(
                         onDismissRequest = { showImportMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Adicionar manualmente") },
+                            text = { Text(stringResource(R.string.home_menu_add_manually)) },
                             onClick = {
                                 showImportMenu = false
                                 onNavigateToAddEntry()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Importar arquivo") },
+                            text = { Text(stringResource(R.string.home_menu_import_file)) },
                             onClick = {
                                 showImportMenu = false
                                 onImportFile()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Importar pasta") },
+                            text = { Text(stringResource(R.string.home_menu_import_folder)) },
                             onClick = {
                                 showImportMenu = false
                                 onImportFolder()
@@ -268,7 +269,7 @@ private fun HomeContent(
                     IconButton(onClick = { showFilterDialog = true }) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "Filtrar"
+                            contentDescription = stringResource(R.string.home_filter_content_description)
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
@@ -329,19 +330,25 @@ private fun HomeContent(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     PatrimonyCard(
                         patrimony = patrimony,
                         onPatrimonyChanged = onPatrimonyChanged,
                         currencyFormat = currencyFormat,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
                     )
                     RemainingCard(
                         remaining = remaining,
                         currencyFormat = currencyFormat,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
                     )
                 }
 
@@ -587,7 +594,7 @@ private fun EntriesList(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Nenhuma entrada encontrada",
+                    text = stringResource(R.string.home_entries_empty),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = BrutalBlack
@@ -638,7 +645,7 @@ private fun EntriesList(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowUp,
-                        contentDescription = "Ir para o topo",
+                        contentDescription = stringResource(R.string.home_scroll_to_top_content_description),
                         tint = BrutalBlack
                     )
                 }
@@ -693,7 +700,8 @@ private fun EntryCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val tagBg = if (entry.isExpense) BrutalPink else BrutalCyan
-                        val tagText = if (entry.isExpense) "GASTO" else "RENDA"
+                        val tagText = if (entry.isExpense) stringResource(R.string.entry_type_expense)
+                                      else stringResource(R.string.entry_type_income)
                         NeoTag(
                             text = tagText,
                             backgroundColor = tagBg,
@@ -733,16 +741,22 @@ private fun PatrimonyCard(
     HardShadowBox(
         offsetX = 4.dp,
         offsetY = 4.dp,
+        fillHeight = true,
         modifier = modifier
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape)
                 .background(BrutalYellow, RectangleShape)
                 .padding(12.dp)
         ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxHeight()
+        ) {
             Text(
                 text = stringResource(R.string.home_patrimony),
                 style = MaterialTheme.typography.titleSmall,
@@ -808,16 +822,22 @@ private fun RemainingCard(
     HardShadowBox(
         offsetX = 4.dp,
         offsetY = 4.dp,
+        fillHeight = true,
         modifier = modifier
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape)
                 .background(bgColor, RectangleShape)
                 .padding(12.dp)
         ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxHeight()
+        ) {
             Text(
                 text = stringResource(R.string.home_remaining_balance),
                 style = MaterialTheme.typography.titleSmall,
@@ -918,8 +938,9 @@ private fun CategoryDropdown(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (selectedCategory != null) "Categoria: $selectedCategory"
-                           else "Todas as categorias",
+                    text = if (selectedCategory != null)
+                        stringResource(R.string.filter_category_selected, selectedCategory)
+                    else stringResource(R.string.filter_category_all),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onTertiary
                 )
@@ -933,7 +954,7 @@ private fun CategoryDropdown(
             DropdownMenuItem(
                 text = {
                     Text(
-                        text = "Todas as categorias",
+                        text = stringResource(R.string.filter_category_all),
                         fontWeight = if (selectedCategory == null) FontWeight.Black else FontWeight.Medium
                     )
                 },
@@ -989,7 +1010,7 @@ private fun FilterDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Filtrar",
+                text = stringResource(R.string.filter_dialog_title),
                 fontWeight = FontWeight.Black,
                 style = MaterialTheme.typography.titleLarge
             )
@@ -999,7 +1020,7 @@ private fun FilterDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Período",
+                    text = stringResource(R.string.filter_label_period),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -1024,7 +1045,7 @@ private fun FilterDialog(
                 }
 
                 Text(
-                    text = "Categoria",
+                    text = stringResource(R.string.filter_label_category),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -1044,8 +1065,7 @@ private fun FilterDialog(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (tempCategory != null) tempCategory!!
-                                       else "Todas as categorias",
+                                text = tempCategory ?: stringResource(R.string.filter_category_all),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onTertiary
                             )
@@ -1059,7 +1079,7 @@ private fun FilterDialog(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = "Todas as categorias",
+                                    text = stringResource(R.string.filter_category_all),
                                     fontWeight = if (tempCategory == null) FontWeight.Black else FontWeight.Medium
                                 )
                             },
@@ -1094,7 +1114,7 @@ private fun FilterDialog(
                 }
                 onDismiss()
             }) {
-                Text("Aplicar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.action_apply), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -1104,7 +1124,7 @@ private fun FilterDialog(
                 tempEndDate = null
                 onApplyCategory(null)
             }) {
-                Text("Limpar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.action_clear), fontWeight = FontWeight.Bold)
             }
         }
     )

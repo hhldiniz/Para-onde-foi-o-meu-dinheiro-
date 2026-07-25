@@ -37,6 +37,20 @@
     <!-- General -->
     <string name="unknown_file">desconhecido</string>
 
+    <!-- Common actions -->
+    <string name="action_back">Voltar</string>
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_add">Adicionar</string>
+    <string name="action_apply">Aplicar</string>
+    <string name="action_clear">Limpar</string>
+    <string name="action_save">SALVAR</string>
+    <string name="action_saving">Salvando...</string>
+
+    <!-- Entry types -->
+    <string name="entry_type_expense">GASTO</string>
+    <string name="entry_type_income">RENDA</string>
+
     <!-- Home Screen -->
     <string name="home_title">Pra Onde Foi\nO Meu Dinheiro?</string>
     <string name="home_total_spending">TOTAL DE GASTOS</string>
@@ -65,6 +79,22 @@
     <string name="bottom_nav_summary">Resumo</string>
     <string name="bottom_nav_entries">Movimentos</string>
 
+    <!-- Home actions and entries list -->
+    <string name="home_add_entry_content_description">Adicionar entrada</string>
+    <string name="home_menu_add_manually">Adicionar manualmente</string>
+    <string name="home_menu_import_file">Importar arquivo</string>
+    <string name="home_menu_import_folder">Importar pasta</string>
+    <string name="home_filter_content_description">Filtrar</string>
+    <string name="home_entries_empty">Nenhuma entrada encontrada</string>
+    <string name="home_scroll_to_top_content_description">Ir para o topo</string>
+
+    <!-- Filter dialog -->
+    <string name="filter_dialog_title">Filtrar</string>
+    <string name="filter_label_period">Período</string>
+    <string name="filter_label_category">Categoria</string>
+    <string name="filter_category_all">Todas as categorias</string>
+    <string name="filter_category_selected">Categoria: %s</string>
+
     <!-- Indicators -->
     <string name="home_patrimony">PATRIMONIO TOTAL</string>
     <string name="home_remaining_balance">SALDO APOS GASTOS</string>
@@ -75,10 +105,28 @@
     <string name="import_loading_progress">%1$d de %2$d arquivos</string>
     <string name="import_loading_done">Concluído: %s</string>
 
+    <!-- Add Entry Screen -->
+    <string name="add_entry_title">Adicionar Movimentação</string>
+    <string name="add_entry_field_date">Data</string>
+    <string name="add_entry_field_amount">Valor</string>
+    <string name="add_entry_amount_placeholder">0,00</string>
+    <string name="add_entry_field_description">Descrição</string>
+    <string name="add_entry_description_placeholder">Descrição da movimentação</string>
+    <string name="add_entry_field_category">Categoria</string>
+    <string name="add_entry_category_placeholder">Selecione uma categoria</string>
+    <string name="add_entry_add_new_category">Adicionar nova categoria...</string>
+    <string name="add_entry_new_category_title">Nova categoria</string>
+    <string name="add_entry_new_category_placeholder">Nome da categoria</string>
+    <string name="add_entry_field_type">Tipo</string>
+    <string name="add_entry_error_invalid_amount">Valor inválido</string>
+    <string name="add_entry_error_description_required">Descrição obrigatória</string>
+    <string name="add_entry_error_category_required">Categoria obrigatória</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Configurações</string>
     <string name="settings_placeholder">Configurações em breve</string>
     <string name="settings_back_content_description">Voltar</string>
+    <string name="settings_currency_label">Moeda: %1$s (%2$s)</string>
 
     <!-- Settings Danger Zone -->
     <string name="settings_danger_title">ZONA DE PERIGO</string>

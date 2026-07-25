@@ -3,8 +3,8 @@
 
     <!-- Landing Screen -->
     <string name="landing_title">¿A Dónde Fue\nMi Dinero?</string>
-    <string name="landing_instruction">Seleccione un archivo CSV o una carpeta con sus gastos</string>
-    <string name="landing_btn_select_csv">SELECCIONAR ARCHIVO CSV</string>
+    <string name="landing_instruction">Seleccione un archivo CSV/ODS o una carpeta con sus gastos</string>
+    <string name="landing_btn_select_csv">SELECCIONAR ARCHIVO CSV/ODS</string>
     <string name="landing_btn_select_folder">SELECCIONAR CARPETA</string>
     <string name="landing_btn_skip">CONTINUAR SIN IMPORTAR</string>
     <string name="landing_validating">VALIDANDO ARCHIVOS...</string>
@@ -19,9 +19,9 @@
 
     <!-- Error Messages -->
     <string name="error_no_valid_files">No se encontró ningún archivo válido.</string>
-    <string name="error_no_csv_in_folder">No se encontró ningún archivo .csv en la carpeta.</string>
-    <string name="error_no_valid_csv_in_folder">No se encontró ningún archivo .csv válido en la carpeta.</string>
-    <string name="error_unsupported_format">Formato no soportado. Solo se aceptan archivos .csv.</string>
+    <string name="error_no_csv_in_folder">No se encontró ningún archivo .csv o .ods en la carpeta.</string>
+    <string name="error_no_valid_csv_in_folder">No se encontró ningún archivo .csv o .ods válido en la carpeta.</string>
+    <string name="error_unsupported_format">Formato no soportado. Solo se aceptan archivos .csv y .ods.</string>
     <string name="error_cannot_read_file">No se pudo leer el archivo: %s</string>
     <string name="error_empty_file">Archivo vacío.</string>
     <string name="error_no_header_or_data">El archivo debe contener un encabezado y al menos una fila de datos.</string>
@@ -36,6 +36,20 @@
 
     <!-- General -->
     <string name="unknown_file">desconocido</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Volver</string>
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_add">Agregar</string>
+    <string name="action_apply">Aplicar</string>
+    <string name="action_clear">Limpiar</string>
+    <string name="action_save">GUARDAR</string>
+    <string name="action_saving">Guardando...</string>
+
+    <!-- Entry types -->
+    <string name="entry_type_expense">GASTO</string>
+    <string name="entry_type_income">INGRESO</string>
 
     <!-- Home Screen -->
     <string name="home_title">¿A Dónde Fue\nMi Dinero?</string>
@@ -64,6 +78,22 @@
     <string name="bottom_nav_summary">Resumen</string>
     <string name="bottom_nav_entries">Movimientos</string>
 
+    <!-- Home actions and entries list -->
+    <string name="home_add_entry_content_description">Agregar movimiento</string>
+    <string name="home_menu_add_manually">Agregar manualmente</string>
+    <string name="home_menu_import_file">Importar archivo</string>
+    <string name="home_menu_import_folder">Importar carpeta</string>
+    <string name="home_filter_content_description">Filtrar</string>
+    <string name="home_entries_empty">No se encontraron movimientos</string>
+    <string name="home_scroll_to_top_content_description">Ir al inicio</string>
+
+    <!-- Filter dialog -->
+    <string name="filter_dialog_title">Filtrar</string>
+    <string name="filter_label_period">Período</string>
+    <string name="filter_label_category">Categoría</string>
+    <string name="filter_category_all">Todas las categorías</string>
+    <string name="filter_category_selected">Categoría: %s</string>
+
     <!-- Indicators -->
     <string name="home_patrimony">PATRIMONIO TOTAL</string>
     <string name="home_remaining_balance">SALDO DESPUÉS DE GASTOS</string>
@@ -77,10 +107,28 @@
     <!-- Home Screen -->
     <string name="home_total_earnings">INGRESOS TOTALES</string>
 
+    <!-- Add Entry Screen -->
+    <string name="add_entry_title">Agregar Movimiento</string>
+    <string name="add_entry_field_date">Fecha</string>
+    <string name="add_entry_field_amount">Valor</string>
+    <string name="add_entry_amount_placeholder">0,00</string>
+    <string name="add_entry_field_description">Descripción</string>
+    <string name="add_entry_description_placeholder">Descripción del movimiento</string>
+    <string name="add_entry_field_category">Categoría</string>
+    <string name="add_entry_category_placeholder">Seleccione una categoría</string>
+    <string name="add_entry_add_new_category">Agregar nueva categoría...</string>
+    <string name="add_entry_new_category_title">Nueva categoría</string>
+    <string name="add_entry_new_category_placeholder">Nombre de la categoría</string>
+    <string name="add_entry_field_type">Tipo</string>
+    <string name="add_entry_error_invalid_amount">Valor inválido</string>
+    <string name="add_entry_error_description_required">La descripción es obligatoria</string>
+    <string name="add_entry_error_category_required">La categoría es obligatoria</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Configuración</string>
     <string name="settings_placeholder">Configuración próximamente</string>
     <string name="settings_back_content_description">Volver</string>
+    <string name="settings_currency_label">Moneda: %1$s (%2$s)</string>
 
     <!-- Settings Danger Zone -->
     <string name="settings_danger_title">ZONA DE PELIGRO</string>
