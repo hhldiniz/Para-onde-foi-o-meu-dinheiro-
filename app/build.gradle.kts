@@ -77,6 +77,10 @@ kotlin {
             implementation(libs.androidx.junit)
             implementation(libs.androidx.espresso.core)
             implementation(libs.pdfbox.android)
+            // AppDatabaseTest drives suspending DAO calls with runTest. This used
+            // to arrive transitively through compose ui-test-junit4, which these
+            // tests no longer need.
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }
