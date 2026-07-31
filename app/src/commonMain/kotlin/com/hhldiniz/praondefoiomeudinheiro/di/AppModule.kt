@@ -1,8 +1,5 @@
 package com.hhldiniz.praondefoiomeudinheiro.di
 
-import com.hhldiniz.praondefoiomeudinheiro.data.local.AppDatabase
-import com.hhldiniz.praondefoiomeudinheiro.data.local.buildAppDatabase
-import com.hhldiniz.praondefoiomeudinheiro.data.local.DatabaseBuilderFactory
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.FileSpreadsheetRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
@@ -17,15 +14,12 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 /**
- * Shared graph. The only platform-supplied binding is [DatabaseBuilderFactory],
- * which comes from [platformModule].
+ * Shared graph. [ImportedEntryDao]/[CategoryDao] bindings come from
+ * [platformModule] — Room-backed on Android/iOS, localStorage-backed on
+ * wasmJs — since Room has no wasmJs target (see the `roomMain` source set in
+ * `app/build.gradle.kts`).
  */
 val appModule = module {
-    single { get<DatabaseBuilderFactory>().create().buildAppDatabase() }
-
-    single { get<AppDatabase>().importedEntryDao() }
-    single { get<AppDatabase>().categoryDao() }
-
     single { ImportRepository(get()) }
     single { CategoryRepository(get()) }
     single<SpreadsheetRepository> { FileSpreadsheetRepository() }
@@ -37,5 +31,5 @@ val appModule = module {
     viewModel { IntroCategoriesViewModel(get()) }
 }
 
-/** Bindings that can only be created with platform APIs (Android `Context`, iOS file URLs). */
+/** Bindings that can only be created with platform APIs; also supplies [ImportedEntryDao]/[CategoryDao]. */
 expect val platformModule: Module

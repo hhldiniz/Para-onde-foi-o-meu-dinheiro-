@@ -25,10 +25,12 @@ data class IntroCategoriesUiState(
 
 /**
  * ViewModel for the second onboarding screen, where the user picks which of
- * the suggested default categories to start with and can add their own. The
- * suggested defaults are already seeded in Room by [com.hhldiniz.praondefoiomeudinheiro.data.local.AppDatabase]
- * on first creation, so on continue this only needs to remove the
- * deselected defaults and insert any newly added custom categories.
+ * the suggested default categories to start with and can add their own. On
+ * Android/iOS the suggested defaults are already seeded in Room on first
+ * database creation (see `AppDatabase` in `roomMain`); `onContinue` inserts
+ * every still-selected default anyway (a no-op there thanks to conflict-
+ * ignore semantics), which is also what actually seeds them on wasmJs, which
+ * has no such database-creation callback.
  */
 class IntroCategoriesViewModel(
     private val categoryRepository: CategoryRepository,

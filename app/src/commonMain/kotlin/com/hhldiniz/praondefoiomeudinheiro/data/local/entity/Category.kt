@@ -1,18 +1,15 @@
 package com.hhldiniz.praondefoiomeudinheiro.data.local.entity
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
-@Entity(
-    tableName = "categories",
-    indices = [Index(value = ["name"], unique = true)]
-)
+/**
+ * A spending/earning category name. Room-free so it can be shared with
+ * wasmJs; the Room-backed persistence for Android/iOS lives in `roomMain` as
+ * `CategoryRecord`.
+ */
+@Serializable
 data class Category(
-    @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    @ColumnInfo(name = "name")
     val name: String,
 )
 

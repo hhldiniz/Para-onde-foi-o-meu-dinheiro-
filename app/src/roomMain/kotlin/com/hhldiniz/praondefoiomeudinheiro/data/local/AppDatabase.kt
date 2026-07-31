@@ -6,27 +6,27 @@ import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
-import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.ImportedEntryDao
-import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
-import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
+import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.RoomCategoryDao
+import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.RoomImportedEntryDao
+import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.CategoryRecord
+import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntryRecord
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.defaultCategories
 import com.hhldiniz.praondefoiomeudinheiro.platform.ioDispatcher
 
 const val DATABASE_NAME = "praondefoiomeudinheiro.db"
 
-@Database(entities = [ImportedEntry::class, Category::class], version = 3, exportSchema = false)
+@Database(entities = [ImportedEntryRecord::class, CategoryRecord::class], version = 3, exportSchema = false)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun importedEntryDao(): ImportedEntryDao
-    abstract fun categoryDao(): CategoryDao
+    abstract fun importedEntryDao(): RoomImportedEntryDao
+    abstract fun categoryDao(): RoomCategoryDao
 }
 
 /**
  * Room generates the `actual` implementations of this per target; the
  * `expect` declaration is what lets the `@Database` class itself live in
- * common code.
+ * `roomMain`, shared by Android and iOS.
  */
 @Suppress("NO_ACTUAL_FOR_EXPECT", "KotlinNoActualForExpect")
 expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {

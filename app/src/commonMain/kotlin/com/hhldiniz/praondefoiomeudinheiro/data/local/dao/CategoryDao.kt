@@ -1,32 +1,26 @@
 package com.hhldiniz.praondefoiomeudinheiro.data.local.dao
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
 import kotlinx.coroutines.flow.Flow
 
-@Dao
+/**
+ * [Category] persistence contract. Room-backed on Android/iOS
+ * (`RoomCategoryDao` in `roomMain`), localStorage-backed on wasmJs
+ * (`WebCategoryDao`).
+ */
 interface CategoryDao {
 
-    @Query("SELECT * FROM categories ORDER BY name ASC")
     fun getAll(): Flow<List<Category>>
 
-    @Query("SELECT * FROM categories ORDER BY name ASC")
     suspend fun getAllSync(): List<Category>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(category: Category): Long
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(categories: List<Category>)
 
     /** Deletes every row from the table. */
-    @Query("DELETE FROM categories")
     suspend fun deleteAll()
 
     /** Deletes the category with the given [name], if any. */
-    @Query("DELETE FROM categories WHERE name = :name")
     suspend fun deleteByName(name: String)
 }

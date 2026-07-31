@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
 
@@ -32,6 +33,20 @@ kotlin {
         }
     }
 
+    // Compose Multiplatform for Web, deployed as a static site to GitHub
+    // Pages. Room has no wasmJs target (see the `roomMain` source set below),
+    // so this target gets a hand-rolled localStorage-backed persistence layer
+    // instead (data/local/web/).
+    wasmJs {
+        moduleName = "praondefoiomeudinheiro"
+        browser {
+            commonWebpackConfig {
+                outputFileName = "praondefoiomeudinheiro.js"
+            }
+        }
+        binaries.executable()
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -43,20 +58,33 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
 
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
 
             implementation(libs.jetbrains.lifecycle.viewmodel)
             implementation(libs.jetbrains.lifecycle.viewmodel.compose)
             implementation(libs.jetbrains.lifecycle.runtime.compose)
             implementation(libs.jetbrains.navigation.compose)
 
-            implementation(libs.androidx.room.runtime)
-            implementation(libs.androidx.sqlite.bundled)
-
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
         }
 
+        // Room 2.7.1 (the version this project is pinned to) has no wasmJs/js
+        // target — only the breaking-change Room 3.0 alpha line adds that, and
+        // it needs a hand-rolled Web Worker + OPFS setup. So Room-touching code
+        // (AppDatabase, the @Entity/@Dao classes) lives here instead of
+        // commonMain, and only Android/iOS depend on it; wasmJs gets its own
+        // Room-free persistence (see data/local/web/ under wasmJsMain).
+        val roomMain by creating {
+            dependsOn(commonMain.get())
+            dependencies {
+                implementation(libs.androidx.room.runtime)
+                implementation(libs.androidx.sqlite.bundled)
+            }
+        }
+
+        androidMain.get().dependsOn(roomMain)
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
@@ -64,6 +92,14 @@ kotlin {
             implementation(libs.androidx.documentfile)
             implementation(libs.koin.android)
             implementation(libs.pdfbox.android)
+        }
+
+        iosMain.get().dependsOn(roomMain)
+
+        val wasmJsMain by getting {
+            dependencies {
+                implementation(libs.kotlinx.browser)
+            }
         }
 
         androidUnitTest.dependencies {
