@@ -9,6 +9,7 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.ImportedEntryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
+import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.defaultCategories
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -313,14 +314,29 @@ class AppDatabaseTest {
     }
 
     // =========================================================================
-    // AppDatabase – getInstance singleton
+    // DatabaseBuilderFactory – the production wiring
     // =========================================================================
 
+    /**
+     * The hand-rolled `getInstance` singleton is gone: Koin owns the single
+     * instance and [DatabaseBuilderFactory] supplies the platform builder. This
+     * covers what that replaced, and rather more — a file-backed database
+     * opened through the real production path, seeding its default categories
+     * from the create callback. The tests above all use an in-memory database,
+     * so this is the only one that exercises either.
+     */
     @Test
-    fun getInstance_returnsSameInstance() {
+    fun databaseBuilderFactory_opensAndSeedsDefaultCategories() = runTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val db1 = AppDatabase.getInstance(context)
-        val db2 = AppDatabase.getInstance(context)
-        assertEquals(db1, db2)
+        context.deleteDatabase(DATABASE_NAME)
+
+        val database = DatabaseBuilderFactory(context).create().buildAppDatabase()
+        try {
+            val seeded = database.categoryDao().getAllSync().map { it.name }
+            assertEquals(defaultCategories().map { it.name }.sorted(), seeded.sorted())
+        } finally {
+            database.close()
+            context.deleteDatabase(DATABASE_NAME)
+        }
     }
 }
