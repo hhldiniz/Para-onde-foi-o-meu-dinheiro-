@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - DI: Koin
 - Persistence: Room KMP + `androidx.sqlite` bundled driver
 - Android: minSdk 31 / targetSdk & compileSdk 37, Java/Kotlin target 11, AGP 9.3.1, Kotlin 2.4.0, Compose Multiplatform 1.11.1
-- iOS: `iosX64`, `iosArm64`, `iosSimulatorArm64`, static framework `ComposeApp`, deployment target 15.0
+- iOS: `iosArm64` + `iosSimulatorArm64`, static framework `ComposeApp`, deployment target 15.0 (no `iosX64` — Compose Multiplatform no longer publishes for the Intel simulator)
 
 ## Source sets
 

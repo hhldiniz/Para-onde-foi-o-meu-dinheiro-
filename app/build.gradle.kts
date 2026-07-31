@@ -16,13 +16,13 @@ kotlin {
         }
     }
 
-    // The three Apple targets an iPhone app needs: device (arm64), Intel
-    // simulator (x64) and Apple-silicon simulator (arm64). They all produce the
-    // same `ComposeApp` framework consumed by the Xcode project in iosApp/.
+    // Device (arm64) and Apple-silicon simulator (arm64); both produce the same
+    // `ComposeApp` framework consumed by the Xcode project in iosApp/. There is
+    // no iosX64 target because Compose Multiplatform stopped publishing for the
+    // Intel simulator.
     // Note: these can only be *compiled* on a macOS host; the Android target
     // (and therefore `testDebugUnitTest`) builds everywhere.
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64(),
     ).forEach { iosTarget ->
@@ -121,7 +121,6 @@ compose.resources {
 dependencies {
     // Room's compiler has to run once per Kotlin target that compiles the DAOs.
     add("kspAndroid", libs.androidx.room.compiler)
-    add("kspIosX64", libs.androidx.room.compiler)
     add("kspIosArm64", libs.androidx.room.compiler)
     add("kspIosSimulatorArm64", libs.androidx.room.compiler)
 

@@ -6,7 +6,6 @@ import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.sqlite.use
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.ImportedEntryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
@@ -47,12 +46,15 @@ fun RoomDatabase.Builder<AppDatabase>.buildAppDatabase(): AppDatabase =
         .addCallback(object : RoomDatabase.Callback() {
             override fun onCreate(connection: SQLiteConnection) {
                 super.onCreate(connection)
-                connection.prepare("INSERT OR IGNORE INTO categories (name) VALUES (?)").use { statement ->
+                val statement = connection.prepare("INSERT OR IGNORE INTO categories (name) VALUES (?)")
+                try {
                     defaultCategories().forEach { category ->
                         statement.bindText(1, category.name)
                         statement.step()
                         statement.reset()
                     }
+                } finally {
+                    statement.close()
                 }
             }
         })
