@@ -22,8 +22,8 @@
     <string name="landing_title_valid">FILES LOADED</string>
     <string name="landing_title_invalid">VALIDATION RESULT</string>
     <string name="landing_warning_invalid">WARNING: one or more files are not in the correct format and were ignored.</string>
-    <string name="landing_tag_valid">VALID (%d)</string>
-    <string name="landing_tag_ignored">IGNORED (%d)</string>
+    <string name="landing_tag_valid">VALID (%1$d)</string>
+    <string name="landing_tag_ignored">IGNORED (%1$d)</string>
     <string name="landing_btn_continue">CONTINUE</string>
     <string name="landing_btn_back">BACK</string>
     <string name="landing_columns_format">%1$d columns: %2$s</string>
@@ -33,7 +33,7 @@
     <string name="error_no_csv_in_folder">No .csv, .ods or .pdf file found in the folder.</string>
     <string name="error_no_valid_csv_in_folder">No valid .csv, .ods or .pdf file found in the folder.</string>
     <string name="error_unsupported_format">Unsupported format. Only .csv, .ods and .pdf files are accepted.</string>
-    <string name="error_cannot_read_file">Could not read file: %s</string>
+    <string name="error_cannot_read_file">Could not read file: %1$s</string>
     <string name="error_empty_file">Empty file.</string>
     <string name="error_no_header_or_data">File must contain a header and at least one data row.</string>
     <string name="error_header_not_found">Invalid format. Could not identify date and amount columns in the spreadsheet.</string>
@@ -60,7 +60,7 @@
     <!-- Home Screen -->
     <string name="home_title">Where Did\nMy Money Go?</string>
     <string name="home_total_spending">TOTAL SPENDING</string>
-    <string name="home_period_label">Period: %s</string>
+    <string name="home_period_label">Period: %1$s</string>
     <string name="home_date_from">From</string>
     <string name="home_date_to">To</string>
     <string name="home_date_placeholder">---</string>
@@ -98,7 +98,7 @@
     <string name="filter_label_period">Period</string>
     <string name="filter_label_category">Category</string>
     <string name="filter_category_all">All categories</string>
-    <string name="filter_category_selected">Category: %s</string>
+    <string name="filter_category_selected">Category: %1$s</string>
 
     <!-- Indicators -->
     <string name="home_patrimony">TOTAL PATRIMONY</string>
@@ -106,9 +106,9 @@
 
     <!-- Import Progress -->
     <string name="import_loading_title">IMPORTING FILES</string>
-    <string name="import_loading_current">Importing: %s</string>
+    <string name="import_loading_current">Importing: %1$s</string>
     <string name="import_loading_progress">%1$d of %2$d files</string>
-    <string name="import_loading_done">Done: %s</string>
+    <string name="import_loading_done">Done: %1$s</string>
 
     <!-- Home Screen -->
     <string name="home_total_earnings">TOTAL EARNINGS</string>

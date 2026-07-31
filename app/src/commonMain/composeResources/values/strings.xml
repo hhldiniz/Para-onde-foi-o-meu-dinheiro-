@@ -22,8 +22,8 @@
     <string name="landing_title_valid">ARQUIVOS CARREGADOS</string>
     <string name="landing_title_invalid">RESULTADO DA VALIDAÇÃO</string>
     <string name="landing_warning_invalid">ATENÇÃO: um ou mais arquivos não estão no formato correto e foram ignorados.</string>
-    <string name="landing_tag_valid">VÁLIDOS (%d)</string>
-    <string name="landing_tag_ignored">IGNORADOS (%d)</string>
+    <string name="landing_tag_valid">VÁLIDOS (%1$d)</string>
+    <string name="landing_tag_ignored">IGNORADOS (%1$d)</string>
     <string name="landing_btn_continue">CONTINUAR</string>
     <string name="landing_btn_back">VOLTAR</string>
     <string name="landing_columns_format">%1$d colunas: %2$s</string>
@@ -33,7 +33,7 @@
     <string name="error_no_csv_in_folder">Nenhum arquivo .csv, .ods ou .pdf encontrado na pasta.</string>
     <string name="error_no_valid_csv_in_folder">Nenhum arquivo .csv, .ods ou .pdf válido encontrado na pasta.</string>
     <string name="error_unsupported_format">Formato não suportado. Apenas arquivos .csv, .ods e .pdf são aceitos.</string>
-    <string name="error_cannot_read_file">Não foi possível ler o arquivo: %s</string>
+    <string name="error_cannot_read_file">Não foi possível ler o arquivo: %1$s</string>
     <string name="error_empty_file">Arquivo vazio.</string>
     <string name="error_no_header_or_data">Arquivo deve conter cabeçalho e pelo menos uma linha de dados.</string>
     <string name="error_header_not_found">Formato inválido. Não foi possível identificar colunas de data e valor na planilha.</string>
@@ -61,7 +61,7 @@
     <string name="home_title">Pra Onde Foi\nO Meu Dinheiro?</string>
     <string name="home_total_spending">TOTAL DE GASTOS</string>
     <string name="home_total_earnings">TOTAL DE RENDAS</string>
-    <string name="home_period_label">Periodo: %s</string>
+    <string name="home_period_label">Periodo: %1$s</string>
     <string name="home_date_from">De</string>
     <string name="home_date_to">Até</string>
     <string name="home_date_placeholder">---</string>
@@ -99,7 +99,7 @@
     <string name="filter_label_period">Período</string>
     <string name="filter_label_category">Categoria</string>
     <string name="filter_category_all">Todas as categorias</string>
-    <string name="filter_category_selected">Categoria: %s</string>
+    <string name="filter_category_selected">Categoria: %1$s</string>
 
     <!-- Indicators -->
     <string name="home_patrimony">PATRIMONIO TOTAL</string>
@@ -107,9 +107,9 @@
 
     <!-- Import Progress -->
     <string name="import_loading_title">IMPORTANDO ARQUIVOS</string>
-    <string name="import_loading_current">Importando: %s</string>
+    <string name="import_loading_current">Importando: %1$s</string>
     <string name="import_loading_progress">%1$d de %2$d arquivos</string>
-    <string name="import_loading_done">Concluído: %s</string>
+    <string name="import_loading_done">Concluído: %1$s</string>
 
     <!-- Add Entry Screen -->
     <string name="add_entry_title">Adicionar Movimentação</string>
