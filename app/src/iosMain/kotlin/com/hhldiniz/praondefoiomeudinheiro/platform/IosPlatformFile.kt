@@ -3,6 +3,7 @@ package com.hhldiniz.praondefoiomeudinheiro.platform
 import com.hhldiniz.praondefoiomeudinheiro.domain.file.PlatformFile
 import com.hhldiniz.praondefoiomeudinheiro.domain.file.PlatformFolder
 import com.hhldiniz.praondefoiomeudinheiro.domain.file.hasSpreadsheetExtension
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSData
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSURL
@@ -31,6 +32,7 @@ class IosPlatformFolder(private val url: NSURL) : PlatformFolder {
 
     override val identifier: String = url.absoluteString ?: ""
 
+    @OptIn(ExperimentalForeignApi::class)
     override suspend fun listSpreadsheetFiles(): List<PlatformFile> = url.withSecurityScope {
         val contents = NSFileManager.defaultManager.contentsOfDirectoryAtURL(
             url = url,

@@ -9,7 +9,6 @@ import platform.Foundation.NSTimeZone
 import platform.Foundation.currentLocale
 import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.localTimeZone
-import platform.Foundation.objectForKey
 import platform.Foundation.secondsFromGMTForDate
 import platform.Foundation.timeIntervalSince1970
 

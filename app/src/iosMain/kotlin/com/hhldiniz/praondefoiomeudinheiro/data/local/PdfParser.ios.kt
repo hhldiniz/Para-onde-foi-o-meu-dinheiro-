@@ -8,5 +8,8 @@ import platform.PDFKit.PDFDocument
  * here (Android uses PDFBox). `PDFDocument.string` already returns the text in
  * reading order, which is what [PdfParser] expects.
  */
-actual fun extractPdfText(bytes: ByteArray): String =
-    PDFDocument(data = bytes.toNSData())?.string() ?: ""
+actual fun extractPdfText(bytes: ByteArray): String {
+    // `initWithData:` returns nil for anything PDFKit cannot open.
+    val document: PDFDocument? = PDFDocument(data = bytes.toNSData())
+    return document?.string ?: ""
+}

@@ -442,8 +442,8 @@ class HomeViewModel(
         val generation = entriesGeneration
         val params = _filterParams.value
         viewModelScope.launch {
-            try {
-                val page = withContext(ioDispatcher) {
+            val page = try {
+                withContext(ioDispatcher) {
                     importRepository.getEntriesPage(
                         category = params.selectedCategory,
                         startMillis = params.startMillis,
@@ -452,14 +452,28 @@ class HomeViewModel(
                         offset = loadedEntryCount,
                     )
                 }
-                // The filter changed while this page was loading; drop it.
-                if (generation != entriesGeneration) return@launch
-                loadedEntryCount += page.size
-                _entries.update { it + page.map { entry -> entry.toDisplay() } }
-                _hasMoreEntries.value = page.size == ENTRIES_PAGE_SIZE
+            } catch (_: Exception) {
+                null
             } finally {
                 pageLoadInFlight = false
             }
+
+            if (generation != entriesGeneration) {
+                // The filter changed while this page was loading: drop it and
+                // start the first page of the new filter, which resetEntries()
+                // could not kick off while this load was in flight.
+                loadMoreEntries()
+                return@launch
+            }
+            if (page == null) {
+                // Stop paging rather than retry in a loop; the list keeps what it has.
+                _hasMoreEntries.value = false
+                return@launch
+            }
+
+            loadedEntryCount += page.size
+            _entries.update { it + page.map { entry -> entry.toDisplay() } }
+            _hasMoreEntries.value = page.size == ENTRIES_PAGE_SIZE
         }
     }
 
