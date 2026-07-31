@@ -50,6 +50,16 @@ dependencyResolutionManagement {
             metadataSources { artifact() }
             content { includeModule("com.yarnpkg", "yarn") }
         }
+        // Binaryen (wasm-opt), which the wasmJs production build also fetches
+        // to optimize the compiled binary; same reasoning, same source.
+        ivy("https://github.com/WebAssembly/binaryen/releases/download") {
+            name = "Binaryen Distributions at https://github.com/WebAssembly/binaryen/releases/download"
+            patternLayout {
+                artifact("version_[revision]/binaryen-version_[revision]-[classifier].[ext]")
+            }
+            metadataSources { artifact() }
+            content { includeModule("com.github.webassembly", "binaryen") }
+        }
     }
 }
 
