@@ -22,8 +22,8 @@
     <string name="landing_title_valid">ARCHIVOS CARGADOS</string>
     <string name="landing_title_invalid">RESULTADO DE VALIDACIÓN</string>
     <string name="landing_warning_invalid">ATENCIÓN: uno o más archivos no están en el formato correcto y fueron ignorados.</string>
-    <string name="landing_tag_valid">VÁLIDOS (%d)</string>
-    <string name="landing_tag_ignored">IGNORADOS (%d)</string>
+    <string name="landing_tag_valid">VÁLIDOS (%1$d)</string>
+    <string name="landing_tag_ignored">IGNORADOS (%1$d)</string>
     <string name="landing_btn_continue">CONTINUAR</string>
     <string name="landing_btn_back">VOLVER</string>
     <string name="landing_columns_format">%1$d columnas: %2$s</string>
@@ -33,7 +33,7 @@
     <string name="error_no_csv_in_folder">No se encontró ningún archivo .csv, .ods o .pdf en la carpeta.</string>
     <string name="error_no_valid_csv_in_folder">No se encontró ningún archivo .csv, .ods o .pdf válido en la carpeta.</string>
     <string name="error_unsupported_format">Formato no soportado. Solo se aceptan archivos .csv, .ods y .pdf.</string>
-    <string name="error_cannot_read_file">No se pudo leer el archivo: %s</string>
+    <string name="error_cannot_read_file">No se pudo leer el archivo: %1$s</string>
     <string name="error_empty_file">Archivo vacío.</string>
     <string name="error_no_header_or_data">El archivo debe contener un encabezado y al menos una fila de datos.</string>
     <string name="error_header_not_found">Formato inválido. No se pudieron identificar las columnas de fecha y valor en la hoja de cálculo.</string>
@@ -60,7 +60,7 @@
     <!-- Home Screen -->
     <string name="home_title">¿A Dónde Fue\nMi Dinero?</string>
     <string name="home_total_spending">GASTOS TOTALES</string>
-    <string name="home_period_label">Período: %s</string>
+    <string name="home_period_label">Período: %1$s</string>
     <string name="home_date_from">Desde</string>
     <string name="home_date_to">Hasta</string>
     <string name="home_date_placeholder">---</string>
@@ -98,7 +98,7 @@
     <string name="filter_label_period">Período</string>
     <string name="filter_label_category">Categoría</string>
     <string name="filter_category_all">Todas las categorías</string>
-    <string name="filter_category_selected">Categoría: %s</string>
+    <string name="filter_category_selected">Categoría: %1$s</string>
 
     <!-- Indicators -->
     <string name="home_patrimony">PATRIMONIO TOTAL</string>
@@ -106,9 +106,9 @@
 
     <!-- Import Progress -->
     <string name="import_loading_title">IMPORTANDO ARCHIVOS</string>
-    <string name="import_loading_current">Importando: %s</string>
+    <string name="import_loading_current">Importando: %1$s</string>
     <string name="import_loading_progress">%1$d de %2$d archivos</string>
-    <string name="import_loading_done">Completado: %s</string>
+    <string name="import_loading_done">Completado: %1$s</string>
 
     <!-- Home Screen -->
     <string name="home_total_earnings">INGRESOS TOTALES</string>
