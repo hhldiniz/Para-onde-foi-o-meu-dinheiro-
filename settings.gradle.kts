@@ -40,6 +40,16 @@ dependencyResolutionManagement {
             metadataSources { artifact() }
             content { includeModule("org.nodejs", "node") }
         }
+        // The Yarn package manager the wasmJs/js plugin also sets up
+        // alongside Node.js; same reasoning, same source for coordinates.
+        ivy("https://github.com/yarnpkg/yarn/releases/download") {
+            name = "Yarn Distributions at https://github.com/yarnpkg/yarn/releases/download"
+            patternLayout {
+                artifact("v[revision]/[artifact](-v[revision]).[ext]")
+            }
+            metadataSources { artifact() }
+            content { includeModule("com.yarnpkg", "yarn") }
+        }
     }
 }
 
