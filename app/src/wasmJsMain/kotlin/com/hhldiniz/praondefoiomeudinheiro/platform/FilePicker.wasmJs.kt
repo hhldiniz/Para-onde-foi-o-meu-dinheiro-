@@ -13,6 +13,7 @@ import kotlinx.coroutines.await
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.js.JsAny
+import kotlin.js.JsFun
 import org.w3c.dom.HTMLInputElement
 import org.w3c.files.File
 import org.w3c.files.FileList
