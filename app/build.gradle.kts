@@ -97,9 +97,8 @@ android {
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            // `optimization { }` is AGP 9 new-DSL only, which is disabled above.
+            isMinifyEnabled = false
         }
     }
     compileOptions {
