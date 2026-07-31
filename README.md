@@ -2,12 +2,12 @@
 
 *("Where did my money go?")*
 
-A native Android personal-finance app. Import a CSV/ODS/PDF file of income and expenses, and the app stores the parsed entries in a local database and visualizes them with pie and line charts. There's no backend — everything runs on-device.
+A Kotlin Multiplatform personal-finance app for **Android and iOS**. Import a CSV/ODS/PDF file of income and expenses, and the app stores the parsed entries in a local database and visualizes them with pie and line charts. There's no backend — everything runs on-device.
 
-- **Language:** Kotlin · **UI:** Jetpack Compose (Material 3)
-- **Persistence:** Room (local, unsynced)
+- **Language:** Kotlin Multiplatform · **UI:** Compose Multiplatform (Material 3), shared by both platforms
+- **Persistence:** Room KMP with the bundled SQLite driver (local, unsynced)
 - **DI:** Koin
-- **minSdk** 31 / **targetSdk & compileSdk** 37
+- **Android:** minSdk 31 / targetSdk & compileSdk 37 · **iOS:** deployment target 15.0
 
 ## User guide
 
@@ -40,14 +40,35 @@ Build tooling is the Gradle wrapper (`./gradlew`); there is no separate lint/for
 
 CI (`.github/workflows/ci.yml`) runs `testDebugUnitTest` on every push/PR to `master`/`main`.
 
+### iOS
+
+The iOS targets need a macOS host with Xcode; the Android target and the unit
+tests build on any platform.
+
+```bash
+# Build the shared framework for the simulator
+./gradlew :app:linkDebugFrameworkIosSimulatorArm64
+```
+
+Then open `iosApp/iosApp.xcodeproj` in Xcode and run. The project's first build
+phase invokes `:app:embedAndSignAppleFrameworkForXcode`, so Xcode rebuilds the
+Kotlin framework automatically.
+
 ## Architecture
 
-Standard layered structure under `app/src/main/java/com/hhldiniz/praondefoiomeudinheiro/`:
+Everything — business logic *and* the Compose UI — lives in
+`app/src/commonMain/kotlin/com/hhldiniz/praondefoiomeudinheiro/`, with
+`androidMain`/`iosMain` holding only the `actual` implementations of the few
+platform capabilities the shared code declares as `expect`:
 
 - **`data/local/`** — Room database, DAOs, and CSV/ODS/PDF parsing.
 - **`data/repository/`** — imported-entries CRUD/aggregation and the spreadsheet import pipeline.
-- **`domain/`** — plain models with no Android/Room dependency.
-- **`di/AppModule.kt`** — the single Koin module.
+- **`domain/`** — plain models plus the `PlatformFile`/`PlatformFolder` abstraction over picked files.
+- **`di/AppModule.kt`** — the shared Koin module (`platformModule` supplies the per-platform bindings).
+- **`platform/`** — the `expect` declarations: clock/time zone, file pickers, currency formatting, preferences.
 - **`presentation/`** — Compose screens grouped by feature (`landing`, `intro`, `home`, `addentry`, `settings`), each with a `XScreen.kt` + `XViewModel.kt` pair.
+
+`iosApp/` holds the Xcode project; it is a thin SwiftUI shell around the shared
+Compose UI.
 
 See [CLAUDE.md](CLAUDE.md) for the full architecture notes, spreadsheet import format, and Room schema details.
