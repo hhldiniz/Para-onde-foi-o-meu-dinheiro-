@@ -38,7 +38,6 @@ kotlin {
     // so this target gets a hand-rolled localStorage-backed persistence layer
     // instead (data/local/web/).
     wasmJs {
-        moduleName = "praondefoiomeudinheiro"
         browser {
             commonWebpackConfig {
                 outputFileName = "praondefoiomeudinheiro.js"
