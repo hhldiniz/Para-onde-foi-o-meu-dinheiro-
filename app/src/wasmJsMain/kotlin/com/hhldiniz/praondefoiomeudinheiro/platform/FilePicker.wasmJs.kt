@@ -13,7 +13,7 @@ import kotlinx.coroutines.await
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.js.JsAny
-import kotlin.js.JsFun
+import kotlin.js.Promise
 import org.w3c.dom.HTMLInputElement
 import org.w3c.files.File
 import org.w3c.files.FileList
@@ -21,11 +21,14 @@ import org.w3c.files.FileList
 /**
  * Reads a `File`'s bytes via a single `arrayBuffer()`/base64 round trip
  * instead of per-byte JS interop, which would be far too slow for anything
- * but the tiniest file.
+ * but the tiniest file. `kotlinx-browser`'s `File` binding has no typed
+ * `arrayBuffer()` member, so the call itself goes through `js(...)`.
  */
-@JsFun(
+private fun jsArrayBuffer(file: File): Promise<JsAny> = js("file.arrayBuffer()")
+
+private fun arrayBufferToBase64(buffer: JsAny): String = js(
     """
-    (buffer) => {
+    (function() {
         const bytes = new Uint8Array(buffer);
         let binary = '';
         const chunkSize = 0x8000;
@@ -33,14 +36,13 @@ import org.w3c.files.FileList
             binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
         }
         return btoa(binary);
-    }
+    })()
     """
 )
-private external fun arrayBufferToBase64(buffer: JsAny): String
 
 @OptIn(ExperimentalEncodingApi::class)
 private suspend fun File.readAllBytes(): ByteArray {
-    val buffer = arrayBuffer().await()
+    val buffer = jsArrayBuffer(this).await()
     return Base64.decode(arrayBufferToBase64(buffer))
 }
 

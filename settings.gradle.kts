@@ -63,5 +63,9 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Pra onde foi o meu dinheiro"
+// npm-safe (no spaces/uppercase): the wasmJs toolchain derives its root
+// package.json "name" field from this verbatim, and npm rejects the
+// original human-readable name. The app's actual display name lives in
+// app/src/androidMain/res/values/app_name.xml, unaffected by this.
+rootProject.name = "pra-onde-foi-o-meu-dinheiro"
 include(":app")

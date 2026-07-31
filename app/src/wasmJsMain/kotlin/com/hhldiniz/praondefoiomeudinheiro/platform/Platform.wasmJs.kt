@@ -2,16 +2,13 @@ package com.hhldiniz.praondefoiomeudinheiro.platform
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlin.js.JsFun
 
-@JsFun("() => Date.now()")
-private external fun jsNow(): Double
+private fun jsNow(): Double = js("Date.now()")
 
-@JsFun("(epochMillis) => new Date(epochMillis).getTimezoneOffset()")
-private external fun jsTimezoneOffsetMinutes(epochMillis: Double): Double
+private fun jsTimezoneOffsetMinutes(epochMillis: Double): Double =
+    js("new Date(epochMillis).getTimezoneOffset()")
 
-@JsFun("() => navigator.language || ''")
-private external fun jsNavigatorLanguage(): String
+private fun jsNavigatorLanguage(): String = js("navigator.language || ''")
 
 actual fun currentTimeMillis(): Long = jsNow().toLong()
 
