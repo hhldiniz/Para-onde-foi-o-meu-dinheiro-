@@ -42,7 +42,7 @@ private fun arrayBufferToBase64(buffer: JsAny): String = js(
 
 @OptIn(ExperimentalEncodingApi::class)
 private suspend fun File.readAllBytes(): ByteArray {
-    val buffer = jsArrayBuffer(this).await()
+    val buffer = jsArrayBuffer(this).await<JsAny>()
     return Base64.decode(arrayBufferToBase64(buffer))
 }
 
