@@ -1,7 +1,88 @@
+import org.jetbrains.compose.resources.ResourcesExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.application)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+}
+
+kotlin {
+    androidTarget {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.fromTarget(libs.versions.javaVersion.get()))
+        }
+    }
+
+    // Device (arm64) and Apple-silicon simulator (arm64); both produce the same
+    // `ComposeApp` framework consumed by the Xcode project in iosApp/. There is
+    // no iosX64 target because Compose Multiplatform stopped publishing for the
+    // Intel simulator.
+    // Note: these can only be *compiled* on a macOS host; the Android target
+    // (and therefore `testDebugUnitTest`) builds everywhere.
+    listOf(
+        iosArm64(),
+        iosSimulatorArm64(),
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ComposeApp"
+            isStatic = true
+        }
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(libs.compose.material.icons.core)
+            implementation(compose.ui)
+            implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
+
+            implementation(libs.kotlinx.coroutines.core)
+
+            implementation(libs.jetbrains.lifecycle.viewmodel)
+            implementation(libs.jetbrains.lifecycle.viewmodel.compose)
+            implementation(libs.jetbrains.lifecycle.runtime.compose)
+            implementation(libs.jetbrains.navigation.compose)
+
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
+
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
+        }
+
+        androidMain.dependencies {
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.documentfile)
+            implementation(libs.koin.android)
+            implementation(libs.pdfbox.android)
+        }
+
+        androidUnitTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.mockito.kotlin)
+            implementation(libs.androidx.arch.core.testing)
+        }
+
+        androidInstrumentedTest.dependencies {
+            implementation(libs.androidx.junit)
+            implementation(libs.androidx.espresso.core)
+            implementation(libs.pdfbox.android)
+            // AppDatabaseTest drives suspending DAO calls with runTest. This used
+            // to arrive transitively through compose ui-test-junit4, which these
+            // tests no longer need.
+            implementation(libs.kotlinx.coroutines.test)
+        }
+    }
 }
 
 android {
@@ -20,9 +101,8 @@ android {
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            // `optimization { }` is AGP 9 new-DSL only, which is disabled above.
+            isMinifyEnabled = false
         }
     }
     compileOptions {
@@ -34,40 +114,19 @@ android {
     }
 }
 
-dependencies {
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material.icons.core)
-    implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.mockito.kotlin)
-    testImplementation(libs.androidx.arch.core.testing)
-    testImplementation(libs.kxml2)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.documentfile)
-    implementation(libs.androidx.paging.runtime.ktx)
-    implementation(libs.androidx.paging.compose)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-    implementation(libs.koin.android)
-    implementation(libs.koin.androidx.compose)
-    implementation(libs.pdfbox.android)
-    androidTestImplementation(libs.pdfbox.android)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
-    debugImplementation(libs.androidx.compose.ui.tooling)
+compose.resources {
+    // Strings live in commonMain/composeResources and are reached through the
+    // generated `Res` class instead of Android's `R`, so the same lookups work
+    // on both platforms.
+    generateResClass = ResourcesExtension.ResourceClassGeneration.Always
+    packageOfResClass = "com.hhldiniz.praondefoiomeudinheiro.resources"
+}
 
+dependencies {
+    // Room's compiler has to run once per Kotlin target that compiles the DAOs.
+    add("kspAndroid", libs.androidx.room.compiler)
+    add("kspIosArm64", libs.androidx.room.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
+
+    debugImplementation(compose.uiTooling)
 }

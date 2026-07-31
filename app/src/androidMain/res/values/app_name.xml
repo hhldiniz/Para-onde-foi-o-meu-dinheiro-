@@ -1,0 +1,5 @@
+<resources>
+    <!-- Referenced from AndroidManifest.xml, which cannot read Compose resources.
+         Every other string lives in commonMain/composeResources. -->
+    <string name="app_name">Pra onde foi o meu dinheiro</string>
+</resources>
