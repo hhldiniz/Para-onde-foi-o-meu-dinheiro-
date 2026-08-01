@@ -2,6 +2,7 @@ package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hhldiniz.praondefoiomeudinheiro.data.local.OnboardingHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.defaultCategories
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -76,6 +77,7 @@ class IntroCategoriesViewModel(
                     .forEach { categoryRepository.deleteByName(it) }
                 categoryRepository.insertAll(selected.toList())
             }
+            OnboardingHolder.markCompleted()
             _uiState.value = _uiState.value.copy(confirmed = true)
         }
     }
