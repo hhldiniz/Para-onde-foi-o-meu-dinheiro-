@@ -24,7 +24,9 @@ object PdfBoxInitializer {
     }
 }
 
-actual fun extractPdfText(bytes: ByteArray): String =
+// `suspend` only to satisfy the common `expect` (wasmJs genuinely awaits a JS
+// Promise); PDFBox itself runs synchronously here, same as before.
+actual suspend fun extractPdfText(bytes: ByteArray): String =
     PDDocument.load(bytes.inputStream()).use { document ->
         PDFTextStripper().apply { sortByPosition = true }.getText(document)
     }

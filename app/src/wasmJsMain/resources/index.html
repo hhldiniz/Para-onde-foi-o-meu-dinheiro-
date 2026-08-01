@@ -15,6 +15,14 @@
     </style>
 </head>
 <body>
+    <!--
+      Defines window.praOndeExtractPdfText, used by PdfParser.wasmJs.kt.
+      A module script so it can `import()` pdf.js lazily; this file itself
+      is tiny (no pdf.js code), so loading it eagerly costs nothing, and the
+      ~1MB pdf.js library is only fetched the first time a user actually
+      picks a PDF.
+    -->
+    <script type="module" src="pdf-extract.js"></script>
     <script src="praondefoiomeudinheiro.js"></script>
 </body>
 </html>

@@ -96,7 +96,7 @@ object SpreadsheetFileValidator {
     }
 
     /** Picks the parser matching [fileName]'s extension (.ods / .pdf / else CSV). */
-    private fun parseByExtension(fileName: String, bytes: ByteArray): List<List<String>> {
+    private suspend fun parseByExtension(fileName: String, bytes: ByteArray): List<List<String>> {
         return when {
             fileName.endsWith(".ods", ignoreCase = true) -> OdsParser.parse(bytes)
             fileName.endsWith(".pdf", ignoreCase = true) -> PdfParser.parse(bytes)

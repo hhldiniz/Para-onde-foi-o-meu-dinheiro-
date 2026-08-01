@@ -6,6 +6,7 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -45,7 +46,7 @@ class PdfParserTest {
     }
 
     @Test
-    fun parse_splitsColumnsOnWideGaps() {
+    fun parse_splitsColumnsOnWideGaps() = runTest {
         val pdf = buildPdf(listOf("Data      Valor      Descricao      Categoria"))
         val result = PdfParser.parse(pdf)
 
@@ -54,7 +55,7 @@ class PdfParserTest {
     }
 
     @Test
-    fun parse_returnsOneRowPerLine() {
+    fun parse_returnsOneRowPerLine() = runTest {
         val pdf = buildPdf(
             listOf(
                 "Data      Valor      Descricao      Categoria",
@@ -68,7 +69,7 @@ class PdfParserTest {
     }
 
     @Test
-    fun parse_emptyDocument_returnsNoRows() {
+    fun parse_emptyDocument_returnsNoRows() = runTest {
         val document = PDDocument()
         document.addPage(PDPage())
         val output = ByteArrayOutputStream()
@@ -81,7 +82,7 @@ class PdfParserTest {
     }
 
     @Test
-    fun parse_singleSpacesWithinColumn_keepWordsTogether() {
+    fun parse_singleSpacesWithinColumn_keepWordsTogether() = runTest {
         val pdf = buildPdf(listOf("01/01/2024      Compra no Mercado      Alimentacao"))
         val result = PdfParser.parse(pdf)
 
@@ -89,7 +90,7 @@ class PdfParserTest {
     }
 
     @Test
-    fun parse_structuredTwoTableHeader_matchesExpectedColumnPositions() {
+    fun parse_structuredTwoTableHeader_matchesExpectedColumnPositions() = runTest {
         // Mirrors the app's real spreadsheet layout: a "Despesas" section label in
         // column 0, then Data/Valor/Descricao/Categoria for spending (index 1-4), a
         // "Renda" label in column 5, then the same four headers again for earnings
@@ -114,7 +115,7 @@ class PdfParserTest {
     }
 
     @Test
-    fun parse_multiPageDocument_returnsRowsFromAllPages() {
+    fun parse_multiPageDocument_returnsRowsFromAllPages() = runTest {
         val document = PDDocument()
         val firstPage = PDPage()
         val secondPage = PDPage()
