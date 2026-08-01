@@ -20,18 +20,33 @@ private const val STORAGE_KEY = "praondefoiomeudinheiro.imported_entries"
  * every mutation, which is fine at the scale of an imported spreadsheet.
  * Filtering/sorting/paging is re-implemented in plain Kotlin to match the
  * SQL queries [com.hhldiniz.praondefoiomeudinheiro.data.local.dao.RoomImportedEntryDao] runs.
+ *
+ * Unlike Room/SQLite, `localStorage` can throw at any time (quota exceeded,
+ * private-browsing/storage-partitioning restrictions, etc.). An uncaught
+ * throw here would propagate out of a DAO call and kill the caller's
+ * `viewModelScope.launch` coroutine mid-flight, silently dropping whatever
+ * UI-state update was meant to follow (e.g. clearing a saving spinner) even
+ * though the in-memory [state] had already been updated. Read/write failures
+ * are therefore caught and logged instead of thrown, so a `localStorage`
+ * hiccup degrades to in-memory-only persistence for that operation rather
+ * than making the whole action appear to silently do nothing.
  */
 class WebImportedEntryDao : ImportedEntryDao {
 
     private val state = MutableStateFlow(load())
 
     private fun load(): List<ImportedEntry> {
-        val raw = localStorage.getItem(STORAGE_KEY) ?: return emptyList()
-        return runCatching { Json.decodeFromString<List<ImportedEntry>>(raw) }.getOrDefault(emptyList())
+        val raw = runCatching { localStorage.getItem(STORAGE_KEY) }
+            .onFailure { logStorageError("load imported entries", it) }
+            .getOrNull() ?: return emptyList()
+        return runCatching { Json.decodeFromString<List<ImportedEntry>>(raw) }
+            .onFailure { logStorageError("decode imported entries", it) }
+            .getOrDefault(emptyList())
     }
 
     private fun persist(entries: List<ImportedEntry>) {
-        localStorage.setItem(STORAGE_KEY, Json.encodeToString(entries))
+        runCatching { localStorage.setItem(STORAGE_KEY, Json.encodeToString(entries)) }
+            .onFailure { logStorageError("persist imported entries", it) }
     }
 
     private fun ImportedEntry.dedupeKey() = listOf(dateMillis, amount, description, category, isExpense)
