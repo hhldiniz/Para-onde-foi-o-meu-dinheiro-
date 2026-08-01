@@ -12,18 +12,27 @@ import kotlinx.serialization.json.Json
 
 private const val STORAGE_KEY = "praondefoiomeudinheiro.categories"
 
-/** [CategoryDao] backed by `localStorage`; see [WebImportedEntryDao] for the persistence approach. */
+/**
+ * [CategoryDao] backed by `localStorage`; see [WebImportedEntryDao] for the
+ * persistence approach, including why read/write failures are caught and
+ * logged instead of thrown.
+ */
 class WebCategoryDao : CategoryDao {
 
     private val state = MutableStateFlow(load())
 
     private fun load(): List<Category> {
-        val raw = localStorage.getItem(STORAGE_KEY) ?: return emptyList()
-        return runCatching { Json.decodeFromString<List<Category>>(raw) }.getOrDefault(emptyList())
+        val raw = runCatching { localStorage.getItem(STORAGE_KEY) }
+            .onFailure { logStorageError("load categories", it) }
+            .getOrNull() ?: return emptyList()
+        return runCatching { Json.decodeFromString<List<Category>>(raw) }
+            .onFailure { logStorageError("decode categories", it) }
+            .getOrDefault(emptyList())
     }
 
     private fun persist(categories: List<Category>) {
-        localStorage.setItem(STORAGE_KEY, Json.encodeToString(categories))
+        runCatching { localStorage.setItem(STORAGE_KEY, Json.encodeToString(categories)) }
+            .onFailure { logStorageError("persist categories", it) }
     }
 
     override fun getAll(): Flow<List<Category>> = state.map { it.sortedBy(Category::name) }
