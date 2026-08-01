@@ -8,7 +8,9 @@ import platform.PDFKit.PDFDocument
  * here (Android uses PDFBox). `PDFDocument.string` already returns the text in
  * reading order, which is what [PdfParser] expects.
  */
-actual fun extractPdfText(bytes: ByteArray): String {
+// `suspend` only to satisfy the common `expect` (wasmJs genuinely awaits a JS
+// Promise); PDFKit itself runs synchronously here, same as before.
+actual suspend fun extractPdfText(bytes: ByteArray): String {
     // `initWithData:` returns nil for anything PDFKit cannot open.
     val document: PDFDocument? = PDFDocument(data = bytes.toNSData())
     return document?.string ?: ""
