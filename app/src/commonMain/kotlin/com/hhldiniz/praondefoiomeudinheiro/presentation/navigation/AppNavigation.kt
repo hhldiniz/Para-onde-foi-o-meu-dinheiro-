@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.hhldiniz.praondefoiomeudinheiro.data.local.OnboardingHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry.AddEntryScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home.HomeScreen
@@ -37,7 +38,12 @@ fun AppNavigation() {
         val count = withContext(ioDispatcher) {
             importRepository.count()
         }
-        startDestination = if (count > 0) Screen.Home.route else Screen.IntroPatrimony.route
+        // count() alone would send a user who finished onboarding (patrimony
+        // + categories) but hasn't added an entry yet straight back to
+        // onboarding on every reload/restart, even though that onboarding
+        // data is correctly persisted.
+        val onboardingDone = count > 0 || OnboardingHolder.completed.value
+        startDestination = if (onboardingDone) Screen.Home.route else Screen.IntroPatrimony.route
     }
 
     val destination = startDestination

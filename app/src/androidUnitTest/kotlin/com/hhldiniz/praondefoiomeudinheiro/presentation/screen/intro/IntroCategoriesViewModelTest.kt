@@ -2,7 +2,9 @@ package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.viewModelScope
+import com.hhldiniz.praondefoiomeudinheiro.data.local.OnboardingHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.defaultCategories
+import com.hhldiniz.praondefoiomeudinheiro.data.local.prefs.InMemoryKeyValueStore
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -47,6 +49,7 @@ class IntroCategoriesViewModelTest {
     fun tearDown() {
         viewModel.viewModelScope.cancel()
         Dispatchers.resetMain()
+        OnboardingHolder.init(InMemoryKeyValueStore())
     }
 
     @Test
@@ -131,5 +134,15 @@ class IntroCategoriesViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(viewModel.uiState.value.confirmed)
+    }
+
+    @Test
+    fun onContinue_marksOnboardingCompleted() = runTest {
+        OnboardingHolder.init(InMemoryKeyValueStore())
+
+        viewModel.onContinue()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(OnboardingHolder.completed.value)
     }
 }

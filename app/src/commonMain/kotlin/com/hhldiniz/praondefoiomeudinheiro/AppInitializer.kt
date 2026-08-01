@@ -1,6 +1,7 @@
 package com.hhldiniz.praondefoiomeudinheiro
 
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.OnboardingHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.PatrimonyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.prefs.createKeyValueStore
 import com.hhldiniz.praondefoiomeudinheiro.di.appModule
@@ -23,6 +24,7 @@ object AppInitializer {
 
         CurrencyHolder.init(createKeyValueStore(CurrencyHolder.PREFS_NAME))
         PatrimonyHolder.init(createKeyValueStore(PatrimonyHolder.PREFS_NAME))
+        OnboardingHolder.init(createKeyValueStore(OnboardingHolder.PREFS_NAME))
 
         startKoin {
             platformConfig()
