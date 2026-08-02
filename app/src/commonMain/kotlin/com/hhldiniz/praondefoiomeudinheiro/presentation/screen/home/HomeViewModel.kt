@@ -6,6 +6,7 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.PatrimonyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.SelectedFilesHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.TransactionValueParser
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
@@ -16,12 +17,9 @@ import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.domain.repository.SpreadsheetRepository
 import com.hhldiniz.praondefoiomeudinheiro.platform.currentRegionCode
 import com.hhldiniz.praondefoiomeudinheiro.platform.currentTimeMillis
-import com.hhldiniz.praondefoiomeudinheiro.util.CivilDate
-import com.hhldiniz.praondefoiomeudinheiro.util.daysInMonth
 import com.hhldiniz.praondefoiomeudinheiro.util.isoWeekOfYear
 import com.hhldiniz.praondefoiomeudinheiro.util.localDateOf
 import com.hhldiniz.praondefoiomeudinheiro.util.minusMonths
-import com.hhldiniz.praondefoiomeudinheiro.util.startOfDayMillis
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,15 +50,6 @@ private data class LoadResult(
     val earnings: List<ParsedEntry>,
     val errors: List<String>,
     val rawAmounts: List<String>,
-)
-
-/** How the numeric fields of a recognized date string are ordered. */
-private enum class DateFieldOrder { DAY_MONTH_YEAR, YEAR_MONTH_DAY, MONTH_DAY_YEAR }
-
-private class DatePattern(
-    val shape: Regex,
-    val order: DateFieldOrder,
-    val twoDigitYear: Boolean = false,
 )
 
 private fun ImportedEntry.toParsedEntry() = ParsedEntry(dateMillis, amount, description, category)
@@ -124,17 +113,6 @@ class HomeViewModel(
 
     /** Bumped whenever the filter changes, so a page that is still loading is discarded. */
     private var entriesGeneration = 0
-
-    // Each pattern is paired with a shape regex so parseDate only attempts orders whose
-    // shape the string could plausibly match. Ordering matters: the day-first forms are
-    // tried before the American month-first one, so "01/02/2024" stays 1 February.
-    private val dateFormats = listOf(
-        DatePattern(Regex("""^\d{1,2}/\d{1,2}/\d{4}$"""), DateFieldOrder.DAY_MONTH_YEAR),
-        DatePattern(Regex("""^\d{2}/\d{2}/\d{2}$"""), DateFieldOrder.DAY_MONTH_YEAR, twoDigitYear = true),
-        DatePattern(Regex("""^\d{4}-\d{2}-\d{2}$"""), DateFieldOrder.YEAR_MONTH_DAY),
-        DatePattern(Regex("""^\d{4}/\d{2}/\d{2}$"""), DateFieldOrder.YEAR_MONTH_DAY),
-        DatePattern(Regex("""^\d{2}/\d{2}/\d{4}$"""), DateFieldOrder.MONTH_DAY_YEAR),
-    )
 
     init {
         viewModelScope.launch {
@@ -660,45 +638,14 @@ class HomeViewModel(
         }
     }
 
-    private fun parseDate(dateStr: String): Long? {
-        val trimmed = dateStr.trim()
-        for (pattern in dateFormats) {
-            if (!pattern.shape.matches(trimmed)) continue
-            val parts = trimmed.split('/', '-').mapNotNull { it.toIntOrNull() }
-            if (parts.size != 3) continue
-            val date = when (pattern.order) {
-                DateFieldOrder.DAY_MONTH_YEAR -> CivilDate(parts[2], parts[1], parts[0])
-                DateFieldOrder.YEAR_MONTH_DAY -> CivilDate(parts[0], parts[1], parts[2])
-                DateFieldOrder.MONTH_DAY_YEAR -> CivilDate(parts[2], parts[0], parts[1])
-            }
-            // Two-digit years resolve into 2000..2099, matching the previous
-            // DateTimeFormatter("yy") behaviour.
-            val year = if (pattern.twoDigitYear) 2000 + date.year else date.year
-            if (date.month !in 1..12) continue
-            if (date.day !in 1..daysInMonth(year, date.month)) continue
-            return startOfDayMillis(year, date.month, date.day)
-        }
-        return null
-    }
+    // Both parsers live in TransactionValueParser, shared with the automatic
+    // importer, so the two import paths agree on what counts as a date and an
+    // amount. It reads every shape this screen used to handle, plus the ones
+    // an arbitrary statement can throw at it (named months, `1.234,56`,
+    // parentheses for negatives).
+    private fun parseDate(dateStr: String): Long? = TransactionValueParser.parseDate(dateStr)
 
-    private fun parseAmount(amountStr: String): Double? {
-        val cleaned = amountStr.trim()
-            .replace(Regex("R\\$|[€£\\$]"), "")
-            .trim()
-        return when {
-            cleaned.contains(",") && cleaned.contains(".") -> {
-                val dotLast = cleaned.lastIndexOf('.')
-                val commaLast = cleaned.lastIndexOf(',')
-                if (commaLast > dotLast) {
-                    cleaned.replace(".", "").replace(",", ".").toDoubleOrNull()
-                } else {
-                    cleaned.replace(",", "").toDoubleOrNull()
-                }
-            }
-            cleaned.contains(",") -> cleaned.replace(",", ".").toDoubleOrNull()
-            else -> cleaned.toDoubleOrNull()
-        }
-    }
+    private fun parseAmount(amountStr: String): Double? = TransactionValueParser.parseAmount(amountStr)
 
     private companion object {
         const val ENTRIES_PAGE_SIZE = 30

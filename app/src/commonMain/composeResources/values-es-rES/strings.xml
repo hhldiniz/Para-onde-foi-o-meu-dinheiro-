@@ -156,4 +156,37 @@
     <string name="category_freelance">Freelance</string>
     <string name="category_investimentos">Inversiones</string>
     <string name="category_outros">Otros</string>
+
+    <!-- Smart (computer-vision) import -->
+    <string name="home_menu_smart_import">Importación inteligente (foto)</string>
+    <string name="smart_import_title">Importación Inteligente</string>
+    <string name="smart_import_intro">Elige una foto, una captura o un archivo. La app reconoce el texto en tu propio dispositivo e identifica sola las columnas de fecha, importe, descripción y categoría, sin depender de un formato concreto.</string>
+    <string name="smart_import_btn_pick">ELEGIR IMAGEN O ARCHIVO</string>
+    <string name="smart_import_btn_pick_another">ELEGIR OTRO ARCHIVO</string>
+    <string name="smart_import_analyzing">Analizando %1$s...</string>
+    <string name="smart_import_analyzing_hint">El reconocimiento ocurre en tu dispositivo. No se envía nada a internet.</string>
+    <string name="smart_import_source_image">IMAGEN</string>
+    <string name="smart_import_source_csv">CSV</string>
+    <string name="smart_import_source_ods">ODS</string>
+    <string name="smart_import_source_pdf">PDF</string>
+    <string name="smart_import_summary">%1$d filas analizadas · %2$d%% de confianza</string>
+    <string name="smart_import_mapping_title">COLUMNAS IDENTIFICADAS</string>
+    <string name="smart_import_mapping_item">%1$s · columna %2$d · %3$d%%</string>
+    <string name="smart_import_field_date">FECHA</string>
+    <string name="smart_import_field_amount">IMPORTE</string>
+    <string name="smart_import_field_credit">CRÉDITO</string>
+    <string name="smart_import_field_description">DESCRIPCIÓN</string>
+    <string name="smart_import_field_category">CATEGORÍA</string>
+    <string name="smart_import_field_type">TIPO</string>
+    <string name="smart_import_low_confidence">Confianza baja: revisa los elementos antes de importar.</string>
+    <string name="smart_import_review_title">ELEMENTOS ENCONTRADOS (%1$d)</string>
+    <string name="smart_import_toggle_hint">Toca un elemento para incluirlo o excluirlo, y su etiqueta para cambiar entre gasto e ingreso.</string>
+    <string name="smart_import_btn_import">IMPORTAR %1$d ELEMENTOS</string>
+    <string name="smart_import_no_category">sin categoría</string>
+    <string name="smart_import_error_no_transactions">No se pudieron identificar movimientos en este archivo. Prueba con una imagen más nítida o usa la importación directa.</string>
+    <string name="smart_import_error_failed">No se pudo analizar el archivo: %1$s</string>
+    <string name="smart_import_done_title">IMPORTACIÓN COMPLETADA</string>
+    <string name="smart_import_done_summary">%1$d movimientos importados · %2$d duplicados omitidos</string>
+    <string name="smart_import_done_categories">%1$d categoría(s) nueva(s) creada(s)</string>
+    <string name="smart_import_btn_done">VOLVER AL RESUMEN</string>
 </resources>

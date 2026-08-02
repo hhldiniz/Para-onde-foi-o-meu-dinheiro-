@@ -107,6 +107,7 @@ import com.hhldiniz.praondefoiomeudinheiro.resources.home_filter_content_descrip
 import com.hhldiniz.praondefoiomeudinheiro.resources.home_menu_add_manually
 import com.hhldiniz.praondefoiomeudinheiro.resources.home_menu_import_file
 import com.hhldiniz.praondefoiomeudinheiro.resources.home_menu_import_folder
+import com.hhldiniz.praondefoiomeudinheiro.resources.home_menu_smart_import
 import com.hhldiniz.praondefoiomeudinheiro.resources.home_patrimony
 import com.hhldiniz.praondefoiomeudinheiro.resources.home_period_label
 import com.hhldiniz.praondefoiomeudinheiro.resources.home_remaining_balance
@@ -131,6 +132,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     onNavigateToSettings: () -> Unit = {},
     onNavigateToAddEntry: () -> Unit = {},
+    onNavigateToSmartImport: () -> Unit = {},
     refreshKey: Int = 0,
 ) {
     val filePicker = rememberSpreadsheetFilePicker { file -> viewModel.importFile(file) }
@@ -168,6 +170,7 @@ fun HomeScreen(
         debugMessage = uiState.debugMessage,
         onNavigateToSettings = onNavigateToSettings,
         onNavigateToAddEntry = onNavigateToAddEntry,
+        onNavigateToSmartImport = onNavigateToSmartImport,
         entries = entries,
         hasMoreEntries = hasMoreEntries,
         onLoadMoreEntries = viewModel::loadMoreEntries,
@@ -207,6 +210,7 @@ private fun HomeContent(
     debugMessage: String? = null,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToAddEntry: () -> Unit = {},
+    onNavigateToSmartImport: () -> Unit = {},
     entries: List<EntryDisplay>,
     hasMoreEntries: Boolean,
     onLoadMoreEntries: () -> Unit,
@@ -268,6 +272,13 @@ private fun HomeContent(
                             onClick = {
                                 showImportMenu = false
                                 onImportFolder()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.home_menu_smart_import)) },
+                            onClick = {
+                                showImportMenu = false
+                                onNavigateToSmartImport()
                             }
                         )
                     }

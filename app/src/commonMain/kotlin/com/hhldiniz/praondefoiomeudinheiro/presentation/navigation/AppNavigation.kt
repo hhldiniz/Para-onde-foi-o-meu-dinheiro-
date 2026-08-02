@@ -23,6 +23,7 @@ import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro.IntroCatego
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro.IntroPatrimonyScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.landing.LandingScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.settings.SettingsScreen
+import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.smartimport.SmartImportScreen
 import kotlinx.coroutines.withContext
 import com.hhldiniz.praondefoiomeudinheiro.platform.ioDispatcher
 import org.koin.compose.koinInject
@@ -95,6 +96,7 @@ fun AppNavigation() {
             HomeScreen(
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigateToAddEntry = { navController.navigate(Screen.AddEntry.route) },
+                onNavigateToSmartImport = { navController.navigate(Screen.SmartImport.route) },
                 refreshKey = refreshKey,
             )
         }
@@ -102,6 +104,17 @@ fun AppNavigation() {
         composable(Screen.Settings.route) {
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.SmartImport.route) {
+            SmartImportScreen(
+                onNavigateBack = {
+                    // Same refresh handshake AddEntry uses: Home has no shared
+                    // ViewModel with this screen, so it reloads on return.
+                    refreshKey++
+                    navController.popBackStack()
+                }
             )
         }
 

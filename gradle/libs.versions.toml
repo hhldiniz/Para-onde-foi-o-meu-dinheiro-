@@ -25,6 +25,9 @@ documentFile = "1.1.0"
 mockitoKotlin = "5.4.0"
 archCoreTesting = "2.2.0"
 pdfboxAndroid = "2.0.27.0"
+# ML Kit's bundled Latin text recognizer, used by the automatic (image)
+# import on Android. The model ships in the APK, so OCR runs offline.
+mlkitTextRecognition = "16.0.1"
 compileSdk = "37"
 minSdk = "31"
 targetSdk = "37"
@@ -56,6 +59,7 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
 androidx-arch-core-testing = { group = "androidx.arch.core", name = "core-testing", version.ref = "archCoreTesting" }
 pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
+mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-browser = { group = "org.jetbrains.kotlinx", name = "kotlinx-browser", version.ref = "kotlinxBrowser" }
 

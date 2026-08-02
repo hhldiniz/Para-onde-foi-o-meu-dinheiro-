@@ -19,3 +19,12 @@ expect fun rememberSpreadsheetFilePicker(onPicked: (PlatformFile) -> Unit): Pick
 /** Remembers a system folder picker; the callback receives the chosen directory. */
 @Composable
 expect fun rememberSpreadsheetFolderPicker(onPicked: (PlatformFolder) -> Unit): PickerLauncher
+
+/**
+ * Remembers a picker for the automatic importer, which accepts images (a photo
+ * or screenshot of a statement) *as well as* the spreadsheet formats — the
+ * classifier behind it treats both the same way, so there is no reason to make
+ * the user choose the right kind of file up front.
+ */
+@Composable
+expect fun rememberImportSourcePicker(onPicked: (PlatformFile) -> Unit): PickerLauncher

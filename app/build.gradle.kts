@@ -93,6 +93,7 @@ kotlin {
             implementation(libs.androidx.documentfile)
             implementation(libs.koin.android)
             implementation(libs.pdfbox.android)
+            implementation(libs.mlkit.text.recognition)
         }
 
         iosMain.get().dependsOn(roomMain)

@@ -34,8 +34,18 @@ interface PlatformFolder {
 /** File extensions the importer understands, used by both folder pickers. */
 val SPREADSHEET_EXTENSIONS = listOf(".csv", ".ods", ".pdf")
 
+/**
+ * Image extensions the automatic (computer-vision) importer accepts — a photo
+ * of a statement or a screenshot of a banking app, read on-device by
+ * [com.hhldiniz.praondefoiomeudinheiro.platform.recognizeDocumentText].
+ */
+val IMAGE_EXTENSIONS = listOf(".png", ".jpg", ".jpeg", ".webp", ".bmp", ".heic", ".heif")
+
 fun String.hasSpreadsheetExtension(): Boolean =
     SPREADSHEET_EXTENSIONS.any { endsWith(it, ignoreCase = true) }
+
+fun String.hasImageExtension(): Boolean =
+    IMAGE_EXTENSIONS.any { endsWith(it, ignoreCase = true) }
 
 /** A [PlatformFile] backed by a byte array; used by tests and Compose previews. */
 class InMemoryPlatformFile(
