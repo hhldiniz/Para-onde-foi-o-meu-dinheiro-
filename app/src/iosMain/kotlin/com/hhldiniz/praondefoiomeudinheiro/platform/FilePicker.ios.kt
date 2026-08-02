@@ -13,6 +13,7 @@ import platform.UIKit.UIDocumentPickerViewController
 import platform.UIKit.UIViewController
 import platform.UniformTypeIdentifiers.UTTypeCommaSeparatedText
 import platform.UniformTypeIdentifiers.UTTypeFolder
+import platform.UniformTypeIdentifiers.UTTypeImage
 import platform.UniformTypeIdentifiers.UTTypePDF
 import platform.UniformTypeIdentifiers.UTTypeSpreadsheet
 import platform.darwin.NSObject
@@ -45,6 +46,29 @@ actual fun rememberSpreadsheetFilePicker(onPicked: (PlatformFile) -> Unit): Pick
             presentPicker(
                 UIDocumentPickerViewController(
                     forOpeningContentTypes = listOf(
+                        UTTypeCommaSeparatedText,
+                        UTTypeSpreadsheet,
+                        UTTypePDF,
+                    ),
+                ),
+                delegate,
+            )
+        }
+    }
+}
+
+@Composable
+actual fun rememberImportSourcePicker(onPicked: (PlatformFile) -> Unit): PickerLauncher {
+    val currentOnPicked by rememberUpdatedState(onPicked)
+    val delegate = remember {
+        DocumentPickerDelegate { url -> currentOnPicked(IosPlatformFile(url)) }
+    }
+    return remember(delegate) {
+        PickerLauncher {
+            presentPicker(
+                UIDocumentPickerViewController(
+                    forOpeningContentTypes = listOf(
+                        UTTypeImage,
                         UTTypeCommaSeparatedText,
                         UTTypeSpreadsheet,
                         UTTypePDF,

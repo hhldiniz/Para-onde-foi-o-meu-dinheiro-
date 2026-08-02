@@ -8,4 +8,5 @@ sealed class Screen(val route: String) {
     data object Home : Screen("home")
     data object Settings : Screen("settings")
     data object AddEntry : Screen("add_entry")
+    data object SmartImport : Screen("smart_import")
 }

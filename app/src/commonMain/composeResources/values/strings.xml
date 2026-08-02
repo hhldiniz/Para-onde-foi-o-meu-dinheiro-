@@ -154,4 +154,37 @@
     <string name="category_freelance">Freelance</string>
     <string name="category_investimentos">Investimentos</string>
     <string name="category_outros">Outros</string>
+
+    <!-- Smart (computer-vision) import -->
+    <string name="home_menu_smart_import">Importação inteligente (foto)</string>
+    <string name="smart_import_title">Importação Inteligente</string>
+    <string name="smart_import_intro">Escolha uma foto, print ou arquivo. O app reconhece o texto no próprio aparelho e identifica sozinho as colunas de data, valor, descrição e categoria — sem depender de um formato específico.</string>
+    <string name="smart_import_btn_pick">ESCOLHER IMAGEM OU ARQUIVO</string>
+    <string name="smart_import_btn_pick_another">ESCOLHER OUTRO ARQUIVO</string>
+    <string name="smart_import_analyzing">Analisando %1$s...</string>
+    <string name="smart_import_analyzing_hint">O reconhecimento acontece no seu aparelho. Nada é enviado para a internet.</string>
+    <string name="smart_import_source_image">IMAGEM</string>
+    <string name="smart_import_source_csv">CSV</string>
+    <string name="smart_import_source_ods">ODS</string>
+    <string name="smart_import_source_pdf">PDF</string>
+    <string name="smart_import_summary">%1$d linhas analisadas · confiança de %2$d%%</string>
+    <string name="smart_import_mapping_title">COLUNAS IDENTIFICADAS</string>
+    <string name="smart_import_mapping_item">%1$s · coluna %2$d · %3$d%%</string>
+    <string name="smart_import_field_date">DATA</string>
+    <string name="smart_import_field_amount">VALOR</string>
+    <string name="smart_import_field_credit">CRÉDITO</string>
+    <string name="smart_import_field_description">DESCRIÇÃO</string>
+    <string name="smart_import_field_category">CATEGORIA</string>
+    <string name="smart_import_field_type">TIPO</string>
+    <string name="smart_import_low_confidence">Confiança baixa: confira os itens antes de importar.</string>
+    <string name="smart_import_review_title">ITENS ENCONTRADOS (%1$d)</string>
+    <string name="smart_import_toggle_hint">Toque no item para incluir ou excluir, e na etiqueta para alternar entre gasto e renda.</string>
+    <string name="smart_import_btn_import">IMPORTAR %1$d ITENS</string>
+    <string name="smart_import_no_category">sem categoria</string>
+    <string name="smart_import_error_no_transactions">Não foi possível identificar movimentações nesse arquivo. Tente uma imagem mais nítida ou use a importação direta.</string>
+    <string name="smart_import_error_failed">Falha ao analisar o arquivo: %1$s</string>
+    <string name="smart_import_done_title">IMPORTAÇÃO CONCLUÍDA</string>
+    <string name="smart_import_done_summary">%1$d movimentações importadas · %2$d duplicadas ignoradas</string>
+    <string name="smart_import_done_categories">%1$d categoria(s) nova(s) criada(s)</string>
+    <string name="smart_import_btn_done">VOLTAR AO RESUMO</string>
 </resources>

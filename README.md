@@ -2,7 +2,7 @@
 
 *("Where did my money go?")*
 
-A Kotlin Multiplatform personal-finance app for **Android and iOS**. Import a CSV/ODS/PDF file of income and expenses, and the app stores the parsed entries in a local database and visualizes them with pie and line charts. There's no backend — everything runs on-device.
+A Kotlin Multiplatform personal-finance app for **Android and iOS**. Import a CSV/ODS/PDF file of income and expenses — or a photo/screenshot of a statement, which the automatic importer reads on-device and maps to columns by itself — and the app stores the parsed entries in a local database and visualizes them with pie and line charts. There's no backend — everything runs on-device.
 
 - **Language:** Kotlin Multiplatform · **UI:** Compose Multiplatform (Material 3), shared by both platforms
 - **Persistence:** Room KMP with the bundled SQLite driver (local, unsynced)
@@ -63,6 +63,7 @@ platform capabilities the shared code declares as `expect`:
 
 - **`data/local/`** — Room database, DAOs, and CSV/ODS/PDF parsing.
 - **`data/repository/`** — imported-entries CRUD/aggregation and the spreadsheet import pipeline.
+- **`data/vision/`** — the automatic importer: on-device text recognition → document layout analysis → column classification.
 - **`domain/`** — plain models plus the `PlatformFile`/`PlatformFolder` abstraction over picked files.
 - **`di/AppModule.kt`** — the shared Koin module (`platformModule` supplies the per-platform bindings).
 - **`platform/`** — the `expect` declarations: clock/time zone, file pickers, currency formatting, preferences.

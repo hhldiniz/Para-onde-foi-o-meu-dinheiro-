@@ -15,6 +15,9 @@ import com.hhldiniz.praondefoiomeudinheiro.domain.file.PlatformFolder
 /** MIME filter for the document picker; the app sniffs the real format by extension. */
 private val DOCUMENT_MIME_TYPES = arrayOf("text/*", "*/*")
 
+/** Same, plus images, for the automatic importer. */
+private val IMPORT_SOURCE_MIME_TYPES = arrayOf("image/*", "application/pdf", "text/*", "*/*")
+
 @Composable
 actual fun rememberSpreadsheetFilePicker(onPicked: (PlatformFile) -> Unit): PickerLauncher {
     val context = LocalContext.current
@@ -30,6 +33,23 @@ actual fun rememberSpreadsheetFilePicker(onPicked: (PlatformFile) -> Unit): Pick
     }
 
     return remember(launcher) { PickerLauncher { launcher.launch(DOCUMENT_MIME_TYPES) } }
+}
+
+@Composable
+actual fun rememberImportSourcePicker(onPicked: (PlatformFile) -> Unit): PickerLauncher {
+    val context = LocalContext.current
+    val currentOnPicked by rememberUpdatedState(onPicked)
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            takePersistableReadPermission(context, uri)
+            currentOnPicked(AndroidPlatformFile(context, uri))
+        }
+    }
+
+    return remember(launcher) { PickerLauncher { launcher.launch(IMPORT_SOURCE_MIME_TYPES) } }
 }
 
 @Composable

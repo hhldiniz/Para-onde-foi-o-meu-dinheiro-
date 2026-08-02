@@ -23,6 +23,13 @@
       picks a PDF.
     -->
     <script type="module" src="pdf-extract.js"></script>
+    <!--
+      Defines window.praOndeRecognizeText, used by TextRecognizer.wasmJs.kt for
+      the automatic (image) import. Same arrangement as pdf-extract.js above:
+      tiny by itself, and it only pulls Tesseract.js from the CDN once an image
+      is actually picked.
+    -->
+    <script type="module" src="ocr-extract.js"></script>
     <script src="praondefoiomeudinheiro.js"></script>
 </body>
 </html>

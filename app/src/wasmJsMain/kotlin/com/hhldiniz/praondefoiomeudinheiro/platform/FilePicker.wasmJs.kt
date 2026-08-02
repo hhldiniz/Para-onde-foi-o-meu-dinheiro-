@@ -66,7 +66,7 @@ private class WebPlatformFolder(
         files.filter { it.name.hasSpreadsheetExtension() }.map { WebPlatformFile(it) }
 }
 
-private fun createFileInput(directory: Boolean): HTMLInputElement {
+private fun createFileInput(directory: Boolean, accept: String = SPREADSHEET_EXTENSIONS.joinToString(",")): HTMLInputElement {
     val input = document.createElement("input") as HTMLInputElement
     input.type = "file"
     if (directory) {
@@ -75,7 +75,7 @@ private fun createFileInput(directory: Boolean): HTMLInputElement {
         input.setAttribute("webkitdirectory", "")
         input.setAttribute("directory", "")
     } else {
-        input.accept = SPREADSHEET_EXTENSIONS.joinToString(",")
+        input.accept = accept
     }
     input.style.display = "none"
     document.body?.appendChild(input)
@@ -89,6 +89,25 @@ actual fun rememberSpreadsheetFilePicker(onPicked: (PlatformFile) -> Unit): Pick
     // launch) so repeated picks don't accumulate duplicate listeners.
     val input = remember {
         createFileInput(directory = false).also { element ->
+            element.addEventListener("change", {
+                element.files?.toList()?.firstOrNull()?.let { currentOnPicked(WebPlatformFile(it)) }
+            })
+        }
+    }
+    return remember(input) {
+        PickerLauncher {
+            input.value = ""
+            input.click()
+        }
+    }
+}
+
+@Composable
+actual fun rememberImportSourcePicker(onPicked: (PlatformFile) -> Unit): PickerLauncher {
+    val currentOnPicked by rememberUpdatedState(onPicked)
+    val input = remember {
+        val accept = (listOf("image/*") + SPREADSHEET_EXTENSIONS).joinToString(",")
+        createFileInput(directory = false, accept = accept).also { element ->
             element.addEventListener("change", {
                 element.files?.toList()?.firstOrNull()?.let { currentOnPicked(WebPlatformFile(it)) }
             })

@@ -156,4 +156,37 @@
     <string name="category_freelance">Freelance</string>
     <string name="category_investimentos">Investments</string>
     <string name="category_outros">Other</string>
+
+    <!-- Smart (computer-vision) import -->
+    <string name="home_menu_smart_import">Smart import (photo)</string>
+    <string name="smart_import_title">Smart Import</string>
+    <string name="smart_import_intro">Pick a photo, a screenshot or a file. The app reads the text on your device and works out the date, amount, description and category columns by itself — no specific format required.</string>
+    <string name="smart_import_btn_pick">CHOOSE IMAGE OR FILE</string>
+    <string name="smart_import_btn_pick_another">CHOOSE ANOTHER FILE</string>
+    <string name="smart_import_analyzing">Analyzing %1$s...</string>
+    <string name="smart_import_analyzing_hint">Recognition runs on your device. Nothing is uploaded.</string>
+    <string name="smart_import_source_image">IMAGE</string>
+    <string name="smart_import_source_csv">CSV</string>
+    <string name="smart_import_source_ods">ODS</string>
+    <string name="smart_import_source_pdf">PDF</string>
+    <string name="smart_import_summary">%1$d rows analyzed · %2$d%% confidence</string>
+    <string name="smart_import_mapping_title">DETECTED COLUMNS</string>
+    <string name="smart_import_mapping_item">%1$s · column %2$d · %3$d%%</string>
+    <string name="smart_import_field_date">DATE</string>
+    <string name="smart_import_field_amount">AMOUNT</string>
+    <string name="smart_import_field_credit">CREDIT</string>
+    <string name="smart_import_field_description">DESCRIPTION</string>
+    <string name="smart_import_field_category">CATEGORY</string>
+    <string name="smart_import_field_type">TYPE</string>
+    <string name="smart_import_low_confidence">Low confidence: check the items before importing.</string>
+    <string name="smart_import_review_title">ITEMS FOUND (%1$d)</string>
+    <string name="smart_import_toggle_hint">Tap an item to include or exclude it, and its tag to switch between expense and income.</string>
+    <string name="smart_import_btn_import">IMPORT %1$d ITEMS</string>
+    <string name="smart_import_no_category">no category</string>
+    <string name="smart_import_error_no_transactions">No transactions could be identified in this file. Try a sharper image or use the direct import.</string>
+    <string name="smart_import_error_failed">Could not analyze the file: %1$s</string>
+    <string name="smart_import_done_title">IMPORT COMPLETE</string>
+    <string name="smart_import_done_summary">%1$d transactions imported · %2$d duplicates skipped</string>
+    <string name="smart_import_done_categories">%1$d new category(ies) created</string>
+    <string name="smart_import_btn_done">BACK TO SUMMARY</string>
 </resources>
