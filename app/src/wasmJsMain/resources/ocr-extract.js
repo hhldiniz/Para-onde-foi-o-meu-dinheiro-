@@ -26,14 +26,25 @@ let workerPromise = null;
 // data is by far the slowest part of a recognition, and it only happens once.
 function loadWorker() {
     if (!workerPromise) {
-        workerPromise = import(`${TESSERACT_BASE}/dist/tesseract.esm.min.js`).then((module) => {
-            const tesseract = module.default || module;
-            return tesseract.createWorker(LANGUAGES, 1, {
-                workerPath: `${TESSERACT_BASE}/dist/worker.min.js`,
-                corePath: TESSERACT_CORE_BASE,
-                langPath: TESSDATA_BASE,
+        workerPromise = import(`${TESSERACT_BASE}/dist/tesseract.esm.min.js`)
+            .then((module) => {
+                const tesseract = typeof module.createWorker === "function" ? module : module.default;
+                if (!tesseract || typeof tesseract.createWorker !== "function") {
+                    throw new Error(`Tesseract.js loaded from ${TESSERACT_BASE} without a usable createWorker export`);
+                }
+                return tesseract.createWorker(LANGUAGES, 1, {
+                    workerPath: `${TESSERACT_BASE}/dist/worker.min.js`,
+                    corePath: TESSERACT_CORE_BASE,
+                    langPath: TESSDATA_BASE,
+                });
+            })
+            .catch((error) => {
+                // Same reasoning as pdf-extract.js: don't cache a failure, or
+                // one bad moment on the network disables the feature for the
+                // rest of the session.
+                workerPromise = null;
+                throw new Error(`could not load Tesseract.js from ${TESSERACT_BASE}: ${(error && error.message) || error}`);
             });
-        });
     }
     return workerPromise;
 }

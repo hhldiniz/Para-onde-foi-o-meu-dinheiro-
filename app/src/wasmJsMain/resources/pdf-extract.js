@@ -19,10 +19,30 @@ let pdfjsLibPromise = null;
 
 function loadPdfjs() {
     if (!pdfjsLibPromise) {
-        pdfjsLibPromise = import(`${PDFJS_BASE}/pdf.min.mjs`).then((pdfjsLib) => {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE}/pdf.worker.min.mjs`;
-            return pdfjsLib;
-        });
+        pdfjsLibPromise = import(`${PDFJS_BASE}/pdf.min.mjs`)
+            .then((module) => {
+                // Depending on how the CDN serves the build, the API is either
+                // the module's named exports or hidden behind `default`.
+                // Reading `getDocument` off the wrong one is what turns a
+                // perfectly loaded library into "undefined is not a function"
+                // at the call site, far away from the real cause.
+                const lib = typeof module.getDocument === "function" ? module : module.default;
+                if (!lib || typeof lib.getDocument !== "function") {
+                    throw new Error(`pdf.js loaded from ${PDFJS_BASE} without a usable getDocument export`);
+                }
+                if (lib.GlobalWorkerOptions) {
+                    lib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE}/pdf.worker.min.mjs`;
+                }
+                return lib;
+            })
+            .catch((error) => {
+                // Without this the first failure (an offline moment, a blocked
+                // CDN) would be cached in the promise and every later import
+                // in the session would fail with it, even once the network is
+                // back. Clearing it lets the next PDF retry from scratch.
+                pdfjsLibPromise = null;
+                throw new Error(`could not load pdf.js from ${PDFJS_BASE}: ${(error && error.message) || error}`);
+            });
     }
     return pdfjsLibPromise;
 }
