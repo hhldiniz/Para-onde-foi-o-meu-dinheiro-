@@ -17,6 +17,14 @@ private fun jsExtractPdfText(base64: String): Promise<JsAny> = js(
 )
 
 /**
+ * Whether `pdf-extract.js` actually made it onto the page. Calling a missing
+ * bridge would fail with a bare "undefined is not a function", which says
+ * nothing about the real problem (the script tag missing from `index.html`, or
+ * the file not being served next to it).
+ */
+private fun isPdfBridgeReady(): Boolean = js("typeof window.praOndeExtractPdfText === 'function'")
+
+/**
  * The declared `String` return type is what makes the `js(...)` intrinsic
  * convert the JS string result back to a Kotlin `String` here, the same
  * trick `FilePicker.wasmJs.kt`'s `arrayBufferToBase64` relies on.
@@ -33,6 +41,9 @@ private fun jsAnyToKotlinString(value: JsAny): String = js("value")
  */
 @OptIn(ExperimentalEncodingApi::class)
 actual suspend fun extractPdfText(bytes: ByteArray): String {
+    check(isPdfBridgeReady()) {
+        "pdf-extract.js is not loaded: the PDF bridge script did not run on this page"
+    }
     val base64 = Base64.encode(bytes)
     val result = jsExtractPdfText(base64).await<JsAny>()
     return jsAnyToKotlinString(result)

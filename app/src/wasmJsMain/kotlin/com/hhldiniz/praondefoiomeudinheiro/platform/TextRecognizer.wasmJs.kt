@@ -22,6 +22,9 @@ private fun jsRecognizeText(base64: String): Promise<JsAny> = js("window.praOnde
 /** See `PdfParser.wasmJs.kt`: the declared return type is what converts the JS string back. */
 private fun jsAnyToKotlinString(value: JsAny): String = js("value")
 
+/** Same guard as the PDF bridge: a missing script must not surface as "undefined is not a function". */
+private fun isOcrBridgeReady(): Boolean = js("typeof window.praOndeRecognizeText === 'function'")
+
 @Serializable
 private class OcrWord(
     val text: String,
@@ -48,6 +51,9 @@ private val ocrJson = Json { ignoreUnknownKeys = true }
  */
 @OptIn(ExperimentalEncodingApi::class)
 actual suspend fun recognizeDocumentText(bytes: ByteArray): RecognizedDocument {
+    check(isOcrBridgeReady()) {
+        "ocr-extract.js is not loaded: the text-recognition bridge script did not run on this page"
+    }
     val result = jsRecognizeText(Base64.encode(bytes)).await<JsAny>()
     val page = ocrJson.decodeFromString<OcrPage>(jsAnyToKotlinString(result))
 
