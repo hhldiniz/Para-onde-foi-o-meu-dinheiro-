@@ -4,12 +4,12 @@
 // CDN as an ES module (dynamic `import()`) rather than shipping it in the
 // app's own JS bundle.
 //
-// pdf.js's `getTextContent()` returns the page as positioned glyph runs.
-// PdfParser.splitIntoRows (commonMain) expects columns separated by 2+
-// whitespace characters, which is what PDFBox's `sortByPosition = true` and
-// PDFKit's `.string` naturally produce. `itemsToText` below reconstructs that
-// padding from the runs' x positions so the same `\s{2,}` regex keeps working
-// regardless of which platform parsed the file.
+// pdf.js's `getTextContent()` returns the page as positioned glyph runs,
+// unlike PDFBox (`sortByPosition = true`) and PDFKit's `.string`, which
+// return text already padded into columns. This file only hands those runs
+// over as JSON; turning them back into padded text is PdfTextLayout's job in
+// commonMain, so the reconstruction is covered by the JVM test run instead of
+// living untested in browser-only code.
 const PDFJS_VERSION = "5.7.284";
 const PDFJS_PACKAGE = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}`;
 const PDFJS_BASE = `${PDFJS_PACKAGE}/build`;
@@ -73,81 +73,24 @@ function base64ToBytes(base64) {
 }
 
 /**
- * Rough width of one character in this run, used as the unit for every gap
- * threshold below. Absolute PDF points cannot be used: the same 8pt gap is a
- * column boundary in an 11pt statement and mid-word in a 24pt one.
+ * The page's text runs in the shape `PdfTextLayout` reads: x is the run's left
+ * edge and y its baseline, both straight out of the text matrix. Items that
+ * carry no `str` at all are pdf.js's marked-content markers, which have no
+ * position; blank ones do have a position and are kept, because it is
+ * PdfTextLayout that decides what to do with them.
  */
-function averageCharWidth(part) {
-    return part.width > 0 && part.str.length > 0 ? part.width / part.str.length : 0;
-}
-
-function median(values) {
-    if (values.length === 0) return 0;
-    const sorted = [...values].sort((a, b) => a - b);
-    return sorted[Math.floor(sorted.length / 2)];
-}
-
-function itemsToText(items) {
-    const yTolerance = 2;
-    const lines = [];
-
+function pageRuns(items) {
+    const runs = [];
     for (const item of items) {
-        // Runs with no printable text are dropped rather than appended: pdf.js
-        // already reconstructs inter-run gaps itself, but it does so as a
-        // *single-space* run whose width spans the whole gap. Keeping those
-        // would make every gap measured below come out as zero — a table's
-        // columns would end up one space apart and PdfParser.splitIntoRows,
-        // which splits on 2+ spaces, would read each row as a single column.
-        // Dropping them leaves the real distance between the printable runs
-        // visible, which is what the padding below is derived from.
-        if (!item.str || !item.str.trim() || !item.transform) continue;
-        const x = item.transform[4];
-        const y = item.transform[5];
-        let line = lines.find((candidate) => Math.abs(candidate.y - y) <= yTolerance);
-        if (!line) {
-            line = { y, parts: [] };
-            lines.push(line);
-        }
-        line.parts.push({ x, str: item.str, width: item.width || 0 });
+        if (typeof item.str !== "string" || !item.transform) continue;
+        runs.push({
+            text: item.str,
+            x: item.transform[4],
+            y: item.transform[5],
+            width: item.width || 0,
+        });
     }
-
-    // PDF space grows upward, so reading order is descending Y, then
-    // ascending X within a line.
-    lines.sort((a, b) => b.y - a.y);
-
-    const pageCharWidth = median(
-        lines.flatMap((line) => line.parts.map(averageCharWidth).filter((width) => width > 0))
-    );
-
-    return lines
-        .map((line) => {
-            line.parts.sort((a, b) => a.x - b.x);
-            // Prefer this line's own text size — a 7pt footer and a 14pt
-            // heading do not share a column threshold — and fall back to the
-            // page's when the line is too short to measure.
-            const charWidth =
-                median(line.parts.map(averageCharWidth).filter((width) => width > 0)) ||
-                pageCharWidth ||
-                4;
-
-            let text = "";
-            let previousEnd = null;
-            for (const part of line.parts) {
-                if (previousEnd !== null) {
-                    const gap = (part.x - previousEnd) / charWidth;
-                    // A gap around one character wide is ordinary word spacing
-                    // (one space); a wide one is very likely a column boundary
-                    // in a tabular report, so it is padded well past the
-                    // `\s{2,}` threshold PdfParser.splitIntoRows splits on.
-                    const spaces = gap >= 1.4 ? Math.max(2, Math.round(gap)) : gap >= 0.25 ? 1 : 0;
-                    text += " ".repeat(spaces);
-                }
-                text += part.str;
-                previousEnd = part.x + part.width;
-            }
-            return text;
-        })
-        .join("\n");
+    return runs;
 }
 
 /**
@@ -164,7 +107,7 @@ function describeFailure(error) {
         : `pdf.js ${PDFJS_VERSION} failed to read this PDF: ${message}`;
 }
 
-async function extractPdfText(base64) {
+async function extractPdfRuns(base64) {
     const pdfjsLib = await loadPdfjs();
     const bytes = base64ToBytes(base64);
 
@@ -180,13 +123,13 @@ async function extractPdfText(base64) {
     }).promise;
 
     try {
-        const pageTexts = [];
+        const pages = [];
         for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
             const page = await doc.getPage(pageNumber);
             const content = await page.getTextContent();
-            pageTexts.push(itemsToText(content.items));
+            pages.push({ runs: pageRuns(content.items) });
         }
-        return pageTexts.join("\n");
+        return JSON.stringify({ pages });
     } finally {
         // Releases the worker's copy of the file; without it every imported
         // PDF stays in memory for the rest of the session.
@@ -194,9 +137,9 @@ async function extractPdfText(base64) {
     }
 }
 
-window.praOndeExtractPdfText = async function (base64) {
+window.praOndeExtractPdfRuns = async function (base64) {
     try {
-        return await extractPdfText(base64);
+        return await extractPdfRuns(base64);
     } catch (error) {
         throw new Error(describeFailure(error));
     }
