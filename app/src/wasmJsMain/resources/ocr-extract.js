@@ -77,7 +77,15 @@ function collectWords(data) {
     return words;
 }
 
-window.praOndeRecognizeText = async function (base64) {
+/** See `pdf-extract.js`: a bare engine message reaches the user unexplained. */
+function describeFailure(error) {
+    const message = (error && error.message) || `${error}`;
+    return message.includes("Tesseract.js")
+        ? message
+        : `Tesseract.js ${TESSERACT_VERSION} failed to read this image: ${message}`;
+}
+
+async function recognizeText(base64) {
     const worker = await loadWorker();
     const blob = new Blob([base64ToBytes(base64)]);
     // Tesseract reports pixel boxes, so the page size has to come from the
@@ -101,5 +109,13 @@ window.praOndeRecognizeText = async function (base64) {
         return JSON.stringify({ words });
     } finally {
         bitmap.close();
+    }
+}
+
+window.praOndeRecognizeText = async function (base64) {
+    try {
+        return await recognizeText(base64);
+    } catch (error) {
+        throw new Error(describeFailure(error));
     }
 };
