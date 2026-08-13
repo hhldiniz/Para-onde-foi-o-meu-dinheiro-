@@ -4,6 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Pra onde foi o meu dinheiro</title>
+    <meta name="description" content="Importe um extrato em CSV, ODS, PDF ou uma foto e veja pra onde foi o seu dinheiro. Tudo fica no seu aparelho.">
+
+    <!--
+      PWA: the manifest makes the app installable and the icons below cover the
+      places that ignore it (Safari's "Adicionar à Tela de Início" reads
+      apple-touch-icon, browser tabs read the favicon links). All paths are
+      relative because the site is served from a repository subdirectory on
+      GitHub Pages, not from the origin's root.
+    -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#EAB308">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Meu dinheiro">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
     <style>
         html, body {
             margin: 0;
@@ -11,10 +30,46 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            /* The manifest's background_color, so an installed launch shows one
+               continuous colour from the splash screen through to the app. */
+            background-color: #FFF5E6;
+        }
+
+        /* Placeholder shown until the wasm bundle is up: main.kt removes it as
+           its first act, right before mounting the Compose viewport. Until
+           then the page is otherwise blank, which on a cold install reads as a
+           broken app rather than a loading one. */
+        #app-loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #FFF5E6;
+        }
+
+        #app-loading .mark {
+            width: 64px;
+            height: 64px;
+            background-color: #EAB308;
+            border: 4px solid #000000;
+            /* The hard shadow the app's NeoBrutalist components draw. */
+            box-shadow: 8px 8px 0 0 #000000;
+            animation: app-loading-pulse 1.1s ease-in-out infinite;
+        }
+
+        @keyframes app-loading-pulse {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(4px, 4px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #app-loading .mark { animation: none; }
         }
     </style>
 </head>
 <body>
+    <div id="app-loading" role="status" aria-label="Carregando"><div class="mark"></div></div>
     <!--
       Defines window.praOndeExtractPdfText, used by PdfParser.wasmJs.kt.
       A module script so it can `import()` pdf.js lazily; this file itself
@@ -30,6 +85,10 @@
       is actually picked.
     -->
     <script type="module" src="ocr-extract.js"></script>
+    <!-- Registers sw.js. Deliberately not a module and not deferred behind the
+         bundle: the service worker is what serves the app when the network is
+         gone, so it must not depend on the wasm load succeeding. -->
+    <script src="pwa.js"></script>
     <script src="praondefoiomeudinheiro.js"></script>
 </body>
 </html>
