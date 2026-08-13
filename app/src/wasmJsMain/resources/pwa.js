@@ -4,6 +4,58 @@
 // of Kotlin because it must run even if the wasm bundle fails to load, which is
 // exactly when a cached shell matters.
 
+// It also keeps the install prompt for the app's own "install" button, which
+// is the other reason this file cannot live in Kotlin: Chromium fires
+// `beforeinstallprompt` once, early, while the wasm bundle is still
+// downloading, and an unclaimed prompt is gone. So it is caught here and held
+// until AppInstall.wasmJs.kt asks for it.
+
+let deferredInstallPrompt = null;
+
+/**
+ * Tells the app that the answer to `praOndeCanInstall()` changed. A DOM event
+ * rather than a callback registry because the Kotlin side can subscribe to it
+ * with the same typed `addEventListener` it already uses for file inputs.
+ */
+function announceInstallAvailability() {
+    window.dispatchEvent(new CustomEvent("praonde:installavailability"));
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+    // Holds back the browser's own install banner: the app offers the install
+    // in its settings screen instead, and the banner would cover its UI.
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    announceInstallAvailability();
+});
+
+window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    announceInstallAvailability();
+});
+
+/** True while there is a prompt to show — what the settings button is shown by. */
+window.praOndeCanInstall = function () {
+    return deferredInstallPrompt !== null;
+};
+
+/**
+ * Shows the held prompt, and reports whether there was one to show. The
+ * outcome deliberately goes unread: a prompt can only be used once, accepted
+ * or not, and a browser that still wants the app installed fires
+ * `beforeinstallprompt` again on a later visit. An accepted install arrives
+ * back here as `appinstalled` anyway.
+ */
+window.praOndeInstall = function () {
+    if (!deferredInstallPrompt) return false;
+
+    const prompt = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    announceInstallAvailability();
+    prompt.prompt();
+    return true;
+};
+
 // `?sw=off` tears the worker down and drops its caches, then reloads without
 // the flag. It exists for two situations: iterating with
 // `wasmJsBrowserDevelopmentRun`, where a worker left over from a previous run

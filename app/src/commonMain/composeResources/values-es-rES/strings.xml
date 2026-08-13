@@ -136,6 +136,11 @@
     <string name="settings_back_content_description">Volver</string>
     <string name="settings_currency_label">Moneda: %1$s (%2$s)</string>
 
+    <!-- Settings Install App (only shown where the app can install itself: the web build) -->
+    <string name="settings_install_title">INSTALAR LA APLICACIÓN</string>
+    <string name="settings_install_description">Instálala en la pantalla de inicio para abrirla a pantalla completa, sin la barra del navegador, y usarla sin internet.</string>
+    <string name="settings_install_button">INSTALAR</string>
+
     <!-- Settings Danger Zone -->
     <string name="settings_danger_title">ZONA DE PELIGRO</string>
     <string name="settings_danger_description">Esta acción elimina permanentemente todos los datos internos de la aplicación (movimientos y categorías).</string>

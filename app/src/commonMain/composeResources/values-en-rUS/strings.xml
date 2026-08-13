@@ -136,6 +136,11 @@
     <string name="settings_back_content_description">Back</string>
     <string name="settings_currency_label">Currency: %1$s (%2$s)</string>
 
+    <!-- Settings Install App (only shown where the app can install itself: the web build) -->
+    <string name="settings_install_title">INSTALL THE APP</string>
+    <string name="settings_install_description">Install it to your home screen to open it full screen, without the browser bar, and use it with no internet.</string>
+    <string name="settings_install_button">INSTALL</string>
+
     <!-- Settings Danger Zone -->
     <string name="settings_danger_title">DANGER ZONE</string>
     <string name="settings_danger_description">This permanently deletes all internal app data (entries and categories).</string>

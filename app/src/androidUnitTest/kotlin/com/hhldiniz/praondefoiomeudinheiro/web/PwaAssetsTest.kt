@@ -126,14 +126,42 @@ class PwaAssetsTest {
     @Test
     fun `the loading placeholder is removed by the wasmJs entry point`() {
         val html = resources.resolve("index.html").readText()
-        val mainKt = resources
-            .resolveSibling("kotlin")
-            .resolve("com/hhldiniz/praondefoiomeudinheiro/main.kt")
-            .readText()
+        val mainKt = wasmJsSource("main.kt")
 
         assertTrue("index.html no longer has the loading placeholder", html.contains("""id="app-loading""""))
         assertTrue("main.kt no longer removes the loading placeholder", mainKt.contains(""""app-loading""""))
     }
+
+    /**
+     * The in-app install button, whose two halves are joined by nothing but
+     * these names: `pwa.js` catches `beforeinstallprompt` (it fires while the
+     * wasm bundle is still downloading, so Kotlin cannot) and hangs the prompt
+     * off `window`; `AppInstall.wasmJs.kt` reads it back from there. A rename
+     * on either side compiles and ships, and the button just never appears.
+     */
+    @Test
+    fun `the install bridge is defined on the JS side and read from Kotlin`() {
+        val pwa = resources.resolve("pwa.js").readText()
+        val installer = wasmJsSource("platform/AppInstall.wasmJs.kt")
+
+        assertTrue("pwa.js does not hold back beforeinstallprompt", pwa.contains(""""beforeinstallprompt""""))
+        for (name in listOf("praOndeCanInstall", "praOndeInstall")) {
+            assertTrue("pwa.js does not define window.$name", pwa.contains("window.$name = function"))
+            assertTrue("AppInstall.wasmJs.kt does not call window.$name", installer.contains("window.$name"))
+        }
+
+        // The event that moves the button between hidden and shown.
+        val event = "praonde:installavailability"
+        assertTrue("pwa.js does not dispatch $event", pwa.contains("""CustomEvent("$event")"""))
+        assertTrue("AppInstall.wasmJs.kt does not listen for $event", installer.contains(""""$event""""))
+    }
+
+    private fun wasmJsSource(path: String): String =
+        resources
+            .resolveSibling("kotlin")
+            .resolve("com/hhldiniz/praondefoiomeudinheiro")
+            .resolve(path)
+            .readText()
 
     /** Width and height read out of a PNG's IHDR chunk, which starts at byte 16. */
     private fun pngSize(file: File): List<Int> {

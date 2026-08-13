@@ -134,6 +134,11 @@
     <string name="settings_back_content_description">Voltar</string>
     <string name="settings_currency_label">Moeda: %1$s (%2$s)</string>
 
+    <!-- Settings Install App (only shown where the app can install itself: the web build) -->
+    <string name="settings_install_title">INSTALAR O APLICATIVO</string>
+    <string name="settings_install_description">Instale na tela de início para abrir em tela cheia, sem a barra do navegador, e usar mesmo sem internet.</string>
+    <string name="settings_install_button">INSTALAR</string>
+
     <!-- Settings Danger Zone -->
     <string name="settings_danger_title">ZONA DE PERIGO</string>
     <string name="settings_danger_description">Esta ação apaga permanentemente todos os dados internos do aplicativo (movimentos e categorias).</string>

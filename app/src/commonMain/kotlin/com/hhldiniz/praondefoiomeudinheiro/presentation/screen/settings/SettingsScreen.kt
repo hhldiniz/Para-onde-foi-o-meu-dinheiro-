@@ -37,7 +37,10 @@ import androidx.compose.ui.graphics.RectangleShape
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.hhldiniz.praondefoiomeudinheiro.platform.rememberAppInstaller
+import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalYellow
+import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.NeoButton
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
@@ -56,6 +59,9 @@ import com.hhldiniz.praondefoiomeudinheiro.resources.settings_danger_confirm_tit
 import com.hhldiniz.praondefoiomeudinheiro.resources.settings_danger_delete_button
 import com.hhldiniz.praondefoiomeudinheiro.resources.settings_danger_description
 import com.hhldiniz.praondefoiomeudinheiro.resources.settings_danger_title
+import com.hhldiniz.praondefoiomeudinheiro.resources.settings_install_button
+import com.hhldiniz.praondefoiomeudinheiro.resources.settings_install_description
+import com.hhldiniz.praondefoiomeudinheiro.resources.settings_install_title
 import com.hhldiniz.praondefoiomeudinheiro.resources.settings_title
 
 /** Settings screen allowing the user to change the preferred currency. */
@@ -68,6 +74,7 @@ fun SettingsScreen(
     val importRepository = koinInject<ImportRepository>()
     val categoryDao = koinInject<CategoryDao>()
     val coroutineScope = rememberCoroutineScope()
+    val appInstaller = rememberAppInstaller()
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -110,6 +117,17 @@ fun SettingsScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // Only the web build ever offers this, and only until the app is
+            // installed — see AppInstaller.canInstall.
+            if (appInstaller.canInstall) {
+                Spacer(modifier = Modifier.height(32.dp))
+
+                InstallAppSection(
+                    onInstallRequested = { appInstaller.install() },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -162,6 +180,43 @@ fun SettingsScreen(
                     )
                 }
             }
+        )
+    }
+}
+
+/**
+ * Offer to install the app to the device, shown only where the platform can
+ * actually do it — in practice the web build, in a browser that has an install
+ * prompt ready (see [rememberAppInstaller]).
+ */
+@Composable
+private fun InstallAppSection(
+    onInstallRequested: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(Res.string.settings_install_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Black
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = stringResource(Res.string.settings_install_description),
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        NeoButton(
+            onClick = onInstallRequested,
+            text = stringResource(Res.string.settings_install_button),
+            backgroundColor = BrutalCyan,
+            textColor = MaterialTheme.colorScheme.onSurface,
+            elevation = 4.dp,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
