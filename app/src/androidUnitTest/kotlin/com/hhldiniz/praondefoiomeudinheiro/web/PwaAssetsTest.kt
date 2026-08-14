@@ -100,6 +100,78 @@ class PwaAssetsTest {
         }
     }
 
+    /**
+     * The PDF and OCR engines are vendored under `vendor/` (see its README)
+     * rather than loaded from a CDN, which is the only reason the service
+     * worker can cache them at all — a cross-origin response it cannot read is
+     * a response it cannot store. A single URL slipping back in would compile,
+     * ship, and quietly break the import for an offline user.
+     */
+    @Test
+    fun `the import engines are served from this site, not from a CDN`() {
+        for (script in listOf("pdf-extract.js", "ocr-extract.js")) {
+            val source = resources.resolve(script).readText()
+            for (cdn in listOf("cdn.jsdelivr.net", "tessdata.projectnaptha.com", "unpkg.com")) {
+                assertTrue("$script still loads something from $cdn", !source.contains(cdn))
+            }
+            assertTrue("$script does not load anything from vendor/", source.contains("./vendor/"))
+        }
+
+        // Every directory the bridges name has to be there, since a missing one
+        // only shows up as a failed import in a browser.
+        for (path in listOf(
+            "vendor/pdfjs/pdf.min.mjs",
+            "vendor/pdfjs/pdf.worker.min.mjs",
+            "vendor/pdfjs/standard_fonts",
+            "vendor/pdfjs/cmaps",
+            "vendor/tesseract/tesseract.esm.min.js",
+            "vendor/tesseract/worker.min.js",
+            // The one core build ocr-extract.js can end up asking for: the
+            // worker appends this exact name for LSTM-only on a SIMD browser.
+            "vendor/tesseract-core/tesseract-core-simd-lstm.wasm.js",
+            "vendor/tessdata/por.traineddata.gz",
+            "vendor/tessdata/eng.traineddata.gz",
+            "vendor/tessdata/spa.traineddata.gz",
+        )) {
+            assertTrue("$path is missing from the web resources", resources.resolve(path).exists())
+        }
+    }
+
+    /**
+     * What the service worker pulls down in the background for offline use.
+     * The list is hand-written, so this checks it both ways: nothing in it is
+     * missing from the build, and nothing shipped is missing from it — a
+     * vendored file that nobody pre-caches works online and fails offline,
+     * which is the failure this whole change exists to remove.
+     */
+    @Test
+    fun `the offline library list matches what is vendored`() {
+        // Every path the worker names, wherever in the file it is written —
+        // the lists are plain literals precisely so this can read them.
+        val listed = Regex(""""(\./vendor/[^"]*)"""")
+            .findAll(resources.resolve("sw.js").readText())
+            .map { it.groupValues[1] }
+            .toList()
+
+        assertTrue("sw.js pre-caches no libraries at all", listed.isEmpty().not())
+        for (path in listed) {
+            assertTrue("sw.js pre-caches $path, which is not in the web resources", resources.resolve(path).isFile)
+        }
+
+        val vendored = resources.resolve("vendor")
+            .walkTopDown()
+            .filter { it.isFile }
+            .filterNot { it.name.startsWith("LICENSE") || it.name.endsWith(".LICENSE.txt") || it.name == "README.md" }
+            // The cmaps are deliberately left online-only: 169 files that only
+            // a PDF with a CJK encoding ever touches.
+            .filterNot { it.parentFile.name == "cmaps" }
+            .map { "./" + it.relativeTo(resources).path.replace('\\', '/') }
+            .toList()
+
+        val missing = vendored - listed.toSet()
+        assertTrue("vendored but never pre-cached, so unusable offline: $missing", missing.isEmpty())
+    }
+
     @Test
     fun `index html wires up the manifest, the icons and the service worker`() {
         val html = resources.resolve("index.html").readText()

@@ -1,0 +1,6 @@
+# The browser libraries the web build serves instead of pulling from a CDN
+# (see app/src/wasmJsMain/resources/vendor/README.md). They are third-party
+# files copied verbatim out of npm tarballs: not this project's code, and
+# minified or binary, so a diff of them says nothing to anyone.
+app/src/wasmJsMain/resources/vendor/** linguist-vendored
+app/src/wasmJsMain/resources/vendor/** -diff

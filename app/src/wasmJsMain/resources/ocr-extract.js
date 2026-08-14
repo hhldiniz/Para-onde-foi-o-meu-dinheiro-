@@ -1,20 +1,28 @@
 // Bridges browser text recognition for the wasmJs build, used by
 // TextRecognizer.wasmJs.kt. Android has ML Kit and iOS has the Vision
 // framework; the web has no built-in OCR engine, so this loads Tesseract.js
-// lazily — on the first image actually picked — straight from a CDN as an ES
-// module, exactly like pdf-extract.js does for pdf.js. Neither the library
-// (~1MB) nor the language data (a few MB) touches the app's own bundle, and a
-// user who never uses the automatic import never downloads any of it.
+// lazily — on the first image actually picked — as an ES module, exactly like
+// pdf-extract.js does for pdf.js. Neither the library nor the OCR engine nor
+// the language data touches the app's own bundle, and a user who never uses
+// the automatic import never loads any of it.
+//
+// All of it is served from this site, out of `vendor/` (see
+// `vendor/README.md`), not from a CDN: the app is a PWA that has to work with
+// the network off, and a cross-origin dependency is exactly what a service
+// worker cannot cache.
 //
 // The result is returned as a JSON string of words in *normalized* page
 // coordinates (0..1 from the top-left), which is the contract every platform
 // recognizer honours so DocumentLayoutAnalyzer (commonMain) can stay
 // platform-agnostic.
 const TESSERACT_VERSION = "5.1.1";
-const TESSERACT_CORE_VERSION = "5.1.1";
-const TESSERACT_BASE = `https://cdn.jsdelivr.net/npm/tesseract.js@${TESSERACT_VERSION}`;
-const TESSERACT_CORE_BASE = `https://cdn.jsdelivr.net/npm/tesseract.js-core@${TESSERACT_CORE_VERSION}`;
-const TESSDATA_BASE = "https://tessdata.projectnaptha.com/4.0.0";
+// Resolved against this module's own URL, not the page's: the paths then hold
+// wherever the site is deployed, and — since two of them are handed to a Web
+// Worker, which resolves relative URLs against itself — they must be absolute
+// by the time they leave here anyway.
+const TESSERACT_BASE = new URL("./vendor/tesseract/", import.meta.url);
+const TESSERACT_CORE_BASE = new URL("./vendor/tesseract-core", import.meta.url);
+const TESSDATA_BASE = new URL("./vendor/tessdata", import.meta.url);
 
 // The three languages the app itself is translated into. Statement layouts are
 // mostly digits, but the month names and the header words are not.
@@ -26,24 +34,29 @@ let workerPromise = null;
 // data is by far the slowest part of a recognition, and it only happens once.
 function loadWorker() {
     if (!workerPromise) {
-        workerPromise = import(`${TESSERACT_BASE}/dist/tesseract.esm.min.js`)
+        workerPromise = import(new URL("tesseract.esm.min.js", TESSERACT_BASE).href)
             .then((module) => {
                 const tesseract = typeof module.createWorker === "function" ? module : module.default;
                 if (!tesseract || typeof tesseract.createWorker !== "function") {
-                    throw new Error(`Tesseract.js loaded from ${TESSERACT_BASE} without a usable createWorker export`);
+                    throw new Error(`Tesseract.js loaded from ${TESSERACT_BASE.href} without a usable createWorker export`);
                 }
+                // `corePath` is a directory on purpose: the worker appends the
+                // engine build it needs to it (`tesseract-core-simd-lstm.wasm.js`
+                // for the LSTM-only mode asked for by the `1` above), and only
+                // that one is vendored — every browser that can run this app's
+                // WasmGC bundle also has wasm SIMD.
                 return tesseract.createWorker(LANGUAGES, 1, {
-                    workerPath: `${TESSERACT_BASE}/dist/worker.min.js`,
-                    corePath: TESSERACT_CORE_BASE,
-                    langPath: TESSDATA_BASE,
+                    workerPath: new URL("worker.min.js", TESSERACT_BASE).href,
+                    corePath: TESSERACT_CORE_BASE.href,
+                    langPath: TESSDATA_BASE.href,
                 });
             })
             .catch((error) => {
                 // Same reasoning as pdf-extract.js: don't cache a failure, or
-                // one bad moment on the network disables the feature for the
-                // rest of the session.
+                // one bad moment disables the feature for the rest of the
+                // session.
                 workerPromise = null;
-                throw new Error(`could not load Tesseract.js from ${TESSERACT_BASE}: ${(error && error.message) || error}`);
+                throw new Error(`could not load Tesseract.js from ${TESSERACT_BASE.href}: ${(error && error.message) || error}`);
             });
     }
     return workerPromise;
