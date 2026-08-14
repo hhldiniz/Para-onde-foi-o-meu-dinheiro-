@@ -14,6 +14,12 @@
 .cxx
 local.properties
 
+# Release signing: the keystore itself and the file naming it and its
+# passwords. Neither belongs in git — see scripts/generate-release-keystore.sh.
+*.jks
+*.keystore
+keystore.properties
+
 # Xcode
 xcuserdata/
 *.xcworkspace/xcuserdata/

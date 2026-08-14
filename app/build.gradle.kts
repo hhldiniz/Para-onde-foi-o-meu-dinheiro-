@@ -1,5 +1,6 @@
 @file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
 
+import java.util.Properties
 import org.jetbrains.compose.resources.ResourcesExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -123,6 +124,32 @@ kotlin {
     }
 }
 
+// Release signing material. In CI it arrives as environment variables (see
+// .github/workflows/release.yml, which either decodes a keystore from the
+// repository secrets or generates a self-signed one with
+// scripts/generate-release-keystore.sh); locally it comes from an untracked
+// keystore.properties at the repository root. Both are read through the
+// `providers` API so the configuration cache knows they are build inputs.
+val keystoreProperties = Properties().apply {
+    providers
+        .fileContents(rootProject.layout.projectDirectory.file("keystore.properties"))
+        .asText
+        .orNull
+        ?.let { load(it.reader()) }
+}
+
+val signingSetting: (String, String) -> String? = { property, environmentVariable ->
+    (providers.environmentVariable(environmentVariable).orNull ?: keystoreProperties.getProperty(property))
+        ?.takeIf { it.isNotBlank() }
+}
+
+val releaseStoreFile = signingSetting("storeFile", "RELEASE_KEYSTORE_FILE")
+val releaseStorePassword = signingSetting("storePassword", "RELEASE_KEYSTORE_PASSWORD")
+val releaseKeyAlias = signingSetting("keyAlias", "RELEASE_KEY_ALIAS")
+// PKCS12 (what the script generates) cannot hold a key password of its own;
+// a JKS keystore that does can still say so.
+val releaseKeyPassword = signingSetting("keyPassword", "RELEASE_KEY_PASSWORD") ?: releaseStorePassword
+
 android {
     namespace = "com.hhldiniz.praondefoiomeudinheiro"
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -137,10 +164,34 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        // Only declared when there is something to sign with, so a checkout
+        // with no keystore still configures (and `assembleRelease` still runs,
+        // producing app-release-unsigned.apk).
+        val storePath = releaseStoreFile
+        val storePassphrase = releaseStorePassword
+        val alias = releaseKeyAlias
+        if (storePath != null && storePassphrase != null && alias != null) {
+            create("release") {
+                // Absolute paths pass through untouched; a relative one is
+                // read from the repository root, which is where both
+                // keystore.properties and the generated key live.
+                storeFile = rootProject.file(storePath)
+                storePassword = storePassphrase
+                keyAlias = alias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             // `optimization { }` is AGP 9 new-DSL only, which is disabled above.
             isMinifyEnabled = false
+            // Null when nothing is configured: the build then produces an
+            // unsigned APK rather than failing, which is the right outcome for
+            // a contributor who only wants to check that release compiles.
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {

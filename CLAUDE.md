@@ -43,6 +43,9 @@ Build tooling is the Gradle wrapper (`./gradlew`); there is no separate lint/for
 # Build debug APK
 ./gradlew assembleDebug
 
+# Signed release APK — app/build/outputs/apk/release/ (see "Release signing")
+./gradlew assembleRelease
+
 # Run all JVM unit tests (this is what CI runs)
 ./gradlew testDebugUnitTest --continue
 
@@ -72,6 +75,19 @@ The iOS targets can only be *compiled* on a macOS host; everything else (includi
 Unit test reports land in `app/build/reports/tests/testDebugUnitTest/` and JUnit XML in `app/build/test-results/testDebugUnitTest/`. CI (`.github/workflows/ci.yml`) runs `testDebugUnitTest` on every push/PR to `master`/`main` and publishes a pass/fail summary; there is no separate lint job. A `wasm-build` job runs `wasmJsBrowserDistribution` as a compile check so a broken web build fails CI instead of surfacing only on deploy. A third `instrumented-tests` job boots a cached AVD (API 34, `google_apis`, x86_64) via `reactivecircus/android-emulator-runner` and runs `connectedDebugAndroidTest`, publishing its own pass/fail summary from `app/build/outputs/androidTest-results/connected/`.
 
 `.github/workflows/deploy-pages.yml` runs `wasmJsBrowserDistribution` and publishes `app/build/dist/wasmJs/productionExecutable/` to GitHub Pages via `actions/upload-pages-artifact` + `actions/deploy-pages`, on every push to `master`/`main` (and manually via `workflow_dispatch`). The repo's Settings → Pages → Source must be switched to "GitHub Actions" once for this to actually publish; that's a manual step this workflow file cannot perform.
+
+### Release signing
+
+The app is not distributed through Play, so the release build is signed with a **self-signed certificate**. `app/build.gradle.kts` reads four settings — `storeFile`, `storePassword`, `keyAlias`, `keyPassword` — from the environment (`RELEASE_KEYSTORE_FILE`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`) or, failing that, from an untracked `keystore.properties` at the repository root, both through the `providers` API so the configuration cache treats them as build inputs. `scripts/generate-release-keystore.sh` is the one place that defines what "the certificate" is (PKCS12, RSA 4096, SHA256withRSA, 30 years), and both CI and a developer's machine call it.
+
+`.github/workflows/release.yml` runs `assembleRelease` on pull requests, on `v*` tags and on demand, resolving a key in that order of preference:
+
+1. **Repository secrets** — `RELEASE_KEYSTORE_BASE64` (a `base64 -w0` of the keystore) plus `RELEASE_KEYSTORE_PASSWORD` and `RELEASE_KEY_ALIAS`. The same certificate every time, which is what makes one build installable over another.
+2. **A key generated for that job**, with a random password masked out of the log. Nothing to set up, but every run signs with a different certificate — Android treats that as a different app, so a tester has to uninstall before installing the next build. The job summary says which of the two signed the APK.
+
+The job then proves the APK really is signed (`apksigner verify --print-certs`, whose output goes into the job summary), uploads it as a workflow artifact, and for a tag attaches it to that tag's GitHub release.
+
+Nothing signing-related is committed: `*.jks`, `*.keystore` and `keystore.properties` are gitignored, and with no keystore configured the signing config is not declared at all — `assembleRelease` then produces `app-release-unsigned.apk` rather than failing, so checking that the release variant compiles needs no key.
 
 ## Architecture
 
