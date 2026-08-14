@@ -73,6 +73,31 @@ async function unregisterServiceWorker() {
     window.location.replace(url.toString());
 }
 
+/**
+ * Asks the worker to pull the PDF and OCR engines into its cache, so those
+ * imports work with the network off even for a user who has never used them
+ * online. It is around 13MB, so it waits for the app to be up and idle, and
+ * steps aside entirely when the browser says the connection is metered or
+ * slow — the features still work online, and the worker caches what they fetch
+ * as they are used.
+ */
+function cacheOfflineLibraries() {
+    const connection = navigator.connection;
+    if (connection && (connection.saveData || /(^|-)2g$/.test(connection.effectiveType || ""))) return;
+
+    navigator.serviceWorker.ready.then((registration) => {
+        const worker = registration.active;
+        if (!worker) return;
+
+        const ask = () => worker.postMessage({ type: "praonde:cache-offline-libraries" });
+        if (typeof window.requestIdleCallback === "function") {
+            window.requestIdleCallback(ask, { timeout: 10000 });
+        } else {
+            window.setTimeout(ask, 3000);
+        }
+    });
+}
+
 if ("serviceWorker" in navigator) {
     if (new URLSearchParams(window.location.search).get("sw") === "off") {
         unregisterServiceWorker().catch((error) => {
@@ -82,12 +107,15 @@ if ("serviceWorker" in navigator) {
         // After `load`, so registering never competes with the wasm bundle for
         // the connection on a first, uncached visit.
         window.addEventListener("load", () => {
-            navigator.serviceWorker.register("./sw.js").catch((error) => {
-                // Not fatal: without a worker the app simply always needs the
-                // network. Reasons range from a browser with workers disabled
-                // to the site being served over plain HTTP.
-                console.warn("could not register the service worker:", error);
-            });
+            navigator.serviceWorker
+                .register("./sw.js")
+                .then(cacheOfflineLibraries)
+                .catch((error) => {
+                    // Not fatal: without a worker the app simply always needs
+                    // the network. Reasons range from a browser with workers
+                    // disabled to the site being served over plain HTTP.
+                    console.warn("could not register the service worker:", error);
+                });
         });
     }
 }

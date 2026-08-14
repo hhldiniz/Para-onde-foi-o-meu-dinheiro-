@@ -30,6 +30,51 @@ const SHELL = [
     "./favicon-32.png",
 ];
 
+// The base-14 font data pdf.js needs for any PDF that does not embed its
+// fonts. Written out in full rather than built from a list of names, so every
+// file this worker pre-caches can be found in it by searching for its path —
+// which is how PwaAssetsTest checks the list against what is actually shipped.
+const PDFJS_STANDARD_FONTS = [
+    "./vendor/pdfjs/standard_fonts/FoxitDingbats.pfb",
+    "./vendor/pdfjs/standard_fonts/FoxitFixed.pfb",
+    "./vendor/pdfjs/standard_fonts/FoxitFixedBold.pfb",
+    "./vendor/pdfjs/standard_fonts/FoxitFixedBoldItalic.pfb",
+    "./vendor/pdfjs/standard_fonts/FoxitFixedItalic.pfb",
+    "./vendor/pdfjs/standard_fonts/FoxitSerif.pfb",
+    "./vendor/pdfjs/standard_fonts/FoxitSerifBold.pfb",
+    "./vendor/pdfjs/standard_fonts/FoxitSerifBoldItalic.pfb",
+    "./vendor/pdfjs/standard_fonts/FoxitSerifItalic.pfb",
+    "./vendor/pdfjs/standard_fonts/FoxitSymbol.pfb",
+    "./vendor/pdfjs/standard_fonts/LiberationSans-Bold.ttf",
+    "./vendor/pdfjs/standard_fonts/LiberationSans-BoldItalic.ttf",
+    "./vendor/pdfjs/standard_fonts/LiberationSans-Italic.ttf",
+    "./vendor/pdfjs/standard_fonts/LiberationSans-Regular.ttf",
+];
+
+/**
+ * The import engines, vendored under `vendor/` so they are same-origin and can
+ * be cached at all (see `vendor/README.md`). Around 13MB in total, which is
+ * why they are not in [SHELL]: they are fetched in the background, well after
+ * the app is up, and only when the page asks for it — `pwa.js` skips the whole
+ * thing on a metered connection. Anything missed here still lands in the cache
+ * the first time it is genuinely used, online.
+ *
+ * The cmaps (`vendor/pdfjs/cmaps/`) are deliberately absent: 169 files that
+ * only a PDF with a CJK encoding ever touches. They stay a normal, online
+ * fetch.
+ */
+const OFFLINE_LIBRARIES = [
+    "./vendor/pdfjs/pdf.min.mjs",
+    "./vendor/pdfjs/pdf.worker.min.mjs",
+    ...PDFJS_STANDARD_FONTS,
+    "./vendor/tesseract/tesseract.esm.min.js",
+    "./vendor/tesseract/worker.min.js",
+    "./vendor/tesseract-core/tesseract-core-simd-lstm.wasm.js",
+    "./vendor/tessdata/por.traineddata.gz",
+    "./vendor/tessdata/eng.traineddata.gz",
+    "./vendor/tessdata/spa.traineddata.gz",
+];
+
 self.addEventListener("install", (event) => {
     event.waitUntil(
         caches
@@ -106,6 +151,36 @@ async function handleAsset(event) {
     }
     return network;
 }
+
+/**
+ * Fills the cache with [OFFLINE_LIBRARIES], one file at a time so a background
+ * download of a dozen megabytes never competes with whatever the user is
+ * actually doing. Already-cached files are skipped, which makes this safe to
+ * ask for on every launch and lets an interrupted run pick up where it left
+ * off: the worker can be killed at any point, and the next launch finishes the
+ * rest.
+ */
+async function cacheOfflineLibraries() {
+    const cache = await caches.open(CACHE);
+    for (const path of OFFLINE_LIBRARIES) {
+        if (await cache.match(path)) continue;
+        try {
+            await cache.add(path);
+        } catch (error) {
+            // Offline again, or a file that moved without this list being
+            // updated. Neither is worth failing the rest of the run for: the
+            // import features still work online, and PwaAssetsTest is what
+            // catches the second case before it ships.
+            console.warn("could not pre-cache", path, error);
+        }
+    }
+}
+
+self.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "praonde:cache-offline-libraries") {
+        event.waitUntil(cacheOfflineLibraries());
+    }
+});
 
 self.addEventListener("fetch", (event) => {
     const request = event.request;

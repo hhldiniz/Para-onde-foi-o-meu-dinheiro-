@@ -1,8 +1,13 @@
 // Bridges browser PDF text extraction for the wasmJs build. Android uses
 // PDFBox, iOS uses PDFKit; the web has no bundled PDF engine, so this loads
-// Mozilla's pdf.js lazily, on the first PDF actually picked, straight from a
-// CDN as an ES module (dynamic `import()`) rather than shipping it in the
-// app's own JS bundle.
+// Mozilla's pdf.js lazily, on the first PDF actually picked, as an ES module
+// (dynamic `import()`) rather than shipping it in the app's own JS bundle.
+//
+// The library is served from this site, out of `vendor/pdfjs/` (see
+// `vendor/README.md`), not from a CDN: the app is a PWA that has to work with
+// the network off, and a cross-origin dependency is exactly what a service
+// worker cannot cache. It is still loaded lazily, so a user who never imports
+// a PDF never downloads it.
 //
 // pdf.js's `getTextContent()` returns the page as positioned glyph runs,
 // unlike PDFBox (`sortByPosition = true`) and PDFKit's `.string`, which
@@ -11,8 +16,15 @@
 // commonMain, so the reconstruction is covered by the JVM test run instead of
 // living untested in browser-only code.
 const PDFJS_VERSION = "5.7.284";
-const PDFJS_PACKAGE = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}`;
-const PDFJS_BASE = `${PDFJS_PACKAGE}/build`;
+// Resolved against this module's own URL rather than the page's, so the paths
+// hold wherever the site is deployed (a repository subdirectory on GitHub
+// Pages) and whatever route the app is showing.
+const PDFJS_BASE = new URL("./vendor/pdfjs/", import.meta.url);
+
+/** Absolute URL of a vendored pdf.js file. */
+function pdfjsUrl(path) {
+    return new URL(path, PDFJS_BASE).href;
+}
 
 let pdfjsLibPromise = null;
 
@@ -35,7 +47,7 @@ function loadPdfjs() {
                 new Error(`this browser is too old to read PDFs: it has no ${missing}`)
             );
         }
-        pdfjsLibPromise = import(`${PDFJS_BASE}/pdf.min.mjs`)
+        pdfjsLibPromise = import(pdfjsUrl("pdf.min.mjs"))
             .then((module) => {
                 // Depending on how the CDN serves the build, the API is either
                 // the module's named exports or hidden behind `default`.
@@ -44,20 +56,21 @@ function loadPdfjs() {
                 // at the call site, far away from the real cause.
                 const lib = typeof module.getDocument === "function" ? module : module.default;
                 if (!lib || typeof lib.getDocument !== "function") {
-                    throw new Error(`pdf.js loaded from ${PDFJS_BASE} without a usable getDocument export`);
+                    throw new Error(`pdf.js loaded from ${PDFJS_BASE.href} without a usable getDocument export`);
                 }
                 if (lib.GlobalWorkerOptions) {
-                    lib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE}/pdf.worker.min.mjs`;
+                    lib.GlobalWorkerOptions.workerSrc = pdfjsUrl("pdf.worker.min.mjs");
                 }
                 return lib;
             })
             .catch((error) => {
-                // Without this the first failure (an offline moment, a blocked
-                // CDN) would be cached in the promise and every later import
-                // in the session would fail with it, even once the network is
-                // back. Clearing it lets the next PDF retry from scratch.
+                // Without this the first failure (a file not yet in the
+                // service worker's cache while offline) would be cached in the
+                // promise and every later import in the session would fail
+                // with it, even once the network is back. Clearing it lets the
+                // next PDF retry from scratch.
                 pdfjsLibPromise = null;
-                throw new Error(`could not load pdf.js from ${PDFJS_BASE}: ${(error && error.message) || error}`);
+                throw new Error(`could not load pdf.js from ${PDFJS_BASE.href}: ${(error && error.message) || error}`);
             });
     }
     return pdfjsLibPromise;
@@ -114,11 +127,13 @@ async function extractPdfRuns(base64) {
     // Without these two, a PDF that leans on the 14 standard fonts (or on a
     // CJK encoding) loses characters or fails outright during extraction —
     // pdf.js only bundles the data next to the build, it does not fetch it
-    // from anywhere by default.
+    // from anywhere by default. Both directories are vendored alongside the
+    // library; the fonts are pre-cached for offline use, the cmaps are not
+    // (see `vendor/README.md`).
     const doc = await pdfjsLib.getDocument({
         data: bytes,
-        standardFontDataUrl: `${PDFJS_PACKAGE}/standard_fonts/`,
-        cMapUrl: `${PDFJS_PACKAGE}/cmaps/`,
+        standardFontDataUrl: pdfjsUrl("standard_fonts/"),
+        cMapUrl: pdfjsUrl("cmaps/"),
         cMapPacked: true,
     }).promise;
 
