@@ -8,19 +8,26 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.RoomCategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.RoomImportedEntryDao
+import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.RoomInvestmentDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.CategoryRecord
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntryRecord
+import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.InvestmentRecord
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.defaultCategories
 import com.hhldiniz.praondefoiomeudinheiro.platform.ioDispatcher
 
 const val DATABASE_NAME = "praondefoiomeudinheiro.db"
 
-@Database(entities = [ImportedEntryRecord::class, CategoryRecord::class], version = 3, exportSchema = false)
+@Database(
+    entities = [ImportedEntryRecord::class, CategoryRecord::class, InvestmentRecord::class],
+    version = 4,
+    exportSchema = false,
+)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun importedEntryDao(): RoomImportedEntryDao
     abstract fun categoryDao(): RoomCategoryDao
+    abstract fun investmentDao(): RoomInvestmentDao
 }
 
 /**

@@ -5,6 +5,7 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.OnboardingHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.PatrimonyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.SelectedFilesHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
+import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.InvestmentDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.prefs.InMemoryKeyValueStore
 import com.hhldiniz.praondefoiomeudinheiro.domain.file.InMemoryPlatformFile
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,6 +31,7 @@ import org.mockito.kotlin.verify
 class AppDataResetTest {
 
     private val categoryDao: CategoryDao = mock()
+    private val investmentDao: InvestmentDao = mock()
     private val importRepository: ImportRepository = mock()
 
     @Before
@@ -50,16 +52,23 @@ class AppDataResetTest {
 
     @Test
     fun clearAllAppData_clearsEntriesAndCategories() = runTest {
-        clearAllAppData(importRepository, categoryDao)
+        clearAllAppData(importRepository, categoryDao, investmentDao)
 
         verify(importRepository).clearAllData(categoryDao)
+    }
+
+    @Test
+    fun clearAllAppData_clearsInvestments() = runTest {
+        clearAllAppData(importRepository, categoryDao, investmentDao)
+
+        verify(investmentDao).deleteAll()
     }
 
     @Test
     fun clearAllAppData_forgetsSelectedFiles() = runTest {
         SelectedFilesHolder.files = listOf(InMemoryPlatformFile("extrato.csv"))
 
-        clearAllAppData(importRepository, categoryDao)
+        clearAllAppData(importRepository, categoryDao, investmentDao)
 
         assertTrue(SelectedFilesHolder.files.isEmpty())
     }
@@ -68,7 +77,7 @@ class AppDataResetTest {
     fun clearAllAppData_resetsPatrimony() = runTest {
         PatrimonyHolder.setPatrimony(4_200.0)
 
-        clearAllAppData(importRepository, categoryDao)
+        clearAllAppData(importRepository, categoryDao, investmentDao)
 
         assertEquals(0.0, PatrimonyHolder.patrimony.value, 0.0)
     }
@@ -77,14 +86,14 @@ class AppDataResetTest {
     fun clearAllAppData_sendsUserThroughOnboardingAgain() = runTest {
         OnboardingHolder.markCompleted()
 
-        clearAllAppData(importRepository, categoryDao)
+        clearAllAppData(importRepository, categoryDao, investmentDao)
 
         assertFalse(OnboardingHolder.completed.value)
     }
 
     @Test
     fun clearAllAppData_marksDataAsCleared() = runTest {
-        clearAllAppData(importRepository, categoryDao)
+        clearAllAppData(importRepository, categoryDao, investmentDao)
 
         assertTrue(DataClearedHolder.cleared.value)
     }
