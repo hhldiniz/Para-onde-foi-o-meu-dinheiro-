@@ -3,6 +3,7 @@ package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.viewModelScope
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
+import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.SelectedFilesHolder
 import com.hhldiniz.praondefoiomeudinheiro.domain.file.InMemoryPlatformFile
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
@@ -32,6 +33,7 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 /**
@@ -74,6 +76,7 @@ class HomeViewModelParseTest {
         if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
         Dispatchers.resetMain()
         SelectedFilesHolder.files = emptyList()
+        DataClearedHolder.reset()
         CurrencyHolder.setCurrency(CurrencyOption.BRL)
     }
 
@@ -115,6 +118,37 @@ class HomeViewModelParseTest {
         assertTrue(vm.uiState.value.spendingData.isEmpty())
         assertTrue(vm.uiState.value.categorySpending.isEmpty())
         assertEquals(0.0, vm.uiState.value.totalSpending, 0.0)
+    }
+
+    /**
+     * Clearing all data sends the user back through onboarding, which ends in
+     * the landing flow — so files picked while the "cleared" flag is still set
+     * are a fresh import, not the stale selection the flag guards against
+     * (clearing empties [SelectedFilesHolder] itself).
+     */
+    @Test
+    fun loadData_filesPickedAfterDataCleared_stillImports() = runTest {
+        val range = ValueRange(
+            range = "A1:D2",
+            rows = emptyList(),
+            spendingEntries = listOf(entry("01/01/2024", "100,50")),
+            earningsEntries = emptyList()
+        )
+        whenever(spreadsheetRepository.readValues(any())).thenReturn(Result.success(range))
+        whenever(importRepository.insertEntries(any())).thenAnswer { invocation ->
+            @Suppress("UNCHECKED_CAST")
+            invocation.getArgument<List<ImportedEntry>>(0)
+        }
+        DataClearedHolder.markCleared()
+        SelectedFilesHolder.files = listOf(InMemoryPlatformFile("extrato.csv"))
+
+        val vm = buildViewModel()
+        vm.loadData()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify(importRepository).insertEntries(any())
+        assertTrue(vm.uiState.value.debugMessage?.contains("CSV OK") == true)
+        assertFalse(DataClearedHolder.cleared.value)
     }
 
     // -------------------------------------------------------------------------

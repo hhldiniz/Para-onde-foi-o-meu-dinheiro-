@@ -34,4 +34,15 @@ object OnboardingHolder {
         _completed.value = true
         store?.putString(KEY_COMPLETED, "true")
     }
+
+    /**
+     * Forgets that onboarding was completed, so the next start destination is
+     * the intro flow again. Used when the user clears all app data: with the
+     * database emptied, keeping this flag would drop them on an empty Home
+     * screen instead of taking them through onboarding again.
+     */
+    fun reset() {
+        _completed.value = false
+        store?.putString(KEY_COMPLETED, "false")
+    }
 }

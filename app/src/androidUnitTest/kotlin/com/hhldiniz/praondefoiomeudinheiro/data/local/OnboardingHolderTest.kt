@@ -75,4 +75,35 @@ class OnboardingHolderTest {
         OnboardingHolder.markCompleted()
         assertTrue(OnboardingHolder.completed.value)
     }
+
+    @Test
+    fun reset_clearsCompletedFlag() = runTest {
+        OnboardingHolder.init(store)
+        OnboardingHolder.markCompleted()
+
+        OnboardingHolder.reset()
+
+        assertFalse(OnboardingHolder.completed.value)
+    }
+
+    @Test
+    fun reset_persistsAcrossReinit() = runTest {
+        OnboardingHolder.init(store)
+        OnboardingHolder.markCompleted()
+        OnboardingHolder.reset()
+
+        OnboardingHolder.init(store)
+
+        assertFalse(OnboardingHolder.completed.value)
+    }
+
+    @Test
+    fun reset_flowEmitsNewValue() = runTest {
+        OnboardingHolder.init(store)
+        OnboardingHolder.markCompleted()
+
+        OnboardingHolder.reset()
+
+        assertFalse(OnboardingHolder.completed.first())
+    }
 }

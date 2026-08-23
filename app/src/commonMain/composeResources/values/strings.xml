@@ -144,7 +144,7 @@
     <string name="settings_danger_description">Esta ação apaga permanentemente todos os dados internos do aplicativo (movimentos e categorias).</string>
     <string name="settings_danger_delete_button">APAGAR TODOS OS DADOS</string>
     <string name="settings_danger_confirm_title">Apagar todos os dados?</string>
-    <string name="settings_danger_confirm_text">Todos os movimentos e categorias serão apagados permanentemente. Esta ação não pode ser desfeita.</string>
+    <string name="settings_danger_confirm_text">Todos os movimentos e categorias serão apagados permanentemente, o patrimônio inicial volta a zero e o aplicativo recomeça a configuração inicial. Esta ação não pode ser desfeita.</string>
     <string name="settings_danger_confirm_button">APAGAR TUDO</string>
     <string name="settings_danger_cancel_button">CANCELAR</string>
 

@@ -42,9 +42,9 @@ import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalYellow
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.NeoButton
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
-import com.hhldiniz.praondefoiomeudinheiro.data.local.DataClearedHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
+import com.hhldiniz.praondefoiomeudinheiro.data.repository.clearAllAppData
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.HardShadowBox
 import kotlinx.coroutines.launch
@@ -69,6 +69,7 @@ import com.hhldiniz.praondefoiomeudinheiro.resources.settings_title
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onDataCleared: () -> Unit,
 ) {
     val selectedCurrency by CurrencyHolder.selectedCurrency.collectAsState()
     val importRepository = koinInject<ImportRepository>()
@@ -159,9 +160,8 @@ fun SettingsScreen(
                     onClick = {
                         showDeleteConfirm = false
                         coroutineScope.launch {
-                            importRepository.clearAllData(categoryDao)
-                            DataClearedHolder.markCleared()
-                            onNavigateBack()
+                            clearAllAppData(importRepository, categoryDao)
+                            onDataCleared()
                         }
                     }
                 ) {

@@ -62,4 +62,25 @@ class PatrimonyHolderTest {
         PatrimonyHolder.setPatrimony(200.0)
         assertEquals(200.0, PatrimonyHolder.patrimony.value, 0.0)
     }
+
+    @Test
+    fun reset_clearsStoredPatrimony() = runTest {
+        PatrimonyHolder.init(store)
+        PatrimonyHolder.setPatrimony(1234.56)
+
+        PatrimonyHolder.reset()
+
+        assertEquals(0.0, PatrimonyHolder.patrimony.value, 0.0)
+    }
+
+    @Test
+    fun reset_persistsAcrossReinit() = runTest {
+        PatrimonyHolder.init(store)
+        PatrimonyHolder.setPatrimony(1234.56)
+        PatrimonyHolder.reset()
+
+        PatrimonyHolder.init(store)
+
+        assertEquals(0.0, PatrimonyHolder.patrimony.value, 0.0)
+    }
 }

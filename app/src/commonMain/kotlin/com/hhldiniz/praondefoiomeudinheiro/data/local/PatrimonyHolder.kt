@@ -29,4 +29,12 @@ object PatrimonyHolder {
         _patrimony.value = value
         store?.putDouble(KEY_PATRIMONY, value)
     }
+
+    /**
+     * Clears the stored patrimony back to zero, so onboarding asks for it
+     * again. Used when the user clears all app data.
+     */
+    fun reset() {
+        setPatrimony(0.0)
+    }
 }

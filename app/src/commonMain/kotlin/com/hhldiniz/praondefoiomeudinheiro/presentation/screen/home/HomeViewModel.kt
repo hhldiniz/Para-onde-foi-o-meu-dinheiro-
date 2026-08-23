@@ -140,7 +140,10 @@ class HomeViewModel(
      */
     fun loadData() {
         val selectedFiles = SelectedFilesHolder.files
-        if (selectedFiles.isEmpty() || DataClearedHolder.cleared.value) {
+        // Files picked after a "clear all data" are legitimate: clearing empties
+        // SelectedFilesHolder itself (see clearAllAppData), so anything here now
+        // was chosen by the landing flow afterwards and must still be imported.
+        if (selectedFiles.isEmpty()) {
             viewModelScope.launch {
                 val hasRoomData = withContext(ioDispatcher) { importRepository.count() > 0 }
                 if (hasRoomData && !DataClearedHolder.cleared.value) {
