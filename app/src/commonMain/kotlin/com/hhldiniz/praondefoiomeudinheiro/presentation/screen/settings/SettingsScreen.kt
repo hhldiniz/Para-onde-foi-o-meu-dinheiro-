@@ -43,6 +43,7 @@ import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalYellow
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.NeoButton
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
+import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.InvestmentDao
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.clearAllAppData
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
@@ -74,6 +75,7 @@ fun SettingsScreen(
     val selectedCurrency by CurrencyHolder.selectedCurrency.collectAsState()
     val importRepository = koinInject<ImportRepository>()
     val categoryDao = koinInject<CategoryDao>()
+    val investmentDao = koinInject<InvestmentDao>()
     val coroutineScope = rememberCoroutineScope()
     val appInstaller = rememberAppInstaller()
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -160,7 +162,7 @@ fun SettingsScreen(
                     onClick = {
                         showDeleteConfirm = false
                         coroutineScope.launch {
-                            clearAllAppData(importRepository, categoryDao)
+                            clearAllAppData(importRepository, categoryDao, investmentDao)
                             onDataCleared()
                         }
                     }

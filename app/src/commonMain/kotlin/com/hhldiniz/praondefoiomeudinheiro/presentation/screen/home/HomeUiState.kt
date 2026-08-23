@@ -54,6 +54,17 @@ enum class Period(val labelRes: StringResource) {
     CUSTOM(Res.string.period_custom)
 }
 
+/**
+ * The Home screen's bottom-bar tabs. [INVESTMENTS] renders
+ * `InvestmentsScreen`, which has its own ViewModel and its own add button —
+ * Home's import FAB only makes sense on [SUMMARY].
+ */
+enum class HomeTab {
+    SUMMARY,
+    ENTRIES,
+    INVESTMENTS,
+}
+
 /** A single entry suitable for display in the entries list. */
 data class EntryDisplay(
     val dateMillis: Long,

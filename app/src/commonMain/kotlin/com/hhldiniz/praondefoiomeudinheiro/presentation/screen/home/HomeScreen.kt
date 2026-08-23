@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -73,6 +74,7 @@ import com.hhldiniz.praondefoiomeudinheiro.util.formatDayMonthYear
 import kotlinx.coroutines.launch
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.presentation.components.localizedCategoryName
+import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.investments.InvestmentsScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlack
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
@@ -86,6 +88,7 @@ import com.hhldiniz.praondefoiomeudinheiro.resources.Res
 import com.hhldiniz.praondefoiomeudinheiro.resources.action_apply
 import com.hhldiniz.praondefoiomeudinheiro.resources.action_clear
 import com.hhldiniz.praondefoiomeudinheiro.resources.bottom_nav_entries
+import com.hhldiniz.praondefoiomeudinheiro.resources.bottom_nav_investments
 import com.hhldiniz.praondefoiomeudinheiro.resources.bottom_nav_summary
 import com.hhldiniz.praondefoiomeudinheiro.resources.chart_tab_earnings
 import com.hhldiniz.praondefoiomeudinheiro.resources.chart_tab_spending
@@ -230,14 +233,14 @@ private fun HomeContent(
     val currencyFormat = remember(selectedCurrency) { currencyFormatter(selectedCurrency) }
     val remaining = patrimony + totalEarnings - totalSpending
     var showEarnings by remember { mutableStateOf(false) }
-    var showEntries by remember { mutableStateOf(false) }
+    var selectedTab by remember { mutableStateOf(HomeTab.SUMMARY) }
     var showFilterDialog by remember { mutableStateOf(false) }
     var showImportMenu by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         floatingActionButton = {
-            if (!showEntries) {
+            if (selectedTab == HomeTab.SUMMARY) {
                 Box {
                     FloatingActionButton(
                         onClick = { showImportMenu = true },
@@ -318,21 +321,29 @@ private fun HomeContent(
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
-                    selected = !showEntries,
-                    onClick = { showEntries = false },
+                    selected = selectedTab == HomeTab.SUMMARY,
+                    onClick = { selectedTab = HomeTab.SUMMARY },
                     icon = { Icon(Icons.Filled.Home, contentDescription = null) },
                     label = { Text(stringResource(Res.string.bottom_nav_summary)) }
                 )
                 NavigationBarItem(
-                    selected = showEntries,
-                    onClick = { showEntries = true },
+                    selected = selectedTab == HomeTab.ENTRIES,
+                    onClick = { selectedTab = HomeTab.ENTRIES },
                     icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
                     label = { Text(stringResource(Res.string.bottom_nav_entries)) }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == HomeTab.INVESTMENTS,
+                    onClick = { selectedTab = HomeTab.INVESTMENTS },
+                    icon = { Icon(Icons.Filled.Star, contentDescription = null) },
+                    label = { Text(stringResource(Res.string.bottom_nav_investments)) }
                 )
             }
         }
     ) { innerPadding ->
-        if (showEntries) {
+        if (selectedTab == HomeTab.INVESTMENTS) {
+            InvestmentsScreen(modifier = Modifier.padding(innerPadding))
+        } else if (selectedTab == HomeTab.ENTRIES) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
