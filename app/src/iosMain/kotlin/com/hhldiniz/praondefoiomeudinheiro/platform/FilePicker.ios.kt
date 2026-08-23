@@ -71,9 +71,24 @@ actual fun rememberImportSourcePicker(onPicked: (PlatformFile) -> Unit): PickerL
                         UTTypeImage,
                         UTTypeCommaSeparatedText,
                         UTTypeSpreadsheet,
-                        UTTypePDF,
                     ),
                 ),
+                delegate,
+            )
+        }
+    }
+}
+
+@Composable
+actual fun rememberReceiptPicker(onPicked: (PlatformFile) -> Unit): PickerLauncher {
+    val currentOnPicked by rememberUpdatedState(onPicked)
+    val delegate = remember {
+        DocumentPickerDelegate { url -> currentOnPicked(IosPlatformFile(url)) }
+    }
+    return remember(delegate) {
+        PickerLauncher {
+            presentPicker(
+                UIDocumentPickerViewController(forOpeningContentTypes = listOf(UTTypeImage)),
                 delegate,
             )
         }

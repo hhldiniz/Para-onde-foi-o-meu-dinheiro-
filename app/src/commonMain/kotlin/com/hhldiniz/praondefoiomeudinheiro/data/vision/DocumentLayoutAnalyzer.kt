@@ -97,6 +97,19 @@ object DocumentLayoutAnalyzer {
         )
     }
 
+    /**
+     * Just the first pass: [document]'s words swept into lines of cells, with
+     * no column detection at all. A receipt is read line by line rather than
+     * as a table — see [com.hhldiniz.praondefoiomeudinheiro.data.vision.ReceiptAnalyzer] —
+     * and would only be hurt by having its ragged item lines forced into
+     * shared columns.
+     */
+    fun lines(document: RecognizedDocument): List<List<Cell>> {
+        val words = document.words.filter { it.text.isNotBlank() }
+        if (words.isEmpty()) return emptyList()
+        return groupIntoLines(words, medianHeight(words))
+    }
+
     private fun medianHeight(words: List<RecognizedWord>): Float {
         val heights = words.map { it.box.height }.filter { it > 0f }.sorted()
         if (heights.isEmpty()) return FALLBACK_HEIGHT

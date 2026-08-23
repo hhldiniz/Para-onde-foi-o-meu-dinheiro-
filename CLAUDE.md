@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-"Pra onde foi o meu dinheiro" (Portuguese for "Where did my money go") is a Kotlin Multiplatform personal-finance app for Android, iOS, and the web (Kotlin/Wasm, deployed to GitHub Pages). Users import a CSV/ODS/PDF file of income and expenses — or a photo/screenshot of a statement, via the automatic computer-vision importer (see "Automatic import" below) — and the app stores the parsed entries locally and visualizes them with pie/line charts. There is no backend — everything is on-device (Room on Android/iOS, `localStorage` on web; text recognition uses each platform's on-device engine).
+"Pra onde foi o meu dinheiro" (Portuguese for "Where did my money go") is a Kotlin Multiplatform personal-finance app for Android, iOS, and the web (Kotlin/Wasm, deployed to GitHub Pages). Users import a CSV/ODS/PDF file of income and expenses — or a photo/screenshot of a statement, or a photo of a receipt ("nota fiscal"), via the automatic computer-vision importer (see "Automatic import" below) — and the app stores the parsed entries locally and visualizes them with pie/line charts. There is no backend — everything is on-device (Room on Android/iOS, `localStorage` on web; text recognition uses each platform's on-device engine).
 
 - Language: Kotlin Multiplatform, UI: Compose Multiplatform (Material 3) — the same composables render on all three platforms
 - Package/namespace: `com.hhldiniz.praondefoiomeudinheiro`
@@ -93,7 +93,7 @@ Nothing signing-related is committed: `*.jks`, `*.keystore` and `keystore.proper
 
 Standard layered structure under `app/src/commonMain/kotlin/com/hhldiniz/praondefoiomeudinheiro/`:
 
-- **`platform/`** — the `expect` surface, i.e. everything the shared code cannot do by itself: `currentTimeMillis`, `timeZoneOffsetMillis`, `currentRegionCode`, `ioDispatcher` (there is no common `Dispatchers.IO`; wasmJs uses `Dispatchers.Default`, same reasoning as iOS), `currencyFormatter`, the `rememberSpreadsheetFilePicker` / `rememberSpreadsheetFolderPicker` / `rememberImportSourcePicker` composables, `recognizeDocumentText` (`TextRecognizer.kt`, see "Automatic import"), and `rememberAppInstaller` (`AppInstall.kt`, the in-app install button — real only on wasmJs, a constant "no" on Android/iOS, see "Web target"). Add to this file rather than sprinkling `expect` declarations around.
+- **`platform/`** — the `expect` surface, i.e. everything the shared code cannot do by itself: `currentTimeMillis`, `timeZoneOffsetMillis`, `currentRegionCode`, `ioDispatcher` (there is no common `Dispatchers.IO`; wasmJs uses `Dispatchers.Default`, same reasoning as iOS), `currencyFormatter`, the `rememberSpreadsheetFilePicker` / `rememberSpreadsheetFolderPicker` / `rememberImportSourcePicker` / `rememberReceiptPicker` composables, `recognizeDocumentText` (`TextRecognizer.kt`, see "Automatic import"), and `rememberAppInstaller` (`AppInstall.kt`, the in-app install button — real only on wasmJs, a constant "no" on Android/iOS, see "Web target"). Add to this file rather than sprinkling `expect` declarations around.
 - **`domain/file/`** — `PlatformFile` / `PlatformFolder`, the abstraction over a picked document that replaced `android.net.Uri` + `ContentResolver`. Android backs them with the Storage Access Framework, iOS with `UIDocumentPickerViewController` and security-scoped `NSURL`s, wasmJs with a hidden `<input type="file">` (`webkitdirectory` for the folder picker) reading bytes via the File API's `arrayBuffer()`. `InMemoryPlatformFile` exists for tests and previews.
 - **`data/local/`** (commonMain, Room-free) — `ImportedEntry` / `Category` (plain `@Serializable` data classes) and the `ImportedEntryDao` / `CategoryDao` interfaces they're read through, plus file parsing:
   - `CsvParser` / `OdsParser` / `PdfParser` turn raw file bytes into `List<List<String>>` rows; format is auto-detected by file extension in both `SpreadsheetFileValidator` and `FileSpreadsheetRepository` (`.ods` → OdsParser, `.pdf` → PdfParser, everything else treated as CSV).
@@ -104,8 +104,8 @@ Standard layered structure under `app/src/commonMain/kotlin/com/hhldiniz/praonde
   - `TransactionColumnMapper` locates the date/amount/description/category columns inside a header row by matching cell text against per-field synonym sets (Portuguese/English/Spanish + a few common variants, accent- and case-insensitive) — see "Spreadsheet import format" below. Both `SpreadsheetFileValidator` and `FileSpreadsheetRepository` share this instead of each hardcoding column positions/names.
   - `SelectedFilesHolder`, `CurrencyHolder`, `PatrimonyHolder`, `DataClearedHolder` are process-wide singleton `StateFlow` holders (not DI-managed) used to pass small bits of state across screens/lifecycle boundaries — e.g. `DataClearedHolder` tells screens to show zeroed data instead of stale/mocked values right after a "clear all data" action. `CurrencyHolder`/`PatrimonyHolder` persist through a `prefs.KeyValueStore` (SharedPreferences / NSUserDefaults / `localStorage`) and take `init(store)` once from `AppInitializer`.
 - **`data/repository/`** — `ImportRepository` (imported entries/categories CRUD + aggregation queries used by charts) and `FileSpreadsheetRepository` (implements `domain.repository.SpreadsheetRepository`, orchestrates validate → parse → map rows to spending/earnings entries). Both take the plain `ImportedEntryDao`/`CategoryDao` interfaces and are unaffected by which platform backs them.
-- **`data/vision/`** — the automatic importer (see "Automatic import" below): `DocumentLayoutAnalyzer` (words + boxes → table), `TransactionFieldClassifier` (table → column roles → transactions), `SmartImportAnalyzer` (the whole pipeline, injectable recognizer for tests).
-- **`domain/vision/`** — its plain models: `BoundingBox` / `RecognizedWord` / `RecognizedDocument` (the recognizer contract) and `TransactionField` / `FieldMapping` / `DetectedTransaction` / `SmartImportAnalysis` (its output).
+- **`data/vision/`** — the automatic importer (see "Automatic import" below): `DocumentLayoutAnalyzer` (words + boxes → lines, and lines → table), `TransactionFieldClassifier` (table → column roles → transactions), `ReceiptAnalyzer` (lines → one purchase: merchant, date, items, total), `SmartImportAnalyzer` (both pipelines, injectable recognizer for tests).
+- **`domain/vision/`** — its plain models: `BoundingBox` / `RecognizedWord` / `RecognizedDocument` (the recognizer contract), `TransactionField` / `FieldMapping` / `DetectedTransaction` / `SmartImportAnalysis` (the statement output) and `ReceiptItem` / `DetectedReceipt` / `ReceiptAnalysis` (the receipt output).
 - **`domain/`** — plain models/interfaces with no platform or Room dependency (`ValueRange`, `CurrencyOption`, `FileValidationReport`, `UiText`, `SpreadsheetRepository` interface).
 - **`util/`** — `CivilDate.kt` holds the proleptic-Gregorian arithmetic that replaced `java.time`/`Calendar` (epoch millis ↔ local date, ISO week number, month subtraction, `dd/MM/yyyy` formatting), plus `TextNormalization.kt` for accent folding in place of `java.text.Normalizer`.
 - **`di/AppModule.kt`** — shared Koin module wiring repositories and ViewModels, plus `expect val platformModule` for the bindings that need platform APIs. `platformModule` also supplies the `ImportedEntryDao`/`CategoryDao` singletons on every platform (Room-backed on Android/iOS, `localStorage`-backed on wasmJs — see "Room schema"), since `appModule` itself must stay Room-free. When adding a repository/ViewModel, register it in `appModule`.
@@ -134,14 +134,31 @@ Column detection is name-based and position-independent, not tied to fixed indic
 ### Automatic import (computer vision)
 
 The direct import above requires the file to carry a recognizable header. The
-*automatic* importer does not require anything: it takes a photo, a screenshot,
-a CSV/ODS/PDF — anything — and works out for itself which column is the date,
-the amount, the description and the category. Both paths stay available; the
-Home `+` menu offers "Importar arquivo"/"Importar pasta" (direct, exact) and
-"Importação inteligente" (automatic, reviewable).
+*automatic* importer does not require anything: it takes a photo, a screenshot
+or a CSV/ODS and works out for itself which column is the date, the amount, the
+description and the category. Both paths stay available; the Home `+` menu
+offers "Importar arquivo"/"Importar pasta" (direct, exact) and "Importação
+inteligente" (automatic, reviewable).
 
-The pipeline is `SmartImportAnalyzer` (`data/vision/`), and every stage of it is
-common code except text recognition:
+The automatic screen offers two readings, chosen by the user rather than
+guessed, because they are different problems:
+
+- **A statement** — many transactions laid out as a table — goes through
+  `SmartImportAnalyzer.analyze` and the four stages below.
+- **A receipt** ("nota fiscal", "cupom fiscal", NFC-e) — one purchase, a
+  merchant, a list of items and a total — goes through
+  `SmartImportAnalyzer.analyzeReceipt` and `ReceiptAnalyzer`; see "Receipt
+  reading" below.
+
+**PDFs are not read by either.** A PDF already carries its text as text, so the
+direct import reads it exactly instead of guessing at a reconstructed layout;
+handing one to the automatic importer fails with
+`UnsupportedImportSourceException`, which the UI turns into a message pointing
+at "Importar arquivo". `SmartImportSource` therefore has no `PDF` entry and
+`sourceOf` returns null for one.
+
+The statement pipeline is `SmartImportAnalyzer` (`data/vision/`), and every
+stage of it is common code except text recognition:
 
 1. **Recognition** — `expect suspend fun recognizeDocumentText` (`platform/TextRecognizer.kt`)
    returns words with boxes. ML Kit's bundled Latin recognizer on Android
@@ -177,10 +194,45 @@ common code except text recognition:
    database until the user confirms; insertion then reuses `ImportRepository`,
    so the same duplicate-ignoring behaviour applies.
 
-Because stage 2's output is the same `List<List<String>>` the CSV/ODS/PDF
-parsers produce, a spreadsheet takes the identical route from stage 3 onward —
-which is what lets the automatic path import a file whose layout the direct
-path would reject.
+Because stage 2's output is the same `List<List<String>>` the CSV/ODS parsers
+produce, a spreadsheet takes the identical route from stage 3 onward — which is
+what lets the automatic path import a file whose layout the direct path would
+reject.
+
+### Receipt reading
+
+`ReceiptAnalyzer` (`data/vision/`) reads a photographed receipt into a single
+`DetectedReceipt`. It shares stage 1 (the same `recognizeDocumentText`) and the
+*first* pass of stage 2 — `DocumentLayoutAnalyzer.lines`, which stops at lines
+of cells — and then goes its own way, because a receipt is not a table: its item
+lines have no date column and its amounts all belong to one purchase, so the
+column classifier makes nonsense of them.
+
+What it reads off those lines, all of it label-driven and store-agnostic:
+
+- **The total** is the line carrying the strongest "total" label
+  (`STRONG_TOTAL_LABELS` beats `WEAK_TOTAL_LABELS`, later lines beat earlier
+  ones), with its value taken from the next line when the receipt right-aligns
+  it onto its own. `NEVER_TOTAL` is checked first, which is what keeps
+  "Subtotal", "Qtd. total de itens", taxes, payment and change out of it. With
+  no label anywhere the largest remaining amount stands in and
+  `totalWasLabelled` is false, which costs confidence and shows a warning.
+- **The items** are the priced lines above the total, with the `2 UN x 12,50`
+  tail matched as a shape (unit price, multiplier, unit, quantity — right to
+  left, each optional) rather than by eating every trailing number, so
+  "ARROZ TIPO 1" keeps its name and reports a quantity of 2.
+- **The merchant** is the first header line that is neither an address, a
+  document number nor boilerplate (`LINE_NOISE`); the **date** is the one next
+  to an "emissão"/"data" label, or the first printed, falling back to today; the
+  **CNPJ** is the digit run on the "CNPJ" line.
+- **The category** is guessed from `CATEGORY_KEYWORDS` over the merchant (worth
+  3) and the item descriptions (worth 1), and is blank when nothing matches.
+  Add keywords there rather than special-casing a store.
+
+`SmartImportViewModel` proposes the total as one expense; `onItemizedToggled`
+swaps it for one candidate per item (the receipt's date, category and
+confidence carry over). From there it is the same review and the same
+`ImportRepository` insertion as the statement path.
 
 ### Room schema
 
@@ -226,6 +278,7 @@ Both browser bridges (`pdf-extract.js`, `ocr-extract.js`) wrap every failure wit
 - Unit tests (`app/src/androidUnitTest`) mirror the source package structure 1:1 and use JUnit4 + `mockito-kotlin` + `kotlinx-coroutines-test`; ViewModel tests typically pair with an `androidx-arch-core-testing` `InstantTaskExecutorRule`. They compile against the Android target (which now includes `roomMain`), so they exercise the common code and its Android/`roomMain` actuals together.
 - Because the shared code no longer touches Android APIs, most tests need no framework doubles: `InMemoryPlatformFile` stands in for a picked document and `InMemoryKeyValueStore` for preferences.
 - The automatic importer is tested end to end on the JVM by injecting a canned `RecognizedDocument` into `SmartImportAnalyzer` (`data/vision/SmartImportAnalyzerTest`), so the pipeline is covered without a text recognizer. `DocumentLayoutAnalyzerTest` places words by hand to check line/cell/column reconstruction; `TransactionFieldClassifierTest` pins the column mapping for the layouts the app has to survive (headerless, reordered, pt/en/es headers, debit/credit pairs, direction columns, signed amounts) and is the place to add a case when a new layout misclassifies.
+- `ReceiptAnalyzerTest` does the same for the receipt reader, one fixture per printed layout it has to survive (an NFC-e coupon with item codes and a "Qtd. total de itens" line, a receipt with no "total" label, one printing the total's value below its label, one whose service fee has to land among the items for them to add up). A misread receipt belongs there as a new fixture.
 - The common replacements for JVM libraries have their own tests — `util/CivilDateTest` (checked against `java.time`, which is still available in the JVM test run), `data/local/zip/ZipReaderTest` (archives produced by `java.util.zip`), `data/local/zip/RawInflateTest` (the wasmJs raw-DEFLATE decoder, cross-checked against `java.util.zip.Deflater` output across stored/fixed-Huffman/dynamic-Huffman blocks and every compression level even though it only runs in production on wasmJs), `data/local/xml/XmlPullReaderTest`, and `data/local/PdfTextLayoutTest` (the wasmJs PDF page-layout reconstruction, driven by hand-placed runs — including the blank gap-runs pdf.js emits, which is the case that regressed).
 - Instrumented tests (`app/src/androidInstrumentedTest`) are reserved for things that need a real Android environment: Room DB behavior (`AppDatabaseTest`) and PDFBox text extraction (`PdfParserTest`).
 - No mocking framework is used for Room itself in unit tests — parser/repository logic is tested with plain Kotlin objects and in-memory data structures.

@@ -3,6 +3,7 @@ package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.smartimport
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,11 +41,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hhldiniz.praondefoiomeudinheiro.data.local.CurrencyHolder
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.resolve
+import com.hhldiniz.praondefoiomeudinheiro.domain.vision.DetectedReceipt
 import com.hhldiniz.praondefoiomeudinheiro.domain.vision.FieldMapping
 import com.hhldiniz.praondefoiomeudinheiro.domain.vision.SmartImportSource
 import com.hhldiniz.praondefoiomeudinheiro.domain.vision.TransactionField
 import com.hhldiniz.praondefoiomeudinheiro.platform.currencyFormatter
 import com.hhldiniz.praondefoiomeudinheiro.platform.rememberImportSourcePicker
+import com.hhldiniz.praondefoiomeudinheiro.platform.rememberReceiptPicker
 import com.hhldiniz.praondefoiomeudinheiro.presentation.components.localizedCategoryName
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalCyan
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalPink
@@ -62,6 +66,9 @@ import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_btn_done
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_btn_import
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_btn_pick
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_btn_pick_another
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_btn_itemize
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_btn_receipt
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_btn_use_total
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_done_categories
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_done_summary
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_done_title
@@ -76,11 +83,20 @@ import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_low_confidence
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_mapping_item
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_mapping_title
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_no_category
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_receipt_document
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_receipt_intro
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_receipt_items
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_receipt_items_mismatch
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_receipt_no_items
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_receipt_no_merchant
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_receipt_title
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_receipt_total
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_receipt_unlabelled_total
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_review_title
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_source_csv
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_source_image
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_source_ods
-import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_source_pdf
+import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_source_receipt
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_summary
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_title
 import com.hhldiniz.praondefoiomeudinheiro.resources.smart_import_toggle_hint
@@ -90,10 +106,15 @@ import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 
 /**
- * The automatic import screen: pick anything (photo, screenshot, spreadsheet,
- * PDF), see which columns the classifier recognized and which transactions it
- * proposes, then confirm. The direct import on the Home screen is untouched
- * and stays the exact path for files already in the expected format.
+ * The automatic import screen, with the two readings it offers side by side:
+ * a **statement** (photo, screenshot or spreadsheet) whose columns the
+ * classifier works out, and a **receipt** photographed and read by computer
+ * vision into one purchase. Either way the user sees what was recognized and
+ * confirms before anything is written.
+ *
+ * PDFs are not offered here — the direct import on the Home screen reads their
+ * text exactly, and remains the right path for them and for files already in
+ * the expected format.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,6 +125,7 @@ fun SmartImportScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val picker = rememberImportSourcePicker { file -> viewModel.onFilePicked(file) }
+    val receiptPicker = rememberReceiptPicker { file -> viewModel.onReceiptPicked(file) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -141,6 +163,7 @@ fun SmartImportScreen(
                 SmartImportStage.IDLE -> IdleContent(
                     error = uiState.error?.resolve(),
                     onPick = { picker.launch() },
+                    onPickReceipt = { receiptPicker.launch() },
                 )
 
                 SmartImportStage.ANALYZING -> AnalyzingContent(fileName = uiState.fileName)
@@ -151,9 +174,11 @@ fun SmartImportScreen(
                     onToggle = viewModel::onCandidateToggled,
                     onToggleType = viewModel::onCandidateTypeToggled,
                     onConfirm = viewModel::confirmImport,
+                    onItemizedToggled = viewModel::onItemizedToggled,
                     onPickAnother = {
+                        val wasReceipt = uiState.mode == SmartImportMode.RECEIPT
                         viewModel.reset()
-                        picker.launch()
+                        if (wasReceipt) receiptPicker.launch() else picker.launch()
                     },
                 )
 
@@ -167,9 +192,11 @@ fun SmartImportScreen(
 }
 
 @Composable
-private fun IdleContent(error: String?, onPick: () -> Unit) {
+private fun IdleContent(error: String?, onPick: () -> Unit, onPickReceipt: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -202,6 +229,26 @@ private fun IdleContent(error: String?, onPick: () -> Unit) {
             backgroundColor = BrutalCyan,
             textColor = MaterialTheme.colorScheme.onTertiary,
             text = stringResource(Res.string.smart_import_btn_pick),
+        )
+
+        Spacer(Modifier.height(20.dp))
+
+        NeoCard(backgroundColor = BrutalYellow) {
+            Text(
+                text = stringResource(Res.string.smart_import_receipt_intro),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSecondary,
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        NeoButton(
+            onClick = onPickReceipt,
+            modifier = Modifier.fillMaxWidth(),
+            backgroundColor = BrutalPink,
+            text = stringResource(Res.string.smart_import_btn_receipt),
         )
     }
 }
@@ -237,55 +284,18 @@ private fun ReviewContent(
     onToggle: (Int) -> Unit,
     onToggleType: (Int) -> Unit,
     onConfirm: () -> Unit,
+    onItemizedToggled: () -> Unit,
     onPickAnother: () -> Unit,
 ) {
     val currency by CurrencyHolder.selectedCurrency.collectAsStateWithLifecycle()
     val format = remember(currency) { currencyFormatter(currency) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        NeoCard {
-            Column {
-                Text(
-                    text = state.fileName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = stringResource(
-                        Res.string.smart_import_summary,
-                        state.rowsScanned,
-                        (state.confidence * 100).roundToInt(),
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(Res.string.smart_import_mapping_title),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Black,
-                )
-                Spacer(Modifier.height(6.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    state.source?.let { source -> NeoTag(text = sourceLabel(source), backgroundColor = BrutalCyan) }
-                    state.mappings.forEach { mapping -> MappingTag(mapping) }
-                }
-                if (state.isLowConfidence) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(Res.string.smart_import_low_confidence),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
+        val receipt = state.receipt
+        if (state.mode == SmartImportMode.RECEIPT && receipt != null) {
+            ReceiptSummaryCard(receipt = receipt, formatAmount = { format.format(it) })
+        } else {
+            StatementSummaryCard(state = state)
         }
 
         Spacer(Modifier.height(12.dp))
@@ -320,6 +330,22 @@ private fun ReviewContent(
 
         Spacer(Modifier.height(12.dp))
 
+        if (state.mode == SmartImportMode.RECEIPT && state.canItemize) {
+            NeoButton(
+                onClick = onItemizedToggled,
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = BrutalYellow,
+                textColor = MaterialTheme.colorScheme.onSecondary,
+                enabled = !saving,
+                text = stringResource(
+                    if (state.itemized) Res.string.smart_import_btn_use_total
+                    else Res.string.smart_import_btn_itemize
+                ),
+            )
+
+            Spacer(Modifier.height(8.dp))
+        }
+
         NeoButton(
             onClick = onPickAnother,
             modifier = Modifier.fillMaxWidth(),
@@ -341,6 +367,155 @@ private fun ReviewContent(
         )
 
         Spacer(Modifier.height(16.dp))
+    }
+}
+
+/**
+ * What the classifier made of a statement: the file it read, how many rows it
+ * scanned, and which column it took for which field.
+ */
+@Composable
+private fun StatementSummaryCard(state: SmartImportUiState) {
+    NeoCard {
+        Column {
+            Text(
+                text = state.fileName,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(
+                    Res.string.smart_import_summary,
+                    state.rowsScanned,
+                    (state.confidence * 100).roundToInt(),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(Res.string.smart_import_mapping_title),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Black,
+            )
+            Spacer(Modifier.height(6.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                state.source?.let { source -> NeoTag(text = sourceLabel(source), backgroundColor = BrutalCyan) }
+                state.mappings.forEach { mapping -> MappingTag(mapping) }
+            }
+            if (state.isLowConfidence) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(Res.string.smart_import_low_confidence),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * What the receipt reader made of the photo: who was paid, when, how much, and
+ * how sure it is — plus the two things worth a warning, a total it had to
+ * guess and items that do not add up to it.
+ */
+@Composable
+private fun ReceiptSummaryCard(receipt: DetectedReceipt, formatAmount: (Double) -> String) {
+    NeoCard {
+        Column {
+            Text(
+                text = stringResource(Res.string.smart_import_receipt_title),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Black,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = receipt.merchant.ifBlank {
+                    stringResource(Res.string.smart_import_receipt_no_merchant)
+                },
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Black,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (receipt.documentId.isNotBlank()) {
+                Text(
+                    text = stringResource(Res.string.smart_import_receipt_document, receipt.documentId),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(Res.string.smart_import_receipt_total, formatAmount(receipt.total)),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Black,
+            )
+            Text(
+                text = if (receipt.items.isEmpty()) {
+                    stringResource(Res.string.smart_import_receipt_no_items)
+                } else {
+                    stringResource(
+                        Res.string.smart_import_receipt_items,
+                        receipt.items.size,
+                        (receipt.confidence * 100).roundToInt(),
+                    )
+                },
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                NeoTag(
+                    text = stringResource(Res.string.smart_import_source_receipt),
+                    backgroundColor = BrutalCyan,
+                )
+                NeoTag(
+                    text = formatDayMonthYear(receipt.dateMillis),
+                    backgroundColor = BrutalYellow,
+                    textColor = MaterialTheme.colorScheme.onSecondary,
+                )
+                if (receipt.category.isNotBlank()) {
+                    NeoTag(
+                        text = localizedCategoryName(receipt.category),
+                        backgroundColor = BrutalYellow,
+                        textColor = MaterialTheme.colorScheme.onSecondary,
+                    )
+                }
+            }
+            if (!receipt.totalWasLabelled) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(Res.string.smart_import_receipt_unlabelled_total),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (receipt.items.isNotEmpty() && !receipt.itemsMatchTotal) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(
+                        Res.string.smart_import_receipt_items_mismatch,
+                        formatAmount(receipt.itemsTotal),
+                        formatAmount(receipt.total),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
     }
 }
 
@@ -506,6 +681,5 @@ private fun sourceLabel(source: SmartImportSource) = stringResource(
         SmartImportSource.IMAGE -> Res.string.smart_import_source_image
         SmartImportSource.CSV -> Res.string.smart_import_source_csv
         SmartImportSource.ODS -> Res.string.smart_import_source_ods
-        SmartImportSource.PDF -> Res.string.smart_import_source_pdf
     }
 )

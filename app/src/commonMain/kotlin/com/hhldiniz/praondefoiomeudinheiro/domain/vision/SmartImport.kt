@@ -17,13 +17,19 @@ enum class TransactionField {
     TYPE,
 }
 
-/** Where the rows handed to the classifier came from. */
+/**
+ * Where the rows handed to the classifier came from.
+ *
+ * PDFs are deliberately absent: a PDF already carries its text as text, so it
+ * belongs to the direct import, which reads it exactly instead of guessing at
+ * a reconstructed layout. The automatic path takes what has no usable
+ * structure of its own — a photo, a screenshot, a loosely shaped table.
+ */
 enum class SmartImportSource {
     /** A photo or screenshot, read by the platform text recognizer. */
     IMAGE,
     CSV,
     ODS,
-    PDF,
 }
 
 /** One column the classifier assigned to a [field], with how sure it is. */
