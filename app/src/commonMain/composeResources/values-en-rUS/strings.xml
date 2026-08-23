@@ -163,17 +163,32 @@
     <string name="category_outros">Other</string>
 
     <!-- Smart (computer-vision) import -->
-    <string name="home_menu_smart_import">Smart import (photo)</string>
+    <string name="home_menu_smart_import">Smart import (photo or receipt)</string>
     <string name="smart_import_title">Smart Import</string>
-    <string name="smart_import_intro">Pick a photo, a screenshot or a file. The app reads the text on your device and works out the date, amount, description and category columns by itself — no specific format required.</string>
-    <string name="smart_import_btn_pick">CHOOSE IMAGE OR FILE</string>
+    <string name="smart_import_intro">Choose what to read: a statement with several transactions (photo, screenshot or spreadsheet), or a photo of a receipt. Recognition happens on your own device and the app works the fields out by itself. For PDFs, use “Import file” on the home menu.</string>
+    <string name="smart_import_btn_pick">READ A STATEMENT (PHOTO OR SHEET)</string>
     <string name="smart_import_btn_pick_another">CHOOSE ANOTHER FILE</string>
     <string name="smart_import_analyzing">Analyzing %1$s...</string>
     <string name="smart_import_analyzing_hint">Recognition runs on your device. Nothing is uploaded.</string>
     <string name="smart_import_source_image">IMAGE</string>
     <string name="smart_import_source_csv">CSV</string>
     <string name="smart_import_source_ods">ODS</string>
-    <string name="smart_import_source_pdf">PDF</string>
+    <string name="smart_import_receipt_intro">Receipt: take a photo of it and computer vision reads the merchant, the date, the items and the total.</string>
+    <string name="smart_import_btn_receipt">READ A RECEIPT (PHOTO)</string>
+    <string name="smart_import_source_receipt">RECEIPT</string>
+    <string name="smart_import_receipt_title">RECEIPT RECOGNIZED</string>
+    <string name="smart_import_receipt_no_merchant">Merchant not identified</string>
+    <string name="smart_import_receipt_document">Tax ID %1$s</string>
+    <string name="smart_import_receipt_total">Total: %1$s</string>
+    <string name="smart_import_receipt_items">%1$d items recognized · %2$d%% confidence</string>
+    <string name="smart_import_receipt_no_items">No items recognized: only the total can be imported.</string>
+    <string name="smart_import_receipt_unlabelled_total">No "total" field was found on the receipt, so the largest value read was used. Check it before importing.</string>
+    <string name="smart_import_receipt_items_mismatch">The items add up to %1$s, not to the total of %2$s; one of them may have been misread.</string>
+    <string name="smart_import_btn_itemize">IMPORT THE ITEMS SEPARATELY</string>
+    <string name="smart_import_btn_use_total">IMPORT THE TOTAL ONLY</string>
+    <string name="smart_import_error_no_receipt">No amounts could be found in this photo. Try a sharper picture with the whole receipt in frame and well lit.</string>
+    <string name="smart_import_error_receipt_needs_image">Reading a receipt needs a photo or a screenshot of it.</string>
+    <string name="smart_import_error_unsupported">The smart import does not read this kind of file. For PDFs, use "Import file" on the home menu, which reads the PDF text exactly as it is.</string>
     <string name="smart_import_summary">%1$d rows analyzed · %2$d%% confidence</string>
     <string name="smart_import_mapping_title">DETECTED COLUMNS</string>
     <string name="smart_import_mapping_item">%1$s · column %2$d · %3$d%%</string>

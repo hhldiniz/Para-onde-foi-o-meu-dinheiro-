@@ -9,6 +9,8 @@ import com.hhldiniz.praondefoiomeudinheiro.domain.vision.TransactionField
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -42,6 +44,56 @@ class SmartImportAnalyzerTest {
             word("Uber", 0.30f, 0.30f, 0.36f),
             word("R$", 0.79f, 0.30f, 0.83f),
             word("32,00", 0.835f, 0.30f, 0.88f),
+        )
+    )
+
+    /** The words a recognizer would return for a photographed supermarket receipt. */
+    private val receiptPhoto = RecognizedDocument(
+        listOf(
+            word("Mercado", 0.20f, 0.04f, 0.38f),
+            word("Bom", 0.39f, 0.04f, 0.47f),
+            word("Preço", 0.48f, 0.04f, 0.60f),
+
+            word("CNPJ", 0.20f, 0.09f, 0.30f),
+            word("12.345.678/0001-90", 0.31f, 0.09f, 0.62f),
+
+            word("Emissão:", 0.20f, 0.14f, 0.34f),
+            word("15/03/2024", 0.35f, 0.14f, 0.52f),
+
+            word("001", 0.05f, 0.24f, 0.10f),
+            word("ARROZ", 0.12f, 0.24f, 0.25f),
+            word("TIPO", 0.26f, 0.24f, 0.34f),
+            word("1", 0.35f, 0.24f, 0.37f),
+            word("2", 0.55f, 0.24f, 0.57f),
+            word("UN", 0.58f, 0.24f, 0.63f),
+            word("x", 0.64f, 0.24f, 0.66f),
+            word("12,50", 0.67f, 0.24f, 0.77f),
+            word("25,00", 0.85f, 0.24f, 0.95f),
+
+            word("002", 0.05f, 0.29f, 0.10f),
+            word("FEIJÃO", 0.12f, 0.29f, 0.26f),
+            word("PRETO", 0.27f, 0.29f, 0.38f),
+            word("20,40", 0.85f, 0.29f, 0.95f),
+
+            word("Qtd.", 0.05f, 0.36f, 0.12f),
+            word("total", 0.13f, 0.36f, 0.22f),
+            word("de", 0.23f, 0.36f, 0.27f),
+            word("itens:", 0.28f, 0.36f, 0.37f),
+            word("2", 0.90f, 0.36f, 0.93f),
+
+            word("VALOR", 0.05f, 0.41f, 0.17f),
+            word("TOTAL", 0.18f, 0.41f, 0.30f),
+            word("R$", 0.31f, 0.41f, 0.36f),
+            word("45,40", 0.85f, 0.41f, 0.95f),
+
+            word("Forma", 0.05f, 0.46f, 0.16f),
+            word("de", 0.17f, 0.46f, 0.21f),
+            word("pagamento:", 0.22f, 0.46f, 0.40f),
+            word("Dinheiro", 0.41f, 0.46f, 0.56f),
+            word("50,00", 0.85f, 0.46f, 0.95f),
+
+            word("Troco", 0.05f, 0.51f, 0.16f),
+            word("4,60", 0.87f, 0.51f, 0.95f),
         )
     )
 
@@ -139,10 +191,59 @@ class SmartImportAnalyzerTest {
 
         assertEquals(SmartImportSource.IMAGE, analyzer.sourceOf("foto.JPG"))
         assertEquals(SmartImportSource.IMAGE, analyzer.sourceOf("captura.png"))
-        assertEquals(SmartImportSource.PDF, analyzer.sourceOf("extrato.pdf"))
         assertEquals(SmartImportSource.ODS, analyzer.sourceOf("planilha.ods"))
         assertEquals(SmartImportSource.CSV, analyzer.sourceOf("gastos.csv"))
         assertEquals(SmartImportSource.IMAGE, analyzer.sourceOf("document", "image/heic"))
-        assertEquals(SmartImportSource.PDF, analyzer.sourceOf("document", "application/pdf"))
+    }
+
+    @Test
+    fun sourceOf_pdfIsNotRead() {
+        val analyzer = analyzer()
+
+        assertNull(analyzer.sourceOf("extrato.pdf"))
+        assertNull(analyzer.sourceOf("EXTRATO.PDF"))
+        assertNull(analyzer.sourceOf("document", "application/pdf"))
+    }
+
+    @Test
+    fun analyze_pdf_failsAndPointsAtTheDirectImport() = runBlocking {
+        val result = analyzer().analyze(InMemoryPlatformFile("extrato.pdf", byteArrayOf(1)))
+
+        assertTrue(result.exceptionOrNull() is UnsupportedImportSourceException)
+    }
+
+    @Test
+    fun analyzeReceipt_readsThePhotoAsOnePurchase() = runBlocking {
+        val result = analyzer(receiptPhoto).analyzeReceipt(InMemoryPlatformFile("nota.jpg"))
+
+        val receipt = result.getOrThrow()?.receipt
+        assertNotNull(receipt)
+        assertEquals("Mercado Bom Preço", receipt!!.merchant)
+        assertEquals(45.40, receipt.total, 0.001)
+        assertEquals(2, receipt.items.size)
+        assertEquals("Alimentacao", receipt.category)
+    }
+
+    @Test
+    fun analyzeReceipt_rejectsAnythingThatIsNotAPhoto() = runBlocking {
+        val result = analyzer().analyzeReceipt(InMemoryPlatformFile("nota.csv", byteArrayOf(1)))
+
+        assertTrue(result.exceptionOrNull() is ReceiptRequiresImageException)
+    }
+
+    @Test
+    fun analyzeReceipt_photoWithoutAmounts_succeedsWithNothingToReview() = runBlocking {
+        val poster = RecognizedDocument(
+            listOf(
+                word("Feira", 0.05f, 0.10f, 0.20f),
+                word("de", 0.21f, 0.10f, 0.25f),
+                word("domingo", 0.26f, 0.10f, 0.40f),
+            )
+        )
+
+        val result = analyzer(poster).analyzeReceipt(InMemoryPlatformFile("cartaz.png"))
+
+        assertTrue(result.isSuccess)
+        assertNull(result.getOrThrow())
     }
 }

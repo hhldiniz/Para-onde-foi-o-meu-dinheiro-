@@ -163,17 +163,32 @@
     <string name="category_outros">Otros</string>
 
     <!-- Smart (computer-vision) import -->
-    <string name="home_menu_smart_import">Importación inteligente (foto)</string>
+    <string name="home_menu_smart_import">Importación inteligente (foto o ticket)</string>
     <string name="smart_import_title">Importación Inteligente</string>
-    <string name="smart_import_intro">Elige una foto, una captura o un archivo. La app reconoce el texto en tu propio dispositivo e identifica sola las columnas de fecha, importe, descripción y categoría, sin depender de un formato concreto.</string>
-    <string name="smart_import_btn_pick">ELEGIR IMAGEN O ARCHIVO</string>
+    <string name="smart_import_intro">Elige qué leer: un extracto con varios movimientos (foto, captura u hoja de cálculo) o la foto de un ticket. El reconocimiento ocurre en tu propio dispositivo y la app identifica los campos sola. Para PDF, usa “Importar archivo” en el menú inicial.</string>
+    <string name="smart_import_btn_pick">LEER UN EXTRACTO (FOTO U HOJA)</string>
     <string name="smart_import_btn_pick_another">ELEGIR OTRO ARCHIVO</string>
     <string name="smart_import_analyzing">Analizando %1$s...</string>
     <string name="smart_import_analyzing_hint">El reconocimiento ocurre en tu dispositivo. No se envía nada a internet.</string>
     <string name="smart_import_source_image">IMAGEN</string>
     <string name="smart_import_source_csv">CSV</string>
     <string name="smart_import_source_ods">ODS</string>
-    <string name="smart_import_source_pdf">PDF</string>
+    <string name="smart_import_receipt_intro">Ticket: fotografía el comprobante y la visión por computador lee el comercio, la fecha, los artículos y el total.</string>
+    <string name="smart_import_btn_receipt">LEER UN TICKET (FOTO)</string>
+    <string name="smart_import_source_receipt">TICKET</string>
+    <string name="smart_import_receipt_title">TICKET RECONOCIDO</string>
+    <string name="smart_import_receipt_no_merchant">Comercio no identificado</string>
+    <string name="smart_import_receipt_document">NIF %1$s</string>
+    <string name="smart_import_receipt_total">Total: %1$s</string>
+    <string name="smart_import_receipt_items">%1$d artículos reconocidos · %2$d%% de confianza</string>
+    <string name="smart_import_receipt_no_items">No se reconoció ningún artículo: solo se puede importar el total.</string>
+    <string name="smart_import_receipt_unlabelled_total">No encontré un campo "total" en el ticket: usé el importe más alto leído. Compruébalo antes de importar.</string>
+    <string name="smart_import_receipt_items_mismatch">La suma de los artículos (%1$s) no coincide con el total (%2$s); alguno puede haberse leído mal.</string>
+    <string name="smart_import_btn_itemize">IMPORTAR LOS ARTÍCULOS POR SEPARADO</string>
+    <string name="smart_import_btn_use_total">IMPORTAR SOLO EL TOTAL</string>
+    <string name="smart_import_error_no_receipt">No encontré importes en esa foto. Prueba con una imagen más nítida, con el ticket entero encuadrado y bien iluminado.</string>
+    <string name="smart_import_error_receipt_needs_image">La lectura de un ticket necesita una foto o captura del mismo.</string>
+    <string name="smart_import_error_unsupported">La importación inteligente no lee ese tipo de archivo. Para PDF, usa "Importar archivo" en el menú inicial, que lee el texto del PDF tal cual está.</string>
     <string name="smart_import_summary">%1$d filas analizadas · %2$d%% de confianza</string>
     <string name="smart_import_mapping_title">COLUMNAS IDENTIFICADAS</string>
     <string name="smart_import_mapping_item">%1$s · columna %2$d · %3$d%%</string>

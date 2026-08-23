@@ -106,8 +106,30 @@ actual fun rememberSpreadsheetFilePicker(onPicked: (PlatformFile) -> Unit): Pick
 actual fun rememberImportSourcePicker(onPicked: (PlatformFile) -> Unit): PickerLauncher {
     val currentOnPicked by rememberUpdatedState(onPicked)
     val input = remember {
-        val accept = (listOf("image/*") + SPREADSHEET_EXTENSIONS).joinToString(",")
+        // Not SPREADSHEET_EXTENSIONS: that list carries `.pdf`, which the
+        // direct import reads and the automatic one deliberately does not.
+        val accept = listOf("image/*", ".csv", ".ods").joinToString(",")
         createFileInput(directory = false, accept = accept).also { element ->
+            element.addEventListener("change", {
+                element.files?.toList()?.firstOrNull()?.let { currentOnPicked(WebPlatformFile(it)) }
+            })
+        }
+    }
+    return remember(input) {
+        PickerLauncher {
+            input.value = ""
+            input.click()
+        }
+    }
+}
+
+@Composable
+actual fun rememberReceiptPicker(onPicked: (PlatformFile) -> Unit): PickerLauncher {
+    val currentOnPicked by rememberUpdatedState(onPicked)
+    val input = remember {
+        createFileInput(directory = false, accept = "image/*").also { element ->
+            // `capture` is deliberately not set: it would force the camera and
+            // take away the perfectly good photo the user already has.
             element.addEventListener("change", {
                 element.files?.toList()?.firstOrNull()?.let { currentOnPicked(WebPlatformFile(it)) }
             })

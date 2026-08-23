@@ -22,9 +22,19 @@ expect fun rememberSpreadsheetFolderPicker(onPicked: (PlatformFolder) -> Unit): 
 
 /**
  * Remembers a picker for the automatic importer, which accepts images (a photo
- * or screenshot of a statement) *as well as* the spreadsheet formats — the
+ * or screenshot of a statement) *as well as* the CSV/ODS formats — the
  * classifier behind it treats both the same way, so there is no reason to make
- * the user choose the right kind of file up front.
+ * the user choose the right kind of file up front. PDFs are deliberately not
+ * offered here: they keep their text as text and belong to the direct import,
+ * which reads them exactly.
  */
 @Composable
 expect fun rememberImportSourcePicker(onPicked: (PlatformFile) -> Unit): PickerLauncher
+
+/**
+ * Remembers an image-only picker for the receipt reader — a photo of a "nota
+ * fiscal" and nothing else, since the whole point of that path is reading a
+ * printed receipt with computer vision.
+ */
+@Composable
+expect fun rememberReceiptPicker(onPicked: (PlatformFile) -> Unit): PickerLauncher
