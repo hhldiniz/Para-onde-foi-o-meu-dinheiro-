@@ -2,6 +2,8 @@ package com.hhldiniz.praondefoiomeudinheiro.data.local.entity
 
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentType
 import com.hhldiniz.praondefoiomeudinheiro.platform.currentTimeMillis
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 
 /**
@@ -23,6 +25,13 @@ data class Investment(
     val currentValue: Double,
     val dateMillis: Long,
     val notes: String = "",
+    // Json skips a property whose value equals its default, and this default
+    // is re-evaluated at encode time: a position serialized in the same
+    // millisecond it was built would be written without its timestamp and
+    // read back with whatever "now" was at load time. Encoding it always is
+    // what makes the stored value survive a reload on wasmJs.
+    @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+    @OptIn(ExperimentalSerializationApi::class)
     val updatedAt: Long = currentTimeMillis(),
 ) {
     /** How much the position is up (or down) in absolute terms. */

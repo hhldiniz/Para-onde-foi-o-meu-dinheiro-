@@ -86,6 +86,28 @@ class InvestmentEntityTest {
         assertEquals(original, decoded)
     }
 
+    /**
+     * `updatedAt` defaults to "now", and Json omits a property whose value
+     * equals its default — a default that is re-evaluated at encode time, so
+     * without `@EncodeDefault` a position built and stored in the same
+     * millisecond went to `localStorage` without its timestamp and came back
+     * carrying the load time instead.
+     */
+    @Test
+    fun json_writesUpdatedAtEvenWhenItHoldsItsDefault() {
+        val encoded = Json.encodeToString(
+            Investment(
+                name = "Tesouro Selic 2029",
+                type = InvestmentType.TREASURY,
+                investedAmount = 100.0,
+                currentValue = 100.0,
+                dateMillis = 1_700_000_000_000L,
+            )
+        )
+
+        assertTrue(encoded, encoded.contains("\"updatedAt\""))
+    }
+
     @Test
     fun json_serializesTypeByItsStableKey() {
         val encoded = Json.encodeToString(investment(1.0, 1.0).copy(type = InvestmentType.REAL_ESTATE_FUND))
