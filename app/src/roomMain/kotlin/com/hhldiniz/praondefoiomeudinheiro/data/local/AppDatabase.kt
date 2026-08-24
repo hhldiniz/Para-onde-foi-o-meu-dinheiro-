@@ -4,8 +4,10 @@ import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.execSQL
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.RoomCategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.RoomImportedEntryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.RoomInvestmentDao
@@ -19,7 +21,7 @@ const val DATABASE_NAME = "praondefoiomeudinheiro.db"
 
 @Database(
     entities = [ImportedEntryRecord::class, CategoryRecord::class, InvestmentRecord::class],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -41,13 +43,29 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 }
 
 /**
+ * Adds the contracted-yield columns to `investments`. Every other schema
+ * change so far has gone through `fallbackToDestructiveMigration` below, but
+ * two nullable/defaulted columns are one `ALTER TABLE` each — cheap enough
+ * that dropping a user's whole portfolio and import history for them would be
+ * gratuitous.
+ */
+private val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE investments ADD COLUMN yield_mode TEXT NOT NULL DEFAULT 'none'")
+        connection.execSQL("ALTER TABLE investments ADD COLUMN yield_rate REAL")
+    }
+}
+
+/**
  * Finishes wiring a platform-provided [RoomDatabase.Builder] and opens the
  * database. Schema changes recreate the database (see
- * `fallbackToDestructiveMigration`) since this is unsynced local data, and the
- * default categories are seeded on first creation.
+ * `fallbackToDestructiveMigration`) unless a migration is declared above,
+ * since this is unsynced local data, and the default categories are seeded on
+ * first creation.
  */
 fun RoomDatabase.Builder<AppDatabase>.buildAppDatabase(): AppDatabase =
-    fallbackToDestructiveMigration(dropAllTables = true)
+    addMigrations(MIGRATION_4_5)
+        .fallbackToDestructiveMigration(dropAllTables = true)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(ioDispatcher)
         .addCallback(object : RoomDatabase.Callback() {

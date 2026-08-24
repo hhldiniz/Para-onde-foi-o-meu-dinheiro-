@@ -5,12 +5,13 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentType
+import com.hhldiniz.praondefoiomeudinheiro.domain.model.YieldMode
 
 /**
- * Room persistence record for [Investment]. The type is stored as its stable
- * [InvestmentType.key] rather than the enum's ordinal or declared name, so
- * reordering or renaming an entry of that enum does not reinterpret rows
- * already on disk.
+ * Room persistence record for [Investment]. The type and the contracted
+ * yield mode are stored as their stable [InvestmentType.key]/[YieldMode.key]
+ * rather than the enums' ordinals or declared names, so reordering or
+ * renaming an entry of either does not reinterpret rows already on disk.
  */
 @Entity(
     tableName = "investments",
@@ -34,6 +35,12 @@ data class InvestmentRecord(
     @ColumnInfo(name = "date_millis")
     val dateMillis: Long,
     val notes: String = "",
+    // Added in schema version 5 by an ALTER TABLE migration; the defaults
+    // below are what a row written before it reads back as.
+    @ColumnInfo(name = "yield_mode", defaultValue = "none")
+    val yieldModeKey: String = YieldMode.NONE.key,
+    @ColumnInfo(name = "yield_rate")
+    val yieldRate: Double? = null,
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long,
 )
@@ -47,6 +54,8 @@ fun Investment.toRecord(): InvestmentRecord = InvestmentRecord(
     currentValue = currentValue,
     dateMillis = dateMillis,
     notes = notes,
+    yieldModeKey = yieldMode.key,
+    yieldRate = yieldRate,
     updatedAt = updatedAt,
 )
 
@@ -59,5 +68,7 @@ fun InvestmentRecord.toDomain(): Investment = Investment(
     currentValue = currentValue,
     dateMillis = dateMillis,
     notes = notes,
+    yieldMode = YieldMode.fromKey(yieldModeKey),
+    yieldRate = yieldRate,
     updatedAt = updatedAt,
 )

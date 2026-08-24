@@ -6,9 +6,11 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.InvestmentDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Investment
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.InvestmentRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentType
+import com.hhldiniz.praondefoiomeudinheiro.domain.model.YieldMode
 import com.hhldiniz.praondefoiomeudinheiro.resources.Res
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_error_invalid_current_value
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_error_invalid_invested_amount
+import com.hhldiniz.praondefoiomeudinheiro.resources.investment_error_invalid_yield_rate
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_error_name_required
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -364,5 +366,125 @@ class InvestmentsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, dao.current().size)
+    }
+
+    // -------------------------------------------------------------------------
+    // Contracted yield (fixed income)
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun save_storesTheContractedYield() = runTest {
+        viewModel = buildViewModel()
+        viewModel.onAddClicked()
+        viewModel.onNameChanged("CDB Banco X")
+        viewModel.onTypeChanged(InvestmentType.CDB)
+        viewModel.onInvestedAmountChanged("1000")
+        viewModel.onYieldModeChanged(YieldMode.CDI_PERCENT)
+        viewModel.onYieldRateChanged("110")
+        viewModel.save()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val stored = dao.current().single()
+        assertEquals(YieldMode.CDI_PERCENT, stored.yieldMode)
+        assertEquals(110.0, stored.yieldRate!!, 0.001)
+        assertTrue(stored.hasYield)
+    }
+
+    /** The rate goes through the amount parser, so both decimal conventions work, "%" and all. */
+    @Test
+    fun save_readsTheRateInEitherDecimalConventionAndWithAPercentSign() = runTest {
+        viewModel = buildViewModel()
+        viewModel.onAddClicked()
+        viewModel.onNameChanged("Tesouro IPCA+ 2035")
+        viewModel.onInvestedAmountChanged("1000")
+        viewModel.onYieldModeChanged(YieldMode.IPCA_PLUS)
+        viewModel.onYieldRateChanged(" 5,75 % ")
+        viewModel.save()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(5.75, dao.current().single().yieldRate!!, 0.001)
+    }
+
+    @Test
+    fun save_modeWithoutAReadableRate_setsError() = runTest {
+        viewModel = buildViewModel()
+        viewModel.onAddClicked()
+        viewModel.onNameChanged("CDB Banco X")
+        viewModel.onTypeChanged(InvestmentType.CDB)
+        viewModel.onInvestedAmountChanged("1000")
+        viewModel.onYieldModeChanged(YieldMode.CDI_PERCENT)
+        viewModel.save()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(
+            Res.string.investment_error_invalid_yield_rate,
+            viewModel.uiState.value.form?.errorMessageRes,
+        )
+        assertTrue(dao.current().isEmpty())
+    }
+
+    @Test
+    fun save_withoutAYieldMode_storesNone() = runTest {
+        viewModel = buildViewModel()
+        viewModel.onAddClicked()
+        viewModel.onNameChanged("Tesouro Selic")
+        viewModel.onInvestedAmountChanged("1000")
+        viewModel.save()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val stored = dao.current().single()
+        assertEquals(YieldMode.NONE, stored.yieldMode)
+        assertNull(stored.yieldRate)
+    }
+
+    /** A variable-income position has no contracted rate, so switching to one drops what was typed. */
+    @Test
+    fun onTypeChanged_toVariableIncome_clearsTheYield() = runTest {
+        viewModel = buildViewModel()
+        viewModel.onAddClicked()
+        viewModel.onNameChanged("PETR4")
+        viewModel.onInvestedAmountChanged("1000")
+        viewModel.onYieldModeChanged(YieldMode.CDI_PERCENT)
+        viewModel.onYieldRateChanged("110")
+        viewModel.onTypeChanged(InvestmentType.STOCKS)
+
+        val form = viewModel.uiState.value.form!!
+        assertFalse(form.showsYieldFields)
+        assertEquals(YieldMode.NONE, form.yieldMode)
+        assertEquals("", form.yieldRateText)
+
+        viewModel.save()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(YieldMode.NONE, dao.current().single().yieldMode)
+        assertNull(dao.current().single().yieldRate)
+    }
+
+    @Test
+    fun onYieldModeChanged_toNone_clearsTheRate() = runTest {
+        viewModel = buildViewModel()
+        viewModel.onAddClicked()
+        viewModel.onYieldModeChanged(YieldMode.SELIC_PLUS)
+        viewModel.onYieldRateChanged("2")
+        viewModel.onYieldModeChanged(YieldMode.NONE)
+
+        val form = viewModel.uiState.value.form!!
+        assertEquals("", form.yieldRateText)
+        assertFalse(form.showsYieldRate)
+    }
+
+    @Test
+    fun onEditClicked_prefillsTheContractedYield() = runTest {
+        val stored = investment(id = 9, type = InvestmentType.CDB)
+            .copy(yieldMode = YieldMode.CDI_PLUS, yieldRate = 1.5)
+        viewModel = buildViewModel(listOf(stored))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEditClicked(stored)
+
+        val form = viewModel.uiState.value.form!!
+        assertEquals(YieldMode.CDI_PLUS, form.yieldMode)
+        assertEquals("1.5", form.yieldRateText)
+        assertTrue(form.showsYieldRate)
     }
 }

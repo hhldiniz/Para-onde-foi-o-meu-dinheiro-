@@ -3,6 +3,7 @@ package com.hhldiniz.praondefoiomeudinheiro.presentation.screen.investments
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Investment
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.CurrencyOption
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentType
+import com.hhldiniz.praondefoiomeudinheiro.domain.model.YieldMode
 import com.hhldiniz.praondefoiomeudinheiro.platform.currentTimeMillis
 import org.jetbrains.compose.resources.StringResource
 
@@ -48,7 +49,19 @@ data class InvestmentFormState(
     val currentValueText: String = "",
     val dateMillis: Long = currentTimeMillis(),
     val notes: String = "",
+    val yieldMode: YieldMode = YieldMode.NONE,
+    val yieldRateText: String = "",
     val errorMessageRes: StringResource? = null,
 ) {
     val isEditing: Boolean get() = id != null
+
+    /**
+     * Whether the yield fields are offered at all. Only fixed income is
+     * bought with a contracted rate, so a stock's form stays short instead of
+     * asking what index it follows.
+     */
+    val showsYieldFields: Boolean get() = type.supportsYield
+
+    /** Whether the rate input goes with the chosen mode ([YieldMode.NONE] takes none). */
+    val showsYieldRate: Boolean get() = showsYieldFields && yieldMode.hasRate
 }

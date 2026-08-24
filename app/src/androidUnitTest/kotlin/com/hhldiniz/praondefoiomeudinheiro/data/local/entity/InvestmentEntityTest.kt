@@ -2,11 +2,15 @@ package com.hhldiniz.praondefoiomeudinheiro.data.local.entity
 
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentClass
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentType
+import com.hhldiniz.praondefoiomeudinheiro.domain.model.YieldMode
+import com.hhldiniz.praondefoiomeudinheiro.domain.model.formatYieldRate
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -60,6 +64,142 @@ class InvestmentEntityTest {
 
         assertEquals(original, original.toRecord().toDomain())
         assertEquals("stocks", original.toRecord().typeKey)
+    }
+
+    @Test
+    fun roomRecord_roundTripsTheContractedYield() {
+        val original = investment(1_000.0, 1_050.0).copy(
+            type = InvestmentType.CDB,
+            yieldMode = YieldMode.CDI_PERCENT,
+            yieldRate = 110.0,
+        )
+
+        val record = original.toRecord()
+
+        assertEquals("cdi_percent", record.yieldModeKey)
+        assertEquals(110.0, record.yieldRate!!, 0.001)
+        assertEquals(original, record.toDomain())
+    }
+
+    /**
+     * What a row written before the yield columns existed reads back as: the
+     * ALTER TABLE migration defaults `yield_mode` to "none" and leaves
+     * `yield_rate` null, which has to land on a position with no yield rather
+     * than one claiming a rate of zero.
+     */
+    @Test
+    fun roomRecord_withoutYieldColumns_readsBackAsNoYield() {
+        val record = InvestmentRecord(
+            id = 1,
+            name = "CDB antigo",
+            typeKey = "cdb",
+            investedAmount = 100.0,
+            currentValue = 100.0,
+            dateMillis = 1_700_000_000_000L,
+            updatedAt = 1_700_000_000_000L,
+        )
+
+        val investment = record.toDomain()
+
+        assertEquals(YieldMode.NONE, investment.yieldMode)
+        assertNull(investment.yieldRate)
+        assertFalse(investment.hasYield)
+    }
+
+    @Test
+    fun roomRecord_withUnknownYieldModeKey_readsBackAsNone() {
+        val record = InvestmentRecord(
+            id = 1,
+            name = "CDB do futuro",
+            typeKey = "cdb",
+            investedAmount = 100.0,
+            currentValue = 100.0,
+            dateMillis = 1_700_000_000_000L,
+            yieldModeKey = "index_from_a_newer_version",
+            yieldRate = 7.0,
+            updatedAt = 1_700_000_000_000L,
+        )
+
+        assertEquals(YieldMode.NONE, record.toDomain().yieldMode)
+    }
+
+    @Test
+    fun hasYield_requiresBothTheModeAndTheRate() {
+        val position = investment(1_000.0, 1_000.0)
+
+        assertFalse(position.hasYield)
+        assertFalse(position.copy(yieldMode = YieldMode.IPCA_PLUS).hasYield)
+        assertFalse(position.copy(yieldRate = 5.5).hasYield)
+        assertTrue(position.copy(yieldMode = YieldMode.IPCA_PLUS, yieldRate = 5.5).hasYield)
+    }
+
+    @Test
+    fun onlyFixedIncomeTypes_offerAContractedYield() {
+        InvestmentType.entries.forEach { type ->
+            assertEquals(
+                type.name,
+                type.assetClass == InvestmentClass.FIXED_INCOME,
+                type.supportsYield,
+            )
+        }
+    }
+
+    @Test
+    fun json_roundTripsTheContractedYield() {
+        val original = investment(1_000.0, 1_050.0).copy(
+            type = InvestmentType.TREASURY,
+            yieldMode = YieldMode.IPCA_PLUS,
+            yieldRate = 5.75,
+        )
+
+        val encoded = Json.encodeToString(original)
+
+        assertTrue(encoded, encoded.contains("\"ipca_plus\""))
+        assertEquals(original, Json.decodeFromString<Investment>(encoded))
+    }
+
+    /** A position stored before the yield fields existed still decodes, without one. */
+    @Test
+    fun json_withoutYieldFields_decodesAsNoYield() {
+        val stored = """
+            [{"id":1,"name":"CDB antigo","type":"cdb","institution":"","investedAmount":100.0,
+              "currentValue":110.0,"dateMillis":1700000000000,"notes":"","updatedAt":1700000000000}]
+        """.trimIndent()
+
+        val decoded = Json.decodeFromString<List<Investment>>(stored)
+
+        assertEquals(YieldMode.NONE, decoded.single().yieldMode)
+        assertNull(decoded.single().yieldRate)
+    }
+
+    @Test
+    fun yieldModeKeys_areUniqueAndStable() {
+        val keys = YieldMode.entries.map { it.key }
+
+        assertEquals(keys.size, keys.toSet().size)
+        assertEquals(
+            listOf("none", "prefixed", "cdi_percent", "cdi_plus", "ipca_plus", "igpm_plus", "selic_plus"),
+            keys,
+        )
+        YieldMode.entries.forEach { mode -> assertEquals(mode, YieldMode.fromKey(mode.key)) }
+        assertEquals(YieldMode.NONE, YieldMode.fromKey("nao_existe"))
+    }
+
+    @Test
+    fun onlyNone_carriesNoRate() {
+        assertFalse(YieldMode.NONE.hasRate)
+        YieldMode.entries.filterNot { it == YieldMode.NONE }
+            .forEach { mode -> assertTrue(mode.name, mode.hasRate) }
+    }
+
+    /** How a rate is printed: no stray ".0", at most two decimals, always a percent sign. */
+    @Test
+    fun formatYieldRate_dropsTrailingZerosAndKeepsThePercentSign() {
+        assertEquals("110%", formatYieldRate(110.0))
+        assertEquals("5.5%", formatYieldRate(5.5))
+        assertEquals("12.75%", formatYieldRate(12.75))
+        assertEquals("6.3%", formatYieldRate(6.3049))
+        assertEquals("0%", formatYieldRate(0.0))
     }
 
     @Test

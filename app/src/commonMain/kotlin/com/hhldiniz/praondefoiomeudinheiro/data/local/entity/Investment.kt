@@ -1,6 +1,7 @@
 package com.hhldiniz.praondefoiomeudinheiro.data.local.entity
 
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentType
+import com.hhldiniz.praondefoiomeudinheiro.domain.model.YieldMode
 import com.hhldiniz.praondefoiomeudinheiro.platform.currentTimeMillis
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -25,6 +26,11 @@ data class Investment(
     val currentValue: Double,
     val dateMillis: Long,
     val notes: String = "",
+    // How the position is contracted to pay (fixed income only, see
+    // InvestmentType.supportsYield). Descriptive: it records what the paper
+    // promises, it does not recompute currentValue — the app quotes no index.
+    val yieldMode: YieldMode = YieldMode.NONE,
+    val yieldRate: Double? = null,
     // Json skips a property whose value equals its default, and this default
     // is re-evaluated at encode time: a position serialized in the same
     // millisecond it was built would be written without its timestamp and
@@ -44,4 +50,11 @@ data class Investment(
      */
     val profitPercent: Double
         get() = if (investedAmount == 0.0) 0.0 else profit / investedAmount * 100.0
+
+    /**
+     * Whether there is a contracted rate to show. A mode without its rate is
+     * incomplete — "IPCA + ?" says nothing — so both halves are required,
+     * except for [YieldMode.NONE], which is the absence of one.
+     */
+    val hasYield: Boolean get() = yieldMode.hasRate && yieldRate != null
 }
