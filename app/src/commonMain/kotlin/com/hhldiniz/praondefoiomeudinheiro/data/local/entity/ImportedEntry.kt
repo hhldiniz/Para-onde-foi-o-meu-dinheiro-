@@ -1,6 +1,8 @@
 package com.hhldiniz.praondefoiomeudinheiro.data.local.entity
 
 import com.hhldiniz.praondefoiomeudinheiro.platform.currentTimeMillis
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 
 /**
@@ -19,5 +21,13 @@ data class ImportedEntry(
     val category: String,
     val isExpense: Boolean,
     val fileName: String = "",
+    // Json skips a property whose value equals its default, and this default
+    // is re-evaluated at encode time: an entry serialized in the same
+    // millisecond it was built would be written without its timestamp and
+    // read back with whatever "now" was at load time (see the identical fix
+    // on Investment.updatedAt). Encoding it always is what makes the stored
+    // value survive a reload on wasmJs.
+    @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+    @OptIn(ExperimentalSerializationApi::class)
     val importedAt: Long = currentTimeMillis(),
 )
