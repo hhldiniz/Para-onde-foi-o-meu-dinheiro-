@@ -51,10 +51,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Investment
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentClass
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentType
+import com.hhldiniz.praondefoiomeudinheiro.domain.model.YieldMode
 import com.hhldiniz.praondefoiomeudinheiro.platform.CurrencyFormatter
 import com.hhldiniz.praondefoiomeudinheiro.platform.currencyFormatter
 import com.hhldiniz.praondefoiomeudinheiro.presentation.components.localizedInvestmentClass
 import com.hhldiniz.praondefoiomeudinheiro.presentation.components.localizedInvestmentType
+import com.hhldiniz.praondefoiomeudinheiro.presentation.components.localizedInvestmentYield
+import com.hhldiniz.praondefoiomeudinheiro.presentation.components.localizedYieldMode
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home.CategorySpending
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home.SpendingPieChart
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.BrutalBlack
@@ -87,11 +90,15 @@ import com.hhldiniz.praondefoiomeudinheiro.resources.investment_field_invested_a
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_field_name
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_field_notes
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_field_type
+import com.hhldiniz.praondefoiomeudinheiro.resources.investment_field_yield_mode
+import com.hhldiniz.praondefoiomeudinheiro.resources.investment_field_yield_rate
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_form_edit_title
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_form_new_title
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_institution_placeholder
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_name_placeholder
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_notes_placeholder
+import com.hhldiniz.praondefoiomeudinheiro.resources.investment_yield_hint
+import com.hhldiniz.praondefoiomeudinheiro.resources.investment_yield_rate_placeholder
 import com.hhldiniz.praondefoiomeudinheiro.resources.investments_allocation_title
 import com.hhldiniz.praondefoiomeudinheiro.resources.investments_btn_add
 import com.hhldiniz.praondefoiomeudinheiro.resources.investments_current_value
@@ -139,6 +146,8 @@ fun InvestmentsScreen(
             onCurrentValueChanged = viewModel::onCurrentValueChanged,
             onDateChanged = viewModel::onDateChanged,
             onNotesChanged = viewModel::onNotesChanged,
+            onYieldModeChanged = viewModel::onYieldModeChanged,
+            onYieldRateChanged = viewModel::onYieldRateChanged,
             onConfirm = viewModel::save,
             onDismiss = viewModel::onFormDismissed,
         )
@@ -443,12 +452,30 @@ private fun InvestmentRow(
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                NeoTag(
-                    text = localizedInvestmentType(investment.type),
-                    backgroundColor = BrutalYellow,
-                    textColor = MaterialTheme.colorScheme.onSecondary,
-                )
-                Spacer(modifier = Modifier.weight(1f))
+                // The tags take what the value column leaves rather than the
+                // other way round (a Row measures its weighted child last), so
+                // a long type name plus a rate cannot push the amount off the
+                // edge of a narrow screen.
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    NeoTag(
+                        text = localizedInvestmentType(investment.type),
+                        backgroundColor = BrutalYellow,
+                        textColor = MaterialTheme.colorScheme.onSecondary,
+                    )
+                    // The contracted rate ("110% do CDI"), for the fixed-income
+                    // positions that carry one; nothing is shown otherwise.
+                    localizedInvestmentYield(investment)?.let { yieldText ->
+                        NeoTag(
+                            text = yieldText,
+                            backgroundColor = BrutalCyan,
+                            textColor = MaterialTheme.colorScheme.onTertiary,
+                        )
+                    }
+                }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = currencyFormat.format(investment.currentValue),
@@ -485,6 +512,8 @@ private fun InvestmentFormDialog(
     onCurrentValueChanged: (String) -> Unit,
     onDateChanged: (Long) -> Unit,
     onNotesChanged: (String) -> Unit,
+    onYieldModeChanged: (YieldMode) -> Unit,
+    onYieldRateChanged: (String) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -544,6 +573,31 @@ private fun InvestmentFormDialog(
                     placeholder = stringResource(Res.string.investment_amount_placeholder),
                     keyboardType = KeyboardType.Decimal,
                 )
+
+                // Only fixed income is bought with a contracted rate, so a
+                // share's form never asks for one (see InvestmentType.supportsYield).
+                if (form.showsYieldFields) {
+                    YieldModeDropdown(
+                        selectedMode = form.yieldMode,
+                        onModeSelected = onYieldModeChanged,
+                    )
+
+                    if (form.showsYieldRate) {
+                        FormTextField(
+                            label = stringResource(Res.string.investment_field_yield_rate),
+                            value = form.yieldRateText,
+                            onValueChanged = onYieldRateChanged,
+                            placeholder = stringResource(Res.string.investment_yield_rate_placeholder),
+                            keyboardType = KeyboardType.Decimal,
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(Res.string.investment_yield_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = BrutalBlack.copy(alpha = 0.7f),
+                    )
+                }
 
                 FieldLabel(text = stringResource(Res.string.investment_field_date))
                 HardShadowBox(offsetX = 3.dp, offsetY = 3.dp, modifier = Modifier.fillMaxWidth()) {
@@ -702,6 +756,61 @@ private fun FormTextField(
                 .fillMaxWidth()
                 .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape),
         )
+    }
+}
+
+/**
+ * The contracted-yield picker, offered for fixed-income positions only. It is
+ * a flat list — seven entries, no grouping to earn its keep — and picking
+ * "não informado" is what leaves a position without a rate.
+ */
+@Composable
+private fun YieldModeDropdown(
+    selectedMode: YieldMode,
+    onModeSelected: (YieldMode) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        FieldLabel(text = stringResource(Res.string.investment_field_yield_mode))
+        Spacer(modifier = Modifier.height(4.dp))
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape)
+                    .background(BrutalPink, RectangleShape)
+                    .clickable { expanded = true }
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = localizedYieldMode(selectedMode),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                YieldMode.entries.forEach { mode ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = localizedYieldMode(mode),
+                                fontWeight = if (mode == selectedMode) FontWeight.Black
+                                             else FontWeight.Medium,
+                            )
+                        },
+                        onClick = {
+                            onModeSelected(mode)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 

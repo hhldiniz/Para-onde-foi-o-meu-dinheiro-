@@ -84,6 +84,14 @@ enum class InvestmentType(val key: String, val assetClass: InvestmentClass) {
     @SerialName("other")
     OTHER("other", InvestmentClass.OTHER);
 
+    /**
+     * Whether a position of this type is bought with a contracted rate — the
+     * "110% do CDI" a CDB is sold as — and therefore offers the yield fields
+     * on the form. Only fixed income is: a share or a fund pays whatever the
+     * market gives it, so there is nothing to type in.
+     */
+    val supportsYield: Boolean get() = assetClass == InvestmentClass.FIXED_INCOME
+
     companion object {
         /**
          * Resolves a persisted [key] back to its type, falling back to

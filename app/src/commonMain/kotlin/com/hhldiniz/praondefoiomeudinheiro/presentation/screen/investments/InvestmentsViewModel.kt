@@ -7,10 +7,12 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.TransactionValueParser
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Investment
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.InvestmentRepository
 import com.hhldiniz.praondefoiomeudinheiro.domain.model.InvestmentType
+import com.hhldiniz.praondefoiomeudinheiro.domain.model.YieldMode
 import com.hhldiniz.praondefoiomeudinheiro.platform.currentTimeMillis
 import com.hhldiniz.praondefoiomeudinheiro.resources.Res
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_error_invalid_current_value
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_error_invalid_invested_amount
+import com.hhldiniz.praondefoiomeudinheiro.resources.investment_error_invalid_yield_rate
 import com.hhldiniz.praondefoiomeudinheiro.resources.investment_error_name_required
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -80,6 +82,8 @@ class InvestmentsViewModel(
                     currentValueText = formatAmount(investment.currentValue),
                     dateMillis = investment.dateMillis,
                     notes = investment.notes,
+                    yieldMode = investment.yieldMode,
+                    yieldRateText = investment.yieldRate?.let { rate -> formatAmount(rate) }.orEmpty(),
                 )
             )
         }
@@ -91,7 +95,18 @@ class InvestmentsViewModel(
 
     fun onNameChanged(name: String) = updateForm { it.copy(name = name, errorMessageRes = null) }
 
-    fun onTypeChanged(type: InvestmentType) = updateForm { it.copy(type = type) }
+    /**
+     * Switching to a type that carries no contracted rate (anything outside
+     * fixed income) drops whatever yield was typed, so a hidden field cannot
+     * be saved behind the user's back.
+     */
+    fun onTypeChanged(type: InvestmentType) = updateForm { form ->
+        if (type.supportsYield) {
+            form.copy(type = type)
+        } else {
+            form.copy(type = type, yieldMode = YieldMode.NONE, yieldRateText = "", errorMessageRes = null)
+        }
+    }
 
     fun onInstitutionChanged(institution: String) = updateForm { it.copy(institution = institution) }
 
@@ -104,6 +119,18 @@ class InvestmentsViewModel(
     fun onDateChanged(dateMillis: Long) = updateForm { it.copy(dateMillis = dateMillis) }
 
     fun onNotesChanged(notes: String) = updateForm { it.copy(notes = notes) }
+
+    /** Picking "não informado" also clears the rate, which would otherwise be unreachable but still saved. */
+    fun onYieldModeChanged(mode: YieldMode) = updateForm { form ->
+        form.copy(
+            yieldMode = mode,
+            yieldRateText = if (mode.hasRate) form.yieldRateText else "",
+            errorMessageRes = null,
+        )
+    }
+
+    fun onYieldRateChanged(text: String) =
+        updateForm { it.copy(yieldRateText = text, errorMessageRes = null) }
 
     /**
      * Validates the open form and writes it, inserting or updating depending
@@ -132,6 +159,20 @@ class InvestmentsViewModel(
             return
         }
 
+        // A mode with no readable rate would store "IPCA + ?", which says
+        // nothing, so it is rejected rather than silently dropped.
+        val yieldMode = if (form.showsYieldFields) form.yieldMode else YieldMode.NONE
+        val yieldRate = if (yieldMode.hasRate) {
+            val rate = parseRate(form.yieldRateText)
+            if (rate == null || rate < 0.0) {
+                updateForm { it.copy(errorMessageRes = Res.string.investment_error_invalid_yield_rate) }
+                return
+            }
+            rate
+        } else {
+            null
+        }
+
         val investment = Investment(
             id = form.id ?: 0L,
             name = form.name.trim(),
@@ -141,6 +182,8 @@ class InvestmentsViewModel(
             currentValue = current,
             dateMillis = form.dateMillis,
             notes = form.notes.trim(),
+            yieldMode = yieldMode,
+            yieldRate = yieldRate,
             updatedAt = currentTimeMillis(),
         )
 
@@ -195,6 +238,14 @@ class InvestmentsViewModel(
                 .map { (type, positions) -> TypeAllocation(type, positions.sumOf { it.currentValue }) }
                 .filter { it.value > 0.0 }
                 .sortedByDescending { it.value }
+
+        /**
+         * Reads a contracted rate. It goes through the same parser the
+         * amounts do — so "1,5" and "1.5" both work — after dropping a
+         * percent sign the user may well have typed along with it.
+         */
+        fun parseRate(text: String): Double? =
+            TransactionValueParser.parseAmount(text.trim().removeSuffix("%").trim())
 
         /**
          * Renders a stored amount back into the form's text field. The parser
