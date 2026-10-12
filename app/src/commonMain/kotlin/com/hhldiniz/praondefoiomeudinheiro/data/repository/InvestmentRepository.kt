@@ -16,15 +16,9 @@ class InvestmentRepository(private val dao: InvestmentDao) {
     /** Every position, newest first, as a reactive Flow. */
     fun getAll(): Flow<List<Investment>> = dao.getAll()
 
-    suspend fun getAllSync(): List<Investment> = dao.getAllSync()
-
     suspend fun insert(investment: Investment): Long = dao.insert(investment)
 
     suspend fun update(investment: Investment) = dao.update(investment)
 
     suspend fun delete(id: Long) = dao.deleteById(id)
-
-    suspend fun deleteAll() = dao.deleteAll()
-
-    suspend fun count(): Int = dao.count()
 }

@@ -147,7 +147,7 @@ class HomeViewModelParseTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         verify(importRepository).insertEntries(any())
-        assertTrue(vm.uiState.value.debugMessage?.contains("CSV OK") == true)
+        assertTrue(vm.uiState.value.debugMessage?.contains("Importado") == true)
         assertFalse(DataClearedHolder.cleared.value)
     }
 

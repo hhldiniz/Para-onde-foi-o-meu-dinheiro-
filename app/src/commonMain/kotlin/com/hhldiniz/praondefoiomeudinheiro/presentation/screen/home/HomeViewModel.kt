@@ -29,30 +29,34 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hhldiniz.praondefoiomeudinheiro.platform.ioDispatcher as platformIoDispatcher
 
-private data class ParsedEntry(
-    val dateMillis: Long,
-    val amount: Double,
-    val description: String,
-    val category: String,
-)
-
 private data class FilterParams(
-    val period: Period,
     val startMillis: Long,
     val endMillis: Long,
-    val customStart: Long?,
-    val customEnd: Long?,
     val selectedCategory: String?,
 )
 
-private data class LoadResult(
-    val spending: List<ParsedEntry>,
-    val earnings: List<ParsedEntry>,
-    val errors: List<String>,
-    val rawAmounts: List<String>,
+/** One side (spending or earnings) of the charts for the active filter. */
+private data class Series(
+    val points: List<SpendingDataPoint>,
+    val categories: List<CategorySpending>,
+    val total: Double,
 )
 
-private fun ImportedEntry.toParsedEntry() = ParsedEntry(dateMillis, amount, description, category)
+// Both parsers live in TransactionValueParser, shared with the automatic
+// importer, so the two import paths agree on what counts as a date and an
+// amount (named months, `1.234,56`, parentheses for negatives, ...).
+private fun CsvEntry.toImportedEntry(isExpense: Boolean, fileName: String): ImportedEntry? {
+    val dateMillis = TransactionValueParser.parseDate(date) ?: return null
+    val parsedAmount = TransactionValueParser.parseAmount(amount) ?: return null
+    return ImportedEntry(
+        dateMillis = dateMillis,
+        amount = parsedAmount,
+        description = description,
+        category = category,
+        isExpense = isExpense,
+        fileName = fileName,
+    )
+}
 
 private fun ImportedEntry.toDisplay() = EntryDisplay(
     dateMillis = dateMillis,
@@ -91,12 +95,7 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState(selectedCurrency = CurrencyHolder.selectedCurrency.value))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    private val _filterParams = MutableStateFlow(
-        FilterParams(
-            period = Period.MONTH, startMillis = 0L, endMillis = 0L,
-            customStart = null, customEnd = null, selectedCategory = null,
-        )
-    )
+    private var filterParams = FilterParams(startMillis = 0L, endMillis = 0L, selectedCategory = null)
 
     // Entries are paged straight out of SQLite with LIMIT/OFFSET rather than
     // pulled into memory whole. androidx.paging is Android-only, so the list
@@ -136,7 +135,7 @@ class HomeViewModel(
 
     /**
      * Imports whatever the landing flow selected, falling back to the data
-     * already stored in Room (or a zeroed state) when nothing was selected.
+     * already stored (or a zeroed state) when nothing was selected.
      */
     fun loadData() {
         val selectedFiles = SelectedFilesHolder.files
@@ -144,189 +143,94 @@ class HomeViewModel(
         // SelectedFilesHolder itself (see clearAllAppData), so anything here now
         // was chosen by the landing flow afterwards and must still be imported.
         if (selectedFiles.isEmpty()) {
-            viewModelScope.launch {
-                val hasRoomData = withContext(ioDispatcher) { importRepository.count() > 0 }
-                if (hasRoomData && !DataClearedHolder.cleared.value) {
-                    loadFromRoom()
-                } else {
-                    showZeroedState()
-                }
-            }
+            refreshData()
             return
         }
-        viewModelScope.launch {
-            setImporting(fileName = null, total = selectedFiles.size)
-            val s = mutableListOf<ParsedEntry>()
-            val e = mutableListOf<ParsedEntry>()
-            val errs = mutableListOf<String>()
-            val amounts = mutableListOf<String>()
-            val allImported = mutableListOf<ImportedEntry>()
-            for (file in selectedFiles) {
-                val fileName = file.name
-                _uiState.update { it.copy(importingFileName = fileName) }
-                withContext(ioDispatcher) { repository.readValues(file) }
-                    .onSuccess { range ->
-                        range.spendingEntries.forEach { amounts.add(it.amount) }
-                        range.earningsEntries.forEach { amounts.add(it.amount) }
-                        val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
-                        val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
-                        s.addAll(sp)
-                        e.addAll(ep)
-                        sp.forEach { parsed ->
-                            allImported.add(ImportedEntry(dateMillis = parsed.dateMillis, amount = parsed.amount, description = parsed.description, category = parsed.category, isExpense = true, fileName = fileName))
-                        }
-                        ep.forEach { parsed ->
-                            allImported.add(ImportedEntry(dateMillis = parsed.dateMillis, amount = parsed.amount, description = parsed.description, category = parsed.category, isExpense = false, fileName = fileName))
-                        }
-                        errs.add("CSV OK: ${sp.size} gastos, ${ep.size} rendas de ${range.spendingEntries.size + range.earningsEntries.size} linhas brutas")
-                    }
-                    .onFailure { error ->
-                        errs.add("Falha ao ler ${file.identifier}: ${error.message}")
-                    }
-                markImported(fileName)
-            }
-            val result = withContext(ioDispatcher) {
-                importRepository.insertEntries(allImported)
-                val newCategories = saveCategoriesFromEntries(allImported)
-                if (newCategories > 0) {
-                    errs.add("$newCategories categoria(s) nova(s) salva(s) do arquivo")
-                }
-                LoadResult(s, e, errs, amounts)
-            }
-            _uiState.update { it.copy(debugMessage = result.errors.joinToString("\n")) }
-            if (result.spending.isEmpty() && result.earnings.isEmpty()) {
-                _uiState.update {
-                    it.copy(debugMessage = (it.debugMessage ?: "") + "\nNenhum dado encontrado nos arquivos.")
-                }
-                showZeroedState()
-            } else {
-                DataClearedHolder.reset()
-                detectCurrency(result.rawAmounts)
-                updateDerivedState()
-                loadDataForPeriod(Period.MONTH)
-            }
-            clearImporting()
-        }
-    }
-
-    private fun loadFromRoom() {
-        viewModelScope.launch {
-            updateDerivedState()
-            loadDataForPeriod(Period.MONTH)
-        }
+        viewModelScope.launch { importFiles(selectedFiles, zeroWhenEmpty = true) }
     }
 
     /** Imports a single spreadsheet the user picked from the Home screen. */
     fun importFile(file: PlatformFile) {
-        viewModelScope.launch {
-            val fileName = file.name
-            setImporting(fileName = fileName, total = 1)
-            val (imported, errors, rawAmounts) = withContext(ioDispatcher) {
-                val errorMessages = mutableListOf<String>()
-                val raw = mutableListOf<String>()
-                val result = repository.readValues(file)
-                if (result.isSuccess) {
-                    val range = result.getOrThrow()
-                    range.spendingEntries.forEach { raw.add(it.amount) }
-                    range.earningsEntries.forEach { raw.add(it.amount) }
-                    val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
-                    val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
-                    val entries = mutableListOf<ImportedEntry>().apply {
-                        addAll(sp.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = true, fileName = fileName) })
-                        addAll(ep.map { ImportedEntry(dateMillis = it.dateMillis, amount = it.amount, description = it.description, category = it.category, isExpense = false, fileName = fileName) })
-                    }
-                    val inserted = importRepository.insertEntries(entries)
-                    val newCategories = saveCategoriesFromEntries(entries)
-                    errorMessages.add("Importado: ${inserted.size} registros (${entries.size - inserted.size} duplicatas ignoradas)")
-                    if (newCategories > 0) {
-                        errorMessages.add("$newCategories categoria(s) nova(s) salva(s) do arquivo")
-                    }
-                    Triple(inserted, errorMessages, raw)
-                } else {
-                    val error = result.exceptionOrNull()
-                    errorMessages.add("Falha ao importar: ${error?.message}")
-                    Triple(emptyList<ImportedEntry>(), errorMessages, raw)
-                }
-            }
-            _uiState.update { it.copy(debugMessage = errors.joinToString("\n")) }
-            if (imported.isNotEmpty()) {
-                DataClearedHolder.reset()
-                detectCurrency(rawAmounts)
-                updateDerivedState()
-                loadDataForPeriod(_uiState.value.selectedPeriod)
-            }
-            markImported(fileName)
-            clearImporting()
-        }
+        viewModelScope.launch { importFiles(listOf(file)) }
     }
 
     /** Imports every spreadsheet inside a folder the user picked. */
     fun importFolder(folder: PlatformFolder) {
         viewModelScope.launch {
-            val files = withContext(ioDispatcher) { folder.listSpreadsheetFiles() }
-            setImporting(fileName = null, total = files.size)
-            val allEntries = mutableListOf<ImportedEntry>()
-            val errorMessages = mutableListOf<String>()
-            val raw = mutableListOf<String>()
-            for (file in files) {
-                val fileName = file.name
-                _uiState.update { it.copy(importingFileName = fileName) }
-                val result = withContext(ioDispatcher) { repository.readValues(file) }
-                if (result.isSuccess) {
-                    val range = result.getOrThrow()
-                    range.spendingEntries.forEach { raw.add(it.amount) }
-                    range.earningsEntries.forEach { raw.add(it.amount) }
-                    val sp = range.spendingEntries.mapNotNull { parseEntry(it) }
-                    val ep = range.earningsEntries.mapNotNull { parseEntry(it) }
-                    sp.forEach { parsed ->
-                        allEntries.add(ImportedEntry(dateMillis = parsed.dateMillis, amount = parsed.amount, description = parsed.description, category = parsed.category, isExpense = true, fileName = fileName))
-                    }
-                    ep.forEach { parsed ->
-                        allEntries.add(ImportedEntry(dateMillis = parsed.dateMillis, amount = parsed.amount, description = parsed.description, category = parsed.category, isExpense = false, fileName = fileName))
-                    }
-                    errorMessages.add("$fileName: ${sp.size} gastos, ${ep.size} rendas")
-                } else {
-                    val error = result.exceptionOrNull()
-                    errorMessages.add("Falha ao ler ${file.identifier}: ${error?.message}")
-                }
-                markImported(fileName)
-            }
-            val imported = withContext(ioDispatcher) {
-                val inserted = importRepository.insertEntries(allEntries)
-                val newCategories = saveCategoriesFromEntries(allEntries)
-                errorMessages.add("Total: ${inserted.size} registros (${allEntries.size - inserted.size} duplicatas ignoradas)")
-                if (newCategories > 0) {
-                    errorMessages.add("$newCategories categoria(s) nova(s) salva(s) do arquivo")
-                }
-                inserted
-            }
-            detectCurrency(raw)
-            _uiState.update { it.copy(debugMessage = errorMessages.joinToString("\n")) }
-            if (imported.isNotEmpty()) {
-                DataClearedHolder.reset()
-                updateDerivedState()
-                loadDataForPeriod(_uiState.value.selectedPeriod)
-            }
-            clearImporting()
+            importFiles(withContext(ioDispatcher) { folder.listSpreadsheetFiles() })
         }
     }
 
     fun refreshData() {
         viewModelScope.launch {
-            val hasRoomData = withContext(ioDispatcher) { importRepository.count() > 0 }
-            if (hasRoomData && !DataClearedHolder.cleared.value) {
-                loadFromRoom()
+            val hasStoredData = withContext(ioDispatcher) { importRepository.count() > 0 }
+            if (hasStoredData && !DataClearedHolder.cleared.value) {
+                updateDerivedState()
+                loadDataForPeriod(Period.MONTH)
             } else {
                 showZeroedState()
             }
         }
     }
 
-    private fun setImporting(fileName: String?, total: Int) {
+    /**
+     * Reads, stores and shows [files], reporting progress through the import
+     * overlay and a per-file summary through `debugMessage`. With
+     * [zeroWhenEmpty], a batch that yields no entry leaves a zeroed screen
+     * rather than whatever was shown before.
+     */
+    private suspend fun importFiles(files: List<PlatformFile>, zeroWhenEmpty: Boolean = false) {
+        setImporting(total = files.size)
+        val entries = mutableListOf<ImportedEntry>()
+        val rawAmounts = mutableListOf<String>()
+        val messages = mutableListOf<String>()
+        for (file in files) {
+            val fileName = file.name
+            _uiState.update { it.copy(importingFileName = fileName) }
+            withContext(ioDispatcher) { repository.readValues(file) }
+                .onSuccess { range ->
+                    range.spendingEntries.mapTo(rawAmounts) { it.amount }
+                    range.earningsEntries.mapTo(rawAmounts) { it.amount }
+                    val spending = range.spendingEntries.mapNotNull { it.toImportedEntry(isExpense = true, fileName = fileName) }
+                    val earnings = range.earningsEntries.mapNotNull { it.toImportedEntry(isExpense = false, fileName = fileName) }
+                    entries += spending
+                    entries += earnings
+                    messages += "$fileName: ${spending.size} gastos, ${earnings.size} rendas"
+                }
+                .onFailure { error -> messages += "Falha ao ler ${file.identifier}: ${error.message}" }
+            markImported(fileName)
+        }
+        if (entries.isNotEmpty()) {
+            withContext(ioDispatcher) {
+                val inserted = importRepository.insertEntries(entries)
+                messages += "Importado: ${inserted.size} registros (${entries.size - inserted.size} duplicatas ignoradas)"
+                val newCategories = saveCategoriesFromEntries(entries)
+                if (newCategories > 0) {
+                    messages += "$newCategories categoria(s) nova(s) salva(s) do arquivo"
+                }
+            }
+        } else {
+            messages += "Nenhum dado encontrado nos arquivos."
+        }
+        detectCurrency(rawAmounts)
+        _uiState.update { it.copy(debugMessage = messages.joinToString("\n")) }
+        if (entries.isNotEmpty()) {
+            // Refreshed even when every entry was a duplicate: the stored data is
+            // what the screen shows, and it is exactly what the files contain.
+            DataClearedHolder.reset()
+            updateDerivedState()
+            loadDataForPeriod(_uiState.value.selectedPeriod)
+        } else if (zeroWhenEmpty) {
+            showZeroedState()
+        }
+        clearImporting()
+    }
+
+    private fun setImporting(total: Int) {
         _uiState.update {
             it.copy(
                 isImporting = true,
-                importingFileName = fileName,
+                importingFileName = null,
                 importingTotal = total,
                 importedFiles = emptyList(),
             )
@@ -397,7 +301,7 @@ class HomeViewModel(
         val period = currentState.selectedPeriod
         if (period == Period.CUSTOM) {
             filterAndEmit(
-                kPeriod = period,
+                period = period,
                 startMillis = currentState.customStartDate ?: 0L,
                 endMillis = currentState.customEndDate ?: 0L,
                 customStart = currentState.customStartDate,
@@ -405,14 +309,7 @@ class HomeViewModel(
                 selectedCategory = category,
             )
         } else {
-            viewModelScope.launch {
-                val (start, end) = withContext(ioDispatcher) {
-                    val min = importRepository.getMinDate() ?: currentTimeMillis()
-                    val max = importRepository.getMaxDate() ?: min
-                    min to max
-                }
-                filterAndEmit(period, start, end, null, null, category)
-            }
+            loadDataForPeriod(period, category)
         }
     }
 
@@ -421,7 +318,7 @@ class HomeViewModel(
         if (pageLoadInFlight || !_hasMoreEntries.value) return
         pageLoadInFlight = true
         val generation = entriesGeneration
-        val params = _filterParams.value
+        val params = filterParams
         viewModelScope.launch {
             val page = try {
                 withContext(ioDispatcher) {
@@ -478,14 +375,14 @@ class HomeViewModel(
         }
     }
 
-    private fun loadDataForPeriod(period: Period) {
+    private fun loadDataForPeriod(period: Period, category: String? = _uiState.value.selectedCategory) {
         viewModelScope.launch {
             val (start, end) = withContext(ioDispatcher) {
                 val min = importRepository.getMinDate() ?: currentTimeMillis()
                 val max = importRepository.getMaxDate() ?: min
                 min to max
             }
-            filterAndEmit(period, start, end, null, null, _uiState.value.selectedCategory)
+            filterAndEmit(period, start, end, null, null, category)
         }
     }
 
@@ -494,52 +391,30 @@ class HomeViewModel(
     }
 
     private fun filterAndEmit(
-        kPeriod: Period,
+        period: Period,
         startMillis: Long,
         endMillis: Long,
         customStart: Long?,
         customEnd: Long?,
         selectedCategory: String?,
     ) {
-        _filterParams.value = FilterParams(kPeriod, startMillis, endMillis, customStart, customEnd, selectedCategory)
+        filterParams = FilterParams(startMillis, endMillis, selectedCategory)
         resetEntries()
         viewModelScope.launch {
-            val (spendingData, spendingCategories, earningsData, earningsCategories, totalSpending, totalEarnings) =
-                withContext(ioDispatcher) {
-                    val monthNames = listOf("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
-
-                    val spendingCatTotals = importRepository.getCategoryTotals(
-                        isExpense = true, category = selectedCategory,
-                        startMillis = startMillis, endMillis = endMillis,
-                    )
-                    val earningsCatTotals = importRepository.getCategoryTotals(
-                        isExpense = false, category = selectedCategory,
-                        startMillis = startMillis, endMillis = endMillis,
-                    )
-                    val spendingEntries = importRepository.getEntriesByDateRange(
-                        isExpense = true, category = selectedCategory,
-                        startMillis = startMillis, endMillis = endMillis,
-                    )
-                    val earningsEntries = importRepository.getEntriesByDateRange(
-                        isExpense = false, category = selectedCategory,
-                        startMillis = startMillis, endMillis = endMillis,
-                    )
-                    val ts = spendingCatTotals.sumOf { it.total }
-                    val te = earningsCatTotals.sumOf { it.total }
-                    val sd = buildChartData(spendingEntries.map { it.toParsedEntry() }, kPeriod, monthNames)
-                    val ed = buildChartData(earningsEntries.map { it.toParsedEntry() }, kPeriod, monthNames)
-                    QuadResult(sd.first, sd.second, ed.first, ed.second, ts, te)
-                }
+            val (spending, earnings) = withContext(ioDispatcher) {
+                loadSeries(isExpense = true, selectedCategory, startMillis, endMillis, period) to
+                    loadSeries(isExpense = false, selectedCategory, startMillis, endMillis, period)
+            }
 
             _uiState.update {
                 it.copy(
-                    spendingData = spendingData,
-                    categorySpending = spendingCategories,
-                    earningsData = earningsData,
-                    categoryEarnings = earningsCategories,
-                    selectedPeriod = kPeriod,
-                    totalSpending = totalSpending,
-                    totalEarnings = totalEarnings,
+                    spendingData = spending.points,
+                    categorySpending = spending.categories,
+                    earningsData = earnings.points,
+                    categoryEarnings = earnings.categories,
+                    selectedPeriod = period,
+                    totalSpending = spending.total,
+                    totalEarnings = earnings.total,
                     customStartDate = customStart,
                     customEndDate = customEnd,
                     selectedCategory = selectedCategory,
@@ -548,19 +423,22 @@ class HomeViewModel(
         }
     }
 
-    private data class QuadResult(
-        val spendingData: List<SpendingDataPoint>,
-        val spendingCategories: List<CategorySpending>,
-        val earningsData: List<SpendingDataPoint>,
-        val earningsCategories: List<CategorySpending>,
-        val totalSpending: Double,
-        val totalEarnings: Double,
-    )
+    private suspend fun loadSeries(
+        isExpense: Boolean,
+        category: String?,
+        startMillis: Long,
+        endMillis: Long,
+        period: Period,
+    ): Series {
+        val total = importRepository.getCategoryTotals(isExpense, category, startMillis, endMillis).sumOf { it.total }
+        val entries = importRepository.getEntriesByDateRange(isExpense, category, startMillis, endMillis)
+        val (points, categories) = buildChartData(entries, period)
+        return Series(points, categories, total)
+    }
 
     private fun buildChartData(
-        entries: List<ParsedEntry>,
+        entries: List<ImportedEntry>,
         period: Period,
-        monthNames: List<String>,
     ): Pair<List<SpendingDataPoint>, List<CategorySpending>> {
         if (entries.isEmpty()) return emptyList<SpendingDataPoint>() to emptyList()
 
@@ -570,14 +448,11 @@ class HomeViewModel(
             Period.DAY -> groupByDay(entries)
             Period.WEEK -> groupByWeek(entries)
             Period.MONTH, Period.CUSTOM -> {
-                val minDate = entries.minOfOrNull { it.dateMillis }
-                val maxDate = entries.maxOfOrNull { it.dateMillis }
-                val spanDays = if (minDate != null && maxDate != null)
-                    ((maxDate - minDate) / (1000.0 * 60 * 60 * 24)).toInt()
-                else 0
+                val spanMillis = entries.maxOf { it.dateMillis } - entries.minOf { it.dateMillis }
+                val spanDays = (spanMillis / (1000.0 * 60 * 60 * 24)).toInt()
                 when {
                     spanDays > 35 -> entries.groupBy { entry ->
-                        monthNames[localDateOf(entry.dateMillis).month - 1]
+                        MONTH_NAMES[localDateOf(entry.dateMillis).month - 1]
                     }.map { (label, list) -> SpendingDataPoint(label, list.sumOf { it.amount }) }
                     spanDays > 7 -> groupByWeek(entries)
                     else -> groupByDay(entries)
@@ -602,7 +477,7 @@ class HomeViewModel(
         return lineData to categories
     }
 
-    private fun groupByDay(entries: List<ParsedEntry>): List<SpendingDataPoint> =
+    private fun groupByDay(entries: List<ImportedEntry>): List<SpendingDataPoint> =
         entries.groupBy { entry ->
             val date = localDateOf(entry.dateMillis)
             "${date.day}/${date.month}"
@@ -612,16 +487,10 @@ class HomeViewModel(
                 (parts.getOrNull(1)?.toIntOrNull() ?: 0) * 100 + (parts.getOrNull(0)?.toIntOrNull() ?: 0)
             }
 
-    private fun groupByWeek(entries: List<ParsedEntry>): List<SpendingDataPoint> =
+    private fun groupByWeek(entries: List<ImportedEntry>): List<SpendingDataPoint> =
         entries.groupBy { entry -> "Sem ${isoWeekOfYear(entry.dateMillis)}" }
             .map { (label, list) -> SpendingDataPoint(label, list.sumOf { it.amount }) }
             .sortedBy { it.label.removePrefix("Sem ").toIntOrNull() ?: 0 }
-
-    private fun parseEntry(entry: CsvEntry): ParsedEntry? {
-        val dateMillis = parseDate(entry.date) ?: return null
-        val amount = parseAmount(entry.amount) ?: return null
-        return ParsedEntry(dateMillis, amount, entry.description, entry.category)
-    }
 
     private fun detectCurrency(rawAmounts: List<String>) {
         val detected = rawAmounts.mapNotNull { CurrencyOption.fromAmountString(it) }
@@ -641,16 +510,8 @@ class HomeViewModel(
         }
     }
 
-    // Both parsers live in TransactionValueParser, shared with the automatic
-    // importer, so the two import paths agree on what counts as a date and an
-    // amount. It reads every shape this screen used to handle, plus the ones
-    // an arbitrary statement can throw at it (named months, `1.234,56`,
-    // parentheses for negatives).
-    private fun parseDate(dateStr: String): Long? = TransactionValueParser.parseDate(dateStr)
-
-    private fun parseAmount(amountStr: String): Double? = TransactionValueParser.parseAmount(amountStr)
-
     private companion object {
         const val ENTRIES_PAGE_SIZE = 30
+        val MONTH_NAMES = listOf("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
     }
 }

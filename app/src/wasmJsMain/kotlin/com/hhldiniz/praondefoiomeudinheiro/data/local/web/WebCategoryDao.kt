@@ -2,15 +2,8 @@ package com.hhldiniz.praondefoiomeudinheiro.data.local.web
 
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.Category
-import kotlinx.browser.localStorage
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-
-private const val STORAGE_KEY = "praondefoiomeudinheiro.categories"
 
 /**
  * [CategoryDao] backed by `localStorage`; see [WebImportedEntryDao] for the
@@ -19,38 +12,22 @@ private const val STORAGE_KEY = "praondefoiomeudinheiro.categories"
  */
 class WebCategoryDao : CategoryDao {
 
-    private val state = MutableStateFlow(load())
+    private val table = localStorageTable<Category>("praondefoiomeudinheiro.categories", "categories")
 
-    private fun load(): List<Category> {
-        val raw = runCatching { localStorage.getItem(STORAGE_KEY) }
-            .onFailure { logStorageError("load categories", it) }
-            .getOrNull() ?: return emptyList()
-        return runCatching { Json.decodeFromString<List<Category>>(raw) }
-            .onFailure { logStorageError("decode categories", it) }
-            .getOrDefault(emptyList())
-    }
+    override fun getAll(): Flow<List<Category>> = table.flow.map { it.sortedBy(Category::name) }
 
-    private fun persist(categories: List<Category>) {
-        runCatching { localStorage.setItem(STORAGE_KEY, Json.encodeToString(categories)) }
-            .onFailure { logStorageError("persist categories", it) }
-    }
-
-    override fun getAll(): Flow<List<Category>> = state.map { it.sortedBy(Category::name) }
-
-    override suspend fun getAllSync(): List<Category> = state.value.sortedBy(Category::name)
+    override suspend fun getAllSync(): List<Category> = table.rows.sortedBy(Category::name)
 
     override suspend fun insert(category: Category): Long {
-        val current = state.value
+        val current = table.rows
         if (current.any { it.name == category.name }) return -1L
         val id = (current.maxOfOrNull { it.id } ?: 0L) + 1
-        val updated = current + category.copy(id = id)
-        state.value = updated
-        persist(updated)
+        table.write(current + category.copy(id = id))
         return id
     }
 
     override suspend fun insertAll(categories: List<Category>) {
-        val current = state.value
+        val current = table.rows
         var nextId = (current.maxOfOrNull { it.id } ?: 0L) + 1
         val existingNames = current.mapTo(mutableSetOf()) { it.name }
         val toAdd = mutableListOf<Category>()
@@ -59,21 +36,14 @@ class WebCategoryDao : CategoryDao {
                 toAdd += category.copy(id = nextId++)
             }
         }
-        if (toAdd.isNotEmpty()) {
-            val updated = current + toAdd
-            state.value = updated
-            persist(updated)
-        }
+        if (toAdd.isNotEmpty()) table.write(current + toAdd)
     }
 
     override suspend fun deleteAll() {
-        state.value = emptyList()
-        persist(emptyList())
+        table.write(emptyList())
     }
 
     override suspend fun deleteByName(name: String) {
-        val updated = state.value.filterNot { it.name == name }
-        state.value = updated
-        persist(updated)
+        table.write(table.rows.filterNot { it.name == name })
     }
 }
