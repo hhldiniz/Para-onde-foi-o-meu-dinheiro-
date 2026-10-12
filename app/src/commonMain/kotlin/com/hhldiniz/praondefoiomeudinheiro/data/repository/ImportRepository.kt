@@ -4,7 +4,6 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryTotal
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.ImportedEntryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.entity.ImportedEntry
-import kotlinx.coroutines.flow.Flow
 
 /**
  * Repository that wraps [ImportedEntryDao] for importing and querying
@@ -20,18 +19,6 @@ class ImportRepository(private val dao: ImportedEntryDao) {
         val results = dao.insertAll(entries)
         return entries.filterIndexed { index, _ -> results[index] != -1L }
     }
-
-    /** Returns all entries as a reactive Flow. */
-    fun getAllEntries(): Flow<List<ImportedEntry>> = dao.getAllEntries()
-
-    /** Returns only expense entries as a reactive Flow. */
-    fun getSpendingEntries(): Flow<List<ImportedEntry>> = dao.getSpendingEntries()
-
-    /** Returns only earnings entries as a reactive Flow. */
-    fun getEarningsEntries(): Flow<List<ImportedEntry>> = dao.getEarningsEntries()
-
-    /** Deletes all entries from the database. */
-    suspend fun deleteAll() = dao.deleteAll()
 
     /** Deletes all entries and categories from the database. */
     suspend fun clearAllData(categoryDao: CategoryDao) {
