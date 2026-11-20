@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-"Pra onde foi o meu dinheiro" (Portuguese for "Where did my money go") is a Kotlin Multiplatform personal-finance app for Android, iOS, and the web (Kotlin/Wasm, deployed to GitHub Pages). Users import a CSV/ODS/PDF file of income and expenses — or a photo/screenshot of a statement, or a photo of a receipt ("nota fiscal"), via the automatic computer-vision importer (see "Automatic import" below) — and the app stores the parsed entries locally and visualizes them with pie/line charts. A separate tab tracks the user's investment positions, typed in by hand (see "Investments tab" below). There is no backend — everything is on-device (Room on Android/iOS, `localStorage` on web; text recognition uses each platform's on-device engine).
+"Pra onde foi o meu dinheiro" (Portuguese for "Where did my money go") is a Kotlin Multiplatform personal-finance app for Android, iOS, and the web (Kotlin/Wasm, deployed to GitHub Pages). Users import a CSV/ODS/PDF file of income and expenses — or a photo/screenshot of a statement, or a photo of a receipt ("nota fiscal"), via the automatic computer-vision importer (see "Automatic import" below) — and the app stores the parsed entries locally and visualizes them with pie/line charts. A separate tab tracks the user's investment positions, typed in by hand (see "Investments tab" below), and an AI assistant chat answers questions about the user's own data with a language model that runs on the device (see "Assistant chat" below). There is no backend — everything is on-device (Room on Android/iOS, `localStorage` on web; text recognition uses each platform's on-device engine; the chat runs llama.cpp locally over a model downloaded once from Hugging Face).
 
 - Language: Kotlin Multiplatform, UI: Compose Multiplatform (Material 3) — the same composables render on all three platforms
 - Package/namespace: `com.hhldiniz.praondefoiomeudinheiro`
@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - DI: Koin
 - Persistence: Room KMP + `androidx.sqlite` bundled driver on Android/iOS; hand-written `localStorage`-backed DAOs on wasmJs (Room has no wasmJs target — see "Room schema" below)
 - Android: minSdk 31 / targetSdk & compileSdk 37, Java/Kotlin target 11, AGP 9.3.1, Kotlin 2.4.0, Compose Multiplatform 1.11.1
-- iOS: `iosArm64` + `iosSimulatorArm64`, static framework `ComposeApp`, deployment target 15.0 (no `iosX64` — Compose Multiplatform no longer publishes for the Intel simulator)
+- iOS: `iosArm64` + `iosSimulatorArm64`, static framework `ComposeApp`, deployment target 16.6 — Llamatik's floor (no `iosX64` — Compose Multiplatform no longer publishes for the Intel simulator)
 - Web: `wasmJs` (Kotlin/Wasm), deployed as a static site to GitHub Pages by `.github/workflows/deploy-pages.yml` on every push to the default branch. It ships as an installable PWA (manifest + service worker) that works fully offline, and PDF import and text recognition go through JS libraries vendored into the site rather than a platform engine (see "Web target" below).
 
 ## Source sets
@@ -21,19 +21,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 app/src/commonMain/kotlin      all business logic AND the whole Compose UI, Room-free
 app/src/commonMain/composeResources/values*/strings.xml   localized strings (pt default, en-rUS, es-rES)
 app/src/roomMain/kotlin        Room @Entity/@Dao classes + AppDatabase; androidMain/iosMain depend on this, wasmJs does not
+app/src/llamaMain/kotlin       LlamatikRuntime (llama.cpp via Llamatik + Ktor model download); androidMain/iosMain depend on this, wasmJs does not
 app/src/androidMain/kotlin     actuals + MainActivity + Application; AndroidManifest.xml and res/ live here too
 app/src/iosMain/kotlin         actuals + MainViewController
 app/src/wasmJsMain/kotlin      actuals + browser entry point (main.kt) + localStorage-backed DAOs (data/local/web/)
 app/src/wasmJsMain/resources/index.html  minimal HTML shell loading the compiled JS bundle
-app/src/wasmJsMain/resources/pdf-extract.js / ocr-extract.js  lazy bridges to the vendored pdf.js / Tesseract.js
-app/src/wasmJsMain/resources/vendor/       pdf.js, Tesseract.js, its OCR engine and language data, served from the site itself
+app/src/wasmJsMain/resources/pdf-extract.js / ocr-extract.js / llm-chat.js  lazy bridges to the vendored pdf.js / Tesseract.js / wllama
+app/src/wasmJsMain/resources/vendor/       pdf.js, Tesseract.js (+ OCR engine and language data), wllama (+ its Safari compat build), served from the site itself
 app/src/wasmJsMain/resources/manifest.webmanifest / sw.js / pwa.js / icon*.png  PWA manifest, service worker and icons
 app/src/androidUnitTest/kotlin JVM unit tests (JUnit4 + mockito-kotlin)
 app/src/androidInstrumentedTest/kotlin  device tests
 iosApp/                        SwiftUI shell + Xcode project
 ```
 
-New code belongs in `commonMain` by default. Only drop to `androidMain`/`iosMain`/`wasmJsMain` when an API genuinely has no multiplatform equivalent, and then declare it as `expect` in `commonMain` first. Code that touches Room (entities, DAOs, `AppDatabase`) belongs in `roomMain` instead of `commonMain` — see "Room schema".
+New code belongs in `commonMain` by default. Only drop to `androidMain`/`iosMain`/`wasmJsMain` when an API genuinely has no multiplatform equivalent, and then declare it as `expect` in `commonMain` first. Code that touches Room (entities, DAOs, `AppDatabase`) belongs in `roomMain` instead of `commonMain` — see "Room schema". Code that calls Llamatik belongs in `llamaMain`, for the same reason (see "Assistant chat").
 
 ## Commands
 
@@ -105,12 +106,13 @@ Standard layered structure under `app/src/commonMain/kotlin/com/hhldiniz/praonde
   - `SelectedFilesHolder`, `CurrencyHolder`, `PatrimonyHolder`, `DataClearedHolder` are process-wide singleton `StateFlow` holders (not DI-managed) used to pass small bits of state across screens/lifecycle boundaries — e.g. `DataClearedHolder` tells screens to show zeroed data instead of stale/mocked values right after a "clear all data" action (see "Navigation flow" for the rest of what that action resets). `CurrencyHolder`/`PatrimonyHolder` persist through a `prefs.KeyValueStore` (SharedPreferences / NSUserDefaults / `localStorage`) and take `init(store)` once from `AppInitializer`.
 - **`data/repository/`** — `ImportRepository` (imported entries/categories CRUD + aggregation queries used by charts) and `FileSpreadsheetRepository` (implements `domain.repository.SpreadsheetRepository`, orchestrates validate → parse → map rows to spending/earnings entries). Both take the plain `ImportedEntryDao`/`CategoryDao` interfaces and are unaffected by which platform backs them.
 - **`data/vision/`** — the automatic importer (see "Automatic import" below): `DocumentLayoutAnalyzer` (words + boxes → lines, and lines → table), `TransactionFieldClassifier` (table → column roles → transactions), `ReceiptAnalyzer` (lines → one purchase: merchant, date, items, total), `SmartImportAnalyzer` (both pipelines, injectable recognizer for tests).
+- **`data/chat/`** and **`domain/chat/`** — the assistant chat; see "Assistant chat" below.
 - **`domain/vision/`** — its plain models: `BoundingBox` / `RecognizedWord` / `RecognizedDocument` (the recognizer contract), `TransactionField` / `FieldMapping` / `DetectedTransaction` / `SmartImportAnalysis` (the statement output) and `ReceiptItem` / `DetectedReceipt` / `ReceiptAnalysis` (the receipt output).
 - **`domain/`** — plain models/interfaces with no platform or Room dependency (`ValueRange`, `CurrencyOption`, `FileValidationReport`, `UiText`, `SpreadsheetRepository` interface).
 - **`util/`** — `CivilDate.kt` holds the proleptic-Gregorian arithmetic that replaced `java.time`/`Calendar` (epoch millis ↔ local date, ISO week number, month subtraction, `dd/MM/yyyy` formatting), plus `TextNormalization.kt` for accent folding in place of `java.text.Normalizer`.
-- **`di/AppModule.kt`** — shared Koin module wiring repositories and ViewModels, plus `expect val platformModule` for the bindings that need platform APIs. `platformModule` also supplies the `ImportedEntryDao`/`CategoryDao` singletons on every platform (Room-backed on Android/iOS, `localStorage`-backed on wasmJs — see "Room schema"), since `appModule` itself must stay Room-free. When adding a repository/ViewModel, register it in `appModule`.
+- **`di/AppModule.kt`** — shared Koin module wiring repositories and ViewModels, plus `expect val platformModule` for the bindings that need platform APIs. `platformModule` also supplies the `ImportedEntryDao`/`CategoryDao` singletons on every platform (Room-backed on Android/iOS, `localStorage`-backed on wasmJs — see "Room schema"), since `appModule` itself must stay Room-free, and the chat's `LlmRuntime` (`LlamatikRuntime` on Android/iOS, `WllamaRuntime` on wasmJs). When adding a repository/ViewModel, register it in `appModule`.
 - **`AppInitializer.kt` / `App.kt`** — the shared startup sequence and root composable. Android calls them from `PraondefoiomeudinheiroApp.onCreate` + `MainActivity`, iOS from `MainViewController()`, wasmJs from `main.kt`'s `ComposeViewport`.
-- **`presentation/`** — Compose screens grouped by feature folder (`screen/landing`, `screen/intro`, `screen/home`, `screen/addentry`, `screen/investments`, `screen/settings`, `screen/smartimport`), each typically with a `XScreen.kt` (Composable) + `XViewModel.kt` (Koin-injected, exposes `StateFlow` UI state). `presentation/navigation/AppNavigation.kt` + `Screen.kt` define the NavHost.
+- **`presentation/`** — Compose screens grouped by feature folder (`screen/landing`, `screen/intro`, `screen/home`, `screen/addentry`, `screen/investments`, `screen/settings`, `screen/smartimport`, `screen/chat`), each typically with a `XScreen.kt` (Composable) + `XViewModel.kt` (Koin-injected, exposes `StateFlow` UI state). `presentation/navigation/AppNavigation.kt` + `Screen.kt` define the NavHost.
 - **`presentation/theme/`** — Material 3 theme plus a custom "neo-brutalist" component set (`NeoBrutalist.kt`: `HardShadowBox`, `NeoButton`, `NeoCard`, `NeoTag`) that gives the app its hard-shadow, high-contrast visual style. Prefer these components over raw Material widgets for buttons/cards/tags to keep the visual language consistent.
 
 ### Strings and resources
@@ -248,6 +250,83 @@ swaps it for one candidate per item (the receipt's date, category and
 confidence carry over). From there it is the same review and the same
 `ImportRepository` insertion as the statement path.
 
+### Assistant chat (on-device LLM)
+
+The face icon on Home's top bar opens `Screen.Chat`: a conversation with a
+language model that runs **on the device**, about the user's own money. The
+model is **Qwen2.5 1.5B Instruct, Q4_K_M GGUF** (~1.1GB, Apache-2.0, ungated),
+declared once in `domain/chat/ChatModel.kt` (`ChatModels.DEFAULT`) with its
+Hugging Face repository, a **pinned revision** and its exact size — so a
+re-upload under the same name cannot change what the app runs, and a file of
+any other size is known to be broken. It is the balance point for "most modern
+devices": ~1.5GB of free memory, a readable pace on a mid-range phone, decent
+Portuguese/Spanish/English. Swapping models means a new `ChatModel` entry (and,
+if its chat template is not ChatML, a new `PromptFormat`).
+
+The split mirrors the vision importer — everything that decides *what* the
+model is asked lives in commonMain; only running llama.cpp is per platform:
+
+- **`LlmRuntime`** (`domain/chat/`) is the platform contract: is the file here,
+  download it (with progress, cancellable), delete it, load/unload it, and
+  `complete(prompt)` as a `Flow` of text pieces whose cancellation stops the
+  generation.
+  - Android/iOS: `LlamatikRuntime` in **`llamaMain`** — an intermediate source
+    set like `roomMain`, which wasmJs does not depend on. llama.cpp through
+    Llamatik (`com.llamatik:library` 1.x; 2.x renamed it to `core`), whose
+    `LlamaBridge` is a process-wide singleton that *blocks* for loads and
+    generations, so every call goes through one dedicated thread and
+    generations are serialized. The GGUF is downloaded with Ktor (3.4.x — the
+    last line on coroutines 1.10) and kotlinx-io into `<id>.gguf.part`,
+    resumed with an HTTP range request after an interruption, checked against
+    `sizeBytes` and only then renamed into place. It lives in
+    `noBackupFilesDir` on Android and in Application Support (excluded from
+    iCloud backup) on iOS — `ModelStorage.{android,ios}.kt`, which also check
+    free space first (`NotEnoughStorageException`).
+  - Web: `WllamaRuntime` over `llm-chat.js` and the vendored wllama (see "Web
+    target"). Llamatik also publishes a wasm-js variant, but its bridge
+    hardcodes a root-relative worker URL that cannot work from the GitHub Pages
+    subdirectory, and expects the model in its own IndexedDB layout.
+- **`ChatModelManager`** (`data/chat/`) is a Koin **singleton with its own
+  scope** holding `ModelStatus` (Checking → NotDownloaded → Downloading →
+  Downloaded → Loading → Ready, or Failed with a `ModelFailure` of DOWNLOAD /
+  STORAGE / LOAD). It outlives the screen on purpose: a 1GB download must
+  survive the user leaving to look something up, and a native load must not be
+  cancelled halfway. The download always waits for the user's tap; loading
+  happens by itself whenever the chat screen is open and the file is there.
+- **`ChatViewModel`** owns the conversation. Before **every** answer it re-reads
+  the data (`ImportRepository.getAllEntries()`, the investments, currency,
+  starting patrimony) into a fresh briefing, so something imported a minute
+  ago is already known. Leaving the screen unloads the model (the file stays).
+- **`FinancialContextBuilder`** turns that data into a short plain-text
+  summary: totals and balance, the last months side by side, expenses by
+  category (recent and all-time) with shares, the largest recent expenses, the
+  latest transactions and the investment positions. **Every number is computed
+  in code** — a 1.5B model reads figures well and adds them up badly — and the
+  amounts use a fixed, locale-free `R$ 1234.56` form so the model reads them
+  unambiguously.
+- **`AssistantPrompt`** is the system prompt (English, which small models
+  follow most reliably, with a rule to answer in the user's language and the
+  app's language as the fallback); **`ChatPromptBuilder`** renders the
+  conversation in ChatML *itself* rather than through the model's embedded
+  Jinja template, so both runtimes send byte-identical prompts and the JVM
+  tests pin them. It keeps the prompt inside the context window (4096 tokens,
+  512 reserved for the answer) by dropping the oldest turns, never the system
+  prompt or the question, and strips `<|im_start|>`/`<|im_end|>` out of any
+  user-supplied text — llama.cpp parses special tokens inside the prompt, so a
+  transaction description could otherwise inject a turn.
+  **`StopSequenceFilter`** cuts the streamed answer at an end-of-turn marker
+  even when it arrives split across pieces.
+
+"Clear all data" leaves the model alone — it holds nothing about the user, and
+re-downloading a gigabyte would be the wrong penalty; the chat's own menu
+deletes it ("apagar o modelo do aparelho").
+
+The only network traffic is the model download itself (Android needs the
+`INTERNET` permission for it, which the app did not declare before). On iOS the
+Llamatik static libraries need `Accelerate`, `Metal` and `libc++` linked by the
+app target (`OTHER_LDFLAGS` in `iosApp.xcodeproj`), because a static Kotlin
+framework does not carry its cinterop's linker options.
+
 ### Room schema
 
 Room 2.7.1 (the version this project is pinned to) has no wasmJs/js target — only the breaking-change Room 3.0 alpha line adds that, and it needs a hand-rolled Web Worker + OPFS setup that isn't worth the Android/iOS migration risk. So all Room-touching code lives in the `roomMain` intermediate source set (`dependsOn(commonMain)`, depended on by `androidMain` and `iosMain` only — see `app/build.gradle.kts`) instead of `commonMain`:
@@ -274,7 +353,7 @@ pdf.js's `getTextContent()` returns positioned glyph runs rather than the whites
 **The web build is a PWA**: it can be installed to a phone's home screen or a desktop launcher and starts with the network off. Three static files in `app/src/wasmJsMain/resources/` do it, all copied verbatim into the distribution and all addressing each other relatively, because GitHub Pages serves the site from a repository subdirectory rather than the origin's root:
 
 - `manifest.webmanifest` — identity and install metadata (`display: standalone`, the theme's `#EAB308`/`#FFF5E6` for the splash screen, `start_url`/`scope`/`id` of `./`). Its icons are `icon.svg` plus PNGs rendered from the same artwork as the Android adaptive icon: `icon-192/512.png` zoomed 1.4x for contexts that never mask, and `icon-maskable-192/512.png` at the adaptive icon's own framing, whose 66/108 safe zone is exactly what a circle/squircle mask needs. `index.html` additionally links `apple-touch-icon.png` and `favicon-32.png`, which Safari's "Add to Home Screen" and browser tabs read instead of the manifest.
-- `sw.js` — the service worker. It precaches only the shell (the page, the manifest, the icons) and runtime-caches everything else same-origin stale-while-revalidate, because webpack content-hashes the wasm binary's filename and Compose fetches its resources lazily by name: a hardcoded precache list would be a lie and a build-time generated one would be a build step. Navigations are network-first so a deploy lands on the next launch, falling back to the cached shell offline. Cross-origin requests are passed straight through, which now means nothing at runtime: the import engines are vendored (see below), so the app makes no third-party request at all. What those engines do cost is size, so they are not in the install precache — `pwa.js` asks the worker, once the app is up and idle, to pull `OFFLINE_LIBRARIES` (~13MB) into the same cache, skipping the whole thing when `navigator.connection` reports a metered or 2G link.
+- `sw.js` — the service worker. It precaches only the shell (the page, the manifest, the icons) and runtime-caches everything else same-origin stale-while-revalidate, because webpack content-hashes the wasm binary's filename and Compose fetches its resources lazily by name: a hardcoded precache list would be a lie and a build-time generated one would be a build step. Navigations are network-first so a deploy lands on the next launch, falling back to the cached shell offline. Cross-origin requests are passed straight through, which at runtime means exactly one thing: the assistant chat's one-time model download from Hugging Face, which wllama streams into the origin-private file system (OPFS) itself and which must not be duplicated into Cache Storage. Everything else is vendored (see below). What those engines do cost is size, so they are not in the install precache — `pwa.js` asks the worker, once the app is up and idle, to pull `OFFLINE_LIBRARIES` (~13MB) into the same cache, skipping the whole thing when `navigator.connection` reports a metered or 2G link.
 - `pwa.js` — registers the worker after `load`. Not a module and not dependent on the wasm bundle, since a cached shell has to survive the bundle failing to load. Loading any page with `?sw=off` unregisters the worker and drops its caches, which is how to iterate with `wasmJsBrowserDevelopmentRun` without a worker from a previous run serving the previous build. It also owns the **install button**: Chromium fires `beforeinstallprompt` once, early, while the wasm bundle is still downloading, and an unclaimed prompt is gone — so `pwa.js` catches it, holds it, and exposes `window.praOndeCanInstall()` / `window.praOndeInstall()` plus a `praonde:installavailability` DOM event when either answer changes. `platform/AppInstall.wasmJs.kt` wraps that as the `AppInstaller` the shared UI sees, as one long-lived object (a Kotlin lambda has no stable identity on the JS side, so a listener registered per composition could not be removed again). `SettingsScreen` renders its "install the app" section only while `canInstall` is true, which is never on Android/iOS (`UnavailableAppInstaller`) and only until the app is installed on the web — and never in Safari, which installs solely through its own share menu.
 
 `index.html` also paints an `#app-loading` placeholder (the app's hard-shadow square) while the bundle downloads, and `main.kt` removes it as its first act — an installed launch goes from the system splash screen straight into the page, where a blank body reads as a broken app.
@@ -283,7 +362,9 @@ pdf.js's `getTextContent()` returns positioned glyph runs rather than the whites
 
 - They stay **lazily loaded**: `pdf-extract.js` / `ocr-extract.js` still only `import()` on the first PDF or photo picked, and resolve their paths from `import.meta.url` (not the page URL), so a deep link or a subdirectory deploy cannot break them. Tesseract's `corePath` and `langPath` are handed to a Web Worker, which resolves relative URLs against *itself* — hence absolute `new URL(...).href` values.
 - Only what is reachable is shipped: one of the four OCR core builds (`tesseract-core-simd-lstm.wasm.js` — the app's WasmGC floor implies wasm SIMD, and recognition is LSTM-only) and the `4.0.0_best_int` models rather than the CDN default's standard ones, which carry legacy-engine data that LSTM-only recognition never reads. That is 15MB shipped where the naive copy would have been ~40MB.
-- `sw.js`'s `OFFLINE_LIBRARIES` names each file that must survive going offline, and `PwaAssetsTest` checks that list against the directory in both directions, so a vendored file nobody pre-caches — one that works online and fails offline, the exact bug this removes — fails the build instead. The `cmaps/` are the one deliberate omission: 169 files only a CJK-encoded PDF touches.
+- `sw.js`'s `OFFLINE_LIBRARIES` names each file that must survive going offline, and `PwaAssetsTest` checks that list against the directory in both directions, so a vendored file nobody pre-caches — one that works online and fails offline, the exact bug this removes — fails the build instead. There are two deliberate omissions: the `cmaps/` (169 files only a CJK-encoded PDF touches) and the chat engine, `vendor/wllama/` + `vendor/wllama-compat/` (~25MB that is useless until the user downloads a model, online; `handleAsset` caches it the first time the chat runs).
+
+**The assistant chat on the web** runs wllama 3.8.1 — llama.cpp compiled to WebAssembly — through `llm-chat.js`, lazily `import()`ed on the first visit to the chat like the other bridges. Two builds are vendored: the default one (needs JSPI + 64-bit wasm memory, i.e. Chromium) and the **compat** build that wllama falls back to on Safari, which it would otherwise fetch from jsDelivr — `llm-chat.js` hands it the vendored copy with `setCompat`, and `PwaAssetsTest` checks that it does. The model is downloaded by wllama's `ModelManager` straight from Hugging Face (which sends CORS headers for any origin) into OPFS, after asking for persistent storage and checking `navigator.storage.estimate()`; it loads offline from then on. Unlike the native download it cannot resume: an interrupted one starts over. The bridge's functions **resolve with a string, never reject** — the result, or `praonde:failed:` and a message (`praonde:not-enough-storage:` inside it becomes a `NotEnoughStorageException`) — because how a rejected promise's message reaches Kotlin/Wasm has changed between Kotlin releases. wllama runs single-threaded here: multi-threading needs cross-origin isolation (COOP/COEP headers), which GitHub Pages cannot send.
 
 Both browser bridges (`pdf-extract.js`, `ocr-extract.js`) wrap every failure with the library's name before it leaves: the Kotlin side surfaces a JS error's `message` verbatim to the user, and a bare engine message ("undefined is not a function") names neither the file nor what was being attempted. `pdf-extract.js` also checks up front for the JS features pdf.js needs (`Promise.withResolvers`, `structuredClone`) — the app's own baseline is WasmGC, which is not quite the same generation of browser — so an unsupported browser says so instead of failing somewhere inside the library.
 
@@ -297,5 +378,6 @@ Both browser bridges (`pdf-extract.js`, `ocr-extract.js`) wrap every failure wit
 - `InvestmentsViewModelTest` drives the investments tab through a real `InvestmentRepository` over an in-memory `InvestmentDao` (a mock would not re-emit its Flow, which is where the tab's totals come from); `data/local/entity/InvestmentEntityTest` covers the derived profit numbers and both persisted representations, and pins `InvestmentType`'s and `YieldMode`'s stored keys — changing one silently reinterprets rows already on disk. It also pins what a row written *before* the contracted-yield fields existed reads back as, in both representations (a missing Room column defaulting to `none`/null, a JSON object without the properties), which is the half of an added field that is easy to get wrong.
 - Instrumented tests (`app/src/androidInstrumentedTest`) are reserved for things that need a real Android environment: Room DB behavior (`AppDatabaseTest`) and PDFBox text extraction (`PdfParserTest`).
 - No mocking framework is used for Room itself in unit tests — parser/repository logic is tested with plain Kotlin objects and in-memory data structures.
-- `web/PwaAssetsTest` is the same idea applied to files that aren't code at all: it parses `manifest.webmanifest`, checks each icon exists and really is the size it claims (read out of the PNG header), that `sw.js` precaches nothing that isn't shipped, that `index.html`/`main.kt` still agree on the loading placeholder's id, that `pwa.js` and `AppInstall.wasmJs.kt` still agree on the `window.praOnde*` names and event the install button rides on, and that the vendored engines are complete, pre-cached and never reached for over a CDN. Nothing else in the build looks inside those files — the wasmJs compile check copies them without reading them — so a renamed icon would otherwise surface as a browser quietly declining to install the app.
+- `data/chat/` tests drive the assistant without a model: `FakeLlmRuntime` answers with canned pieces and records every prompt, so `ChatViewModelTest` checks what the model was asked (the briefing, the history in ChatML) and what the user sees (stop markers cut, empty answers dropped, failures keeping the partial text); `ChatModelManagerTest` covers the status machine; `ChatPromptBuilderTest` pins the exact ChatML text, the context-window trimming and the marker stripping; `FinancialContextBuilderTest` pins the numbers in the briefing. A wrong answer about the user's data most likely belongs in the briefing, not in the prompt wording.
+- `web/PwaAssetsTest` is the same idea applied to files that aren't code at all: it parses `manifest.webmanifest`, checks each icon exists and really is the size it claims (read out of the PNG header), that `sw.js` precaches nothing that isn't shipped, that `index.html`/`main.kt` still agree on the loading placeholder's id, that `pwa.js` and `AppInstall.wasmJs.kt` still agree on the `window.praOnde*` names and event the install button rides on, that `llm-chat.js` and `WllamaRuntime.kt` agree on `window.praOndeLlm`'s methods and error markers, and that the vendored engines are complete, pre-cached (or deliberately not) and never reached for over a CDN. Nothing else in the build looks inside those files — the wasmJs compile check copies them without reading them — so a renamed icon would otherwise surface as a browser quietly declining to install the app.
 - There is no unit-test source set for wasmJs; its actuals are exercised indirectly through `wasmJsBrowserDistribution` compiling in CI (the `wasm-build` job) plus the shared `RawInflate`/`PdfTextLayout`/`ImportRepository`/etc. logic they call into being covered on the JVM. Keeping browser-only code thin — a bridge that fetches and marshals, with the interpretation in commonMain — is what makes that second half worth anything.

@@ -28,6 +28,14 @@ pdfboxAndroid = "2.0.27.0"
 # ML Kit's bundled Latin text recognizer, used by the automatic (image)
 # import on Android. The model ships in the APK, so OCR runs offline.
 mlkitTextRecognition = "16.0.1"
+# llama.cpp for Android and iOS, behind the assistant chat (the web build
+# vendors wllama instead; see app/src/wasmJsMain/resources/vendor/README.md).
+# 1.x is the mature line; 2.0 renamed the artifact to com.llamatik:core.
+llamatik = "1.10.1"
+# Downloads the assistant's model on Android/iOS. 3.4.x is the last line that
+# stays on kotlinx-coroutines 1.10, which the rest of the project uses.
+ktor = "3.4.3"
+kotlinxIo = "0.8.2"
 compileSdk = "37"
 minSdk = "31"
 targetSdk = "37"
@@ -60,6 +68,11 @@ mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", versio
 androidx-arch-core-testing = { group = "androidx.arch.core", name = "core-testing", version.ref = "archCoreTesting" }
 pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
+llamatik = { group = "com.llamatik", name = "library", version.ref = "llamatik" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
+ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
+kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinxIo" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-browser = { group = "org.jetbrains.kotlinx", name = "kotlinx-browser", version.ref = "kotlinxBrowser" }
 

@@ -85,6 +85,12 @@
       is actually picked.
     -->
     <script type="module" src="ocr-extract.js"></script>
+    <!--
+      Defines window.praOndeLlm, used by WllamaRuntime.kt for the assistant
+      chat. Same arrangement again: tiny by itself, it only imports wllama (the
+      WebAssembly build of llama.cpp) once the chat is actually opened.
+    -->
+    <script type="module" src="llm-chat.js"></script>
     <!-- Registers sw.js. Deliberately not a module and not deferred behind the
          bundle: the service worker is what serves the app when the network is
          gone, so it must not depend on the wasm load succeeding. -->

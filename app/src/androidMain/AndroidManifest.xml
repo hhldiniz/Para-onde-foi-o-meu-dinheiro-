@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Only used to download the assistant chat's model from Hugging Face,
+         once; the chat itself runs on the device. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".PraondefoiomeudinheiroApp"
         android:allowBackup="true"

@@ -29,6 +29,9 @@ class ImportRepository(private val dao: ImportedEntryDao) {
     /** Returns the total entry count. */
     suspend fun count(): Int = dao.count()
 
+    /** Every entry, newest first — what the assistant chat summarizes before answering. */
+    suspend fun getAllEntries(): List<ImportedEntry> = dao.getAllEntriesByDate()
+
     suspend fun getCategoryTotals(
         isExpense: Boolean,
         category: String?,

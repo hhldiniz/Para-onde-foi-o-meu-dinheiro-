@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import com.hhldiniz.praondefoiomeudinheiro.data.local.OnboardingHolder
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.addentry.AddEntryScreen
+import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.chat.ChatScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.home.HomeScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro.IntroCategoriesScreen
 import com.hhldiniz.praondefoiomeudinheiro.presentation.screen.intro.IntroPatrimonyScreen
@@ -98,6 +99,7 @@ fun AppNavigation() {
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigateToAddEntry = { navController.navigate(Screen.AddEntry.route) },
                 onNavigateToSmartImport = { navController.navigate(Screen.SmartImport.route) },
+                onNavigateToChat = { navController.navigate(Screen.Chat.route) },
                 refreshKey = refreshKey,
             )
         }
@@ -128,6 +130,10 @@ fun AppNavigation() {
                     navController.popBackStack()
                 }
             )
+        }
+
+        composable(Screen.Chat.route) {
+            ChatScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Screen.AddEntry.route) {

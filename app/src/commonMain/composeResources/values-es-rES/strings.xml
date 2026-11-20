@@ -282,4 +282,44 @@
     <string name="investment_type_pension">Plan de pensiones</string>
     <string name="investment_type_real_estate">Inmuebles</string>
     <string name="investment_type_other">Otros</string>
+
+    <!-- Assistant chat (on-device AI) -->
+    <string name="chat_title">Asistente IA</string>
+    <string name="chat_open_content_description">Abrir el asistente de IA</string>
+    <string name="chat_intro_title">TU ASISTENTE FINANCIERO</string>
+    <string name="chat_intro_body">Conversa sobre tus gastos, ingresos e inversiones. El asistente usa un modelo de IA que se ejecuta por completo en este dispositivo: lee un resumen de tus datos para responder, y nada de lo que escribes sale de aquí.</string>
+    <string name="chat_download_info">Antes de empezar, hay que descargar el modelo una sola vez desde Hugging Face (%1$s). Se recomienda una red Wi-Fi.</string>
+    <string name="chat_model_name">Modelo: %1$s · licencia %2$s</string>
+    <string name="chat_btn_download">DESCARGAR MODELO (%1$s)</string>
+    <string name="chat_downloading_title">DESCARGANDO EL MODELO</string>
+    <string name="chat_download_progress">%1$s de %2$s · %3$d%%</string>
+    <string name="chat_download_hint">Puedes salir de esta pantalla: la descarga continúa mientras la app esté abierta.</string>
+    <string name="chat_btn_cancel_download">CANCELAR DESCARGA</string>
+    <string name="chat_checking_model">Comprobando el modelo…</string>
+    <string name="chat_loading_model">Cargando el modelo en memoria…</string>
+    <string name="chat_error_download">No se pudo descargar el modelo. Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="chat_error_storage">No hay suficiente espacio libre en este dispositivo. El modelo necesita %1$s.</string>
+    <string name="chat_error_load">No se pudo cargar el modelo. Puede que el dispositivo no tenga memoria libre: cierra otras apps e inténtalo de nuevo.</string>
+    <string name="chat_error_detail">Detalle: %1$s</string>
+    <string name="chat_btn_retry">INTENTAR DE NUEVO</string>
+    <string name="chat_empty_title">Pregunta sobre tu dinero</string>
+    <string name="chat_suggestion_spending">¿En qué gasté más en los últimos meses?</string>
+    <string name="chat_suggestion_saving">¿Cómo puedo ahorrar el próximo mes?</string>
+    <string name="chat_suggestion_investments">Resume mis inversiones.</string>
+    <string name="chat_input_hint">Escribe tu pregunta…</string>
+    <string name="chat_send_content_description">Enviar</string>
+    <string name="chat_stop_content_description">Detener la respuesta</string>
+    <string name="chat_thinking">Leyendo tus datos…</string>
+    <string name="chat_disclaimer">Respuestas generadas por IA en tu dispositivo. Pueden contener errores y no sustituyen a un profesional.</string>
+    <string name="chat_menu_content_description">Más opciones</string>
+    <string name="chat_menu_new_conversation">Nueva conversación</string>
+    <string name="chat_menu_delete_model">Borrar el modelo del dispositivo</string>
+    <string name="chat_delete_model_title">¿Borrar el modelo?</string>
+    <string name="chat_delete_model_body">El modelo se eliminará de este dispositivo y liberará %1$s. Para volver a usar el asistente tendrás que descargarlo otra vez.</string>
+    <string name="chat_delete_model_confirm">Borrar</string>
+    <string name="chat_error_generation">No se pudo generar la respuesta. Inténtalo de nuevo.</string>
+    <string name="chat_error_empty_answer">El modelo no respondió nada. Intenta reformular la pregunta.</string>
+    <string name="chat_answer_interrupted">Respuesta interrumpida.</string>
+    <string name="chat_role_user">TÚ</string>
+    <string name="chat_role_assistant">ASISTENTE</string>
 </resources>
