@@ -86,7 +86,24 @@ kotlin {
             }
         }
 
+        // The assistant chat's on-device model runtime for Android and iOS:
+        // llama.cpp through Llamatik, plus the Ktor client that downloads the
+        // GGUF file. The web build runs llama.cpp through a vendored wllama
+        // instead (Llamatik's own wasm bridge hardcodes a root-relative worker
+        // path that cannot work from the GitHub Pages subdirectory), so — like
+        // Room — this lives in its own intermediate source set that wasmJs
+        // does not depend on.
+        val llamaMain by creating {
+            dependsOn(commonMain.get())
+            dependencies {
+                implementation(libs.llamatik)
+                implementation(libs.ktor.client.core)
+                implementation(libs.kotlinx.io.core)
+            }
+        }
+
         androidMain.get().dependsOn(roomMain)
+        androidMain.get().dependsOn(llamaMain)
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
@@ -95,9 +112,14 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.pdfbox.android)
             implementation(libs.mlkit.text.recognition)
+            implementation(libs.ktor.client.android)
         }
 
         iosMain.get().dependsOn(roomMain)
+        iosMain.get().dependsOn(llamaMain)
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+        }
 
         val wasmJsMain by getting {
             dependencies {
@@ -200,6 +222,22 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    packaging {
+        jniLibs {
+            // Llamatik ships llama.cpp for four ABIs, ~35MB each, stored
+            // uncompressed in the APK. A 32-bit device cannot run the
+            // assistant's 1.5B model in any useful way, so only its 64-bit
+            // builds are kept (arm64-v8a for phones, x86_64 for emulators);
+            // on a 32-bit device the chat reports that the model could not be
+            // loaded instead of crashing (see LlamatikRuntime.native). The
+            // rest of the app keeps all four ABIs.
+            for (abi in listOf("armeabi-v7a", "x86")) {
+                for (library in listOf("ggml", "ggml-base", "ggml-cpu", "llama", "llama-common", "llama_jni", "omp", "whisper")) {
+                    excludes += "lib/$abi/lib$library.so"
+                }
+            }
+        }
     }
 }
 

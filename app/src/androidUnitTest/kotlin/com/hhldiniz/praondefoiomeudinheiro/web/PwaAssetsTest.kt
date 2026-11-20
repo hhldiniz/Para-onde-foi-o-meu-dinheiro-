@@ -109,7 +109,7 @@ class PwaAssetsTest {
      */
     @Test
     fun `the import engines are served from this site, not from a CDN`() {
-        for (script in listOf("pdf-extract.js", "ocr-extract.js")) {
+        for (script in listOf("pdf-extract.js", "ocr-extract.js", "llm-chat.js")) {
             val source = resources.resolve(script).readText()
             for (cdn in listOf("cdn.jsdelivr.net", "tessdata.projectnaptha.com", "unpkg.com")) {
                 assertTrue("$script still loads something from $cdn", !source.contains(cdn))
@@ -132,8 +132,51 @@ class PwaAssetsTest {
             "vendor/tessdata/por.traineddata.gz",
             "vendor/tessdata/eng.traineddata.gz",
             "vendor/tessdata/spa.traineddata.gz",
+            "vendor/wllama/index.js",
+            "vendor/wllama/wllama.wasm",
+            "vendor/wllama-compat/wllama.js",
+            "vendor/wllama-compat/wllama.wasm",
         )) {
             assertTrue("$path is missing from the web resources", resources.resolve(path).exists())
+        }
+    }
+
+    /**
+     * wllama falls back to its compat build (Safari, which lacks JSPI) and
+     * fetches it from jsDelivr unless told otherwise; `llm-chat.js` has to
+     * hand it the vendored copy, or the chat quietly depends on a CDN again.
+     */
+    @Test
+    fun `the chat engine is told to use the vendored compat build`() {
+        val bridge = resources.resolve("llm-chat.js").readText()
+        assertTrue("llm-chat.js does not point wllama at its vendored compat build", bridge.contains("setCompat("))
+        for (path in listOf("./vendor/wllama-compat/wllama.js", "./vendor/wllama-compat/wllama.wasm", "./vendor/wllama/wllama.wasm")) {
+            assertTrue("llm-chat.js does not reference $path", bridge.contains(path))
+        }
+    }
+
+    /**
+     * The chat's two halves are joined by nothing but these names, like the
+     * install button's: `llm-chat.js` defines `window.praOndeLlm` and its
+     * methods, `WllamaRuntime.kt` calls them, and a rename on either side
+     * compiles and ships.
+     */
+    @Test
+    fun `the chat bridge is defined on the JS side and called from Kotlin`() {
+        val bridge = resources.resolve("llm-chat.js").readText()
+        val runtime = wasmJsSource("data/chat/WllamaRuntime.kt")
+        val html = resources.resolve("index.html").readText()
+
+        assertTrue("index.html does not load llm-chat.js", html.contains("""src="llm-chat.js""""))
+        assertTrue("llm-chat.js does not define window.praOndeLlm", bridge.contains("window.praOndeLlm = {"))
+        for (method in listOf("isDownloaded", "download", "cancelDownload", "remove", "load", "unload", "complete", "abortCompletion")) {
+            assertTrue("llm-chat.js does not define praOndeLlm.$method", Regex("""\n    $method[:(]""").containsMatchIn(bridge))
+            assertTrue("WllamaRuntime.kt does not call praOndeLlm.$method", runtime.contains("window.praOndeLlm.$method("))
+        }
+        // The markers the bridge resolves with instead of rejecting.
+        for (marker in listOf("praonde:failed:", "praonde:not-enough-storage")) {
+            assertTrue("llm-chat.js does not use $marker", bridge.contains(marker))
+            assertTrue("WllamaRuntime.kt does not recognize $marker", runtime.contains(marker))
         }
     }
 
@@ -165,6 +208,10 @@ class PwaAssetsTest {
             // The cmaps are deliberately left online-only: 169 files that only
             // a PDF with a CJK encoding ever touches.
             .filterNot { it.parentFile.name == "cmaps" }
+            // So is the chat engine: ~25MB that is useless until the user
+            // downloads a model, online, and that the worker caches the first
+            // time the chat runs (see OFFLINE_LIBRARIES in sw.js).
+            .filterNot { it.parentFile.name == "wllama" || it.parentFile.name == "wllama-compat" }
             .map { "./" + it.relativeTo(resources).path.replace('\\', '/') }
             .toList()
 

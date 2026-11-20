@@ -7,8 +7,9 @@
 //
 // There is nothing to sync and no backend: entries live in localStorage (see
 // data/local/web/), so once the app shell is cached the whole app works with
-// the network off. The two CDN-loaded libraries are the exception — see the
-// cross-origin note in the fetch handler.
+// the network off. The assistant chat's model, downloaded once from Hugging
+// Face, is the one thing that comes from elsewhere — see the cross-origin note
+// in the fetch handler.
 
 const CACHE = "praonde-shell-v1";
 
@@ -62,6 +63,13 @@ const PDFJS_STANDARD_FONTS = [
  * The cmaps (`vendor/pdfjs/cmaps/`) are deliberately absent: 169 files that
  * only a PDF with a CJK encoding ever touches. They stay a normal, online
  * fetch.
+ *
+ * So is the assistant chat's engine (`vendor/wllama/`, `vendor/wllama-compat/`,
+ * ~25MB): it is useless without a model the user has to download first — a
+ * gigabyte, online, from Hugging Face — so pre-fetching it for everyone would
+ * spend a phone's data on a feature most users may never open. It lands in
+ * the cache through [handleAsset] the first time the chat runs, and the chat
+ * works offline from then on.
  */
 const OFFLINE_LIBRARIES = [
     "./vendor/pdfjs/pdf.min.mjs",
@@ -191,13 +199,12 @@ self.addEventListener("fetch", (event) => {
     if (request.cache === "only-if-cached" && request.mode !== "same-origin") return;
 
     const url = new URL(request.url);
-    // Cross-origin requests are pdf.js and Tesseract.js being pulled from the
-    // CDN (see pdf-extract.js / ocr-extract.js). They are megabytes each, only
-    // fetched if the user actually imports a PDF or a photo, and come back as
-    // opaque responses whose success this worker cannot even check — so they
-    // are left to the browser's own HTTP cache. Consequence, worth knowing:
-    // offline the app opens and shows its data, but importing a PDF or an image
-    // needs the network unless the browser still has those libraries cached.
+    // The only cross-origin request the app makes is the assistant chat's
+    // one-time model download from Hugging Face (llm-chat.js), a gigabyte that
+    // wllama streams straight into the origin-private file system and keeps
+    // there itself. It must not go through this cache — duplicating it in
+    // Cache Storage would double its footprint — so cross-origin requests are
+    // left to the browser.
     if (url.origin !== self.location.origin) return;
 
     if (request.mode === "navigate") {

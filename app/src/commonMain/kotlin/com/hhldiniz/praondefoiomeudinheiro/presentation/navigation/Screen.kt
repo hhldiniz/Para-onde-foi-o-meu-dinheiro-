@@ -9,4 +9,5 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
     data object AddEntry : Screen("add_entry")
     data object SmartImport : Screen("smart_import")
+    data object Chat : Screen("chat")
 }

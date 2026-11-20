@@ -2,12 +2,12 @@
 
 *("Where did my money go?")*
 
-A Kotlin Multiplatform personal-finance app for **Android and iOS**. Import a CSV/ODS/PDF file of income and expenses — or a photo/screenshot of a statement, which the automatic importer reads on-device and maps to columns by itself — and the app stores the parsed entries in a local database and visualizes them with pie and line charts. There's no backend — everything runs on-device.
+A Kotlin Multiplatform personal-finance app for **Android and iOS**. Import a CSV/ODS/PDF file of income and expenses — or a photo/screenshot of a statement, which the automatic importer reads on-device and maps to columns by itself — and the app stores the parsed entries in a local database and visualizes them with pie and line charts. An **AI assistant chat** answers questions about your own income, expenses and investments with a language model that runs on the device. There's no backend — everything runs on-device.
 
 - **Language:** Kotlin Multiplatform · **UI:** Compose Multiplatform (Material 3), shared by both platforms
 - **Persistence:** Room KMP with the bundled SQLite driver (local, unsynced)
 - **DI:** Koin
-- **Android:** minSdk 31 / targetSdk & compileSdk 37 · **iOS:** deployment target 15.0
+- **Android:** minSdk 31 / targetSdk & compileSdk 37 · **iOS:** deployment target 16.6
 
 ## User guide
 
@@ -64,6 +64,7 @@ platform capabilities the shared code declares as `expect`:
 - **`data/local/`** — Room database, DAOs, and CSV/ODS/PDF parsing.
 - **`data/repository/`** — imported-entries CRUD/aggregation and the spreadsheet import pipeline.
 - **`data/vision/`** — the automatic importer: on-device text recognition → document layout analysis → column classification.
+- **`data/chat/`** — the AI assistant: model lifecycle (download → load → generate), the prompt and the financial summary the model reads.
 - **`domain/`** — plain models plus the `PlatformFile`/`PlatformFolder` abstraction over picked files.
 - **`di/AppModule.kt`** — the shared Koin module (`platformModule` supplies the per-platform bindings).
 - **`platform/`** — the `expect` declarations: clock/time zone, file pickers, currency formatting, preferences.
@@ -71,5 +72,24 @@ platform capabilities the shared code declares as `expect`:
 
 `iosApp/` holds the Xcode project; it is a thin SwiftUI shell around the shared
 Compose UI.
+
+## AI assistant
+
+The assistant chat (the face icon on the Home screen's top bar) runs
+**Qwen2.5 1.5B Instruct** (Q4_K_M GGUF, ~1.1 GB, Apache-2.0) entirely on the
+device, through [llama.cpp](https://github.com/ggml-org/llama.cpp):
+[Llamatik](https://github.com/ferranpons/Llamatik) on Android and iOS, and
+[wllama](https://github.com/ngxson/wllama) (llama.cpp compiled to WebAssembly)
+on the web. The model is downloaded once from
+[Hugging Face](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF), after
+the user asks for it, and pinned to a fixed revision. Before each answer the
+app summarizes the user's data (totals, months, categories, latest
+transactions, investments) into the prompt; nothing the user writes or the
+model answers leaves the device.
+
+The model was chosen as the balance point for "most modern devices": ~1.5 GB
+of free memory is enough, it answers at a readable pace on a mid-range phone,
+it handles Portuguese, Spanish and English, and it downloads without a Hugging
+Face account.
 
 See [CLAUDE.md](CLAUDE.md) for the full architecture notes, spreadsheet import format, and Room schema details.

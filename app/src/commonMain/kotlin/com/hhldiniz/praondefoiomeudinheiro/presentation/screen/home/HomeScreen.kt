@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.DatePicker
@@ -85,6 +86,7 @@ import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.PraOndeFoiOMeuDinh
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.HardShadowBox
 import com.hhldiniz.praondefoiomeudinheiro.presentation.theme.NeoTag
 import com.hhldiniz.praondefoiomeudinheiro.resources.Res
+import com.hhldiniz.praondefoiomeudinheiro.resources.chat_open_content_description
 import com.hhldiniz.praondefoiomeudinheiro.resources.action_apply
 import com.hhldiniz.praondefoiomeudinheiro.resources.action_clear
 import com.hhldiniz.praondefoiomeudinheiro.resources.bottom_nav_entries
@@ -136,6 +138,7 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToAddEntry: () -> Unit = {},
     onNavigateToSmartImport: () -> Unit = {},
+    onNavigateToChat: () -> Unit = {},
     refreshKey: Int = 0,
 ) {
     val filePicker = rememberSpreadsheetFilePicker { file -> viewModel.importFile(file) }
@@ -174,6 +177,7 @@ fun HomeScreen(
         onNavigateToSettings = onNavigateToSettings,
         onNavigateToAddEntry = onNavigateToAddEntry,
         onNavigateToSmartImport = onNavigateToSmartImport,
+        onNavigateToChat = onNavigateToChat,
         entries = entries,
         hasMoreEntries = hasMoreEntries,
         onLoadMoreEntries = viewModel::loadMoreEntries,
@@ -214,6 +218,7 @@ private fun HomeContent(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToAddEntry: () -> Unit = {},
     onNavigateToSmartImport: () -> Unit = {},
+    onNavigateToChat: () -> Unit = {},
     entries: List<EntryDisplay>,
     hasMoreEntries: Boolean,
     onLoadMoreEntries: () -> Unit,
@@ -298,6 +303,12 @@ private fun HomeContent(
                     )
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToChat) {
+                        Icon(
+                            imageVector = Icons.Filled.Face,
+                            contentDescription = stringResource(Res.string.chat_open_content_description)
+                        )
+                    }
                     IconButton(onClick = { showFilterDialog = true }) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
