@@ -6,6 +6,7 @@ import com.hhldiniz.praondefoiomeudinheiro.domain.chat.DownloadProgress
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.GenerationOptions
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.LlmRuntime
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,6 +19,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 /** Where the assistant's model is in its life on this device. */
 sealed interface ModelStatus {
@@ -71,6 +75,14 @@ class ChatModelManager(
     private val runtime: LlmRuntime,
     val model: ChatModel = ChatModels.DEFAULT,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    /**
+     * How long a load may take before it is reported as failed. Loading
+     * normally takes seconds; this only exists so that a runtime that never
+     * answers — a browser worker killed for using too much memory, a native
+     * call that does not return — ends in an error the user can retry from,
+     * instead of an endless "loading" screen.
+     */
+    private val loadTimeout: Duration = DEFAULT_LOAD_TIMEOUT,
 ) {
     private val _status = MutableStateFlow<ModelStatus>(ModelStatus.Checking)
     val status: StateFlow<ModelStatus> = _status.asStateFlow()
@@ -138,22 +150,65 @@ class ChatModelManager(
             if (!canLoad) return@withLock
 
             _status.value = ModelStatus.Loading
-            _status.value = try {
-                runtime.load(model)
-                ModelStatus.Ready
-            } catch (error: Exception) {
-                if (error is CancellationException) throw error
-                ModelStatus.Failed(ModelFailure.LOAD, error.message)
-            }
+            _status.value = loadWithin(loadTimeout)
         }
     }
 
-    /** Frees the model's memory; the file stays, so the next [load] needs no network. */
+    /**
+     * Runs [LlmRuntime.load] and waits for it at most [timeout].
+     *
+     * The load runs as its own job and is only *awaited* under the timeout,
+     * because a blocking native load cannot be interrupted: wrapping the call
+     * itself in a timeout would wait for it to return anyway. A load that
+     * outlives the timeout is cancelled as far as the runtime allows; a retry
+     * then either picks up the model it finished loading in the meantime or
+     * starts over.
+     */
+    private suspend fun loadWithin(timeout: Duration): ModelStatus {
+        val result = CompletableDeferred<Unit>()
+        val loading = scope.launch {
+            try {
+                runtime.load(model)
+                result.complete(Unit)
+            } catch (error: Throwable) {
+                result.completeExceptionally(error)
+            }
+        }
+        return try {
+            if (withTimeoutOrNull(timeout) { result.await() } != null) {
+                ModelStatus.Ready
+            } else {
+                loading.cancel()
+                ModelStatus.Failed(ModelFailure.LOAD, "loading did not finish within $timeout")
+            }
+        } catch (error: Exception) {
+            if (error is CancellationException && !result.isCompleted) throw error
+            ModelStatus.Failed(ModelFailure.LOAD, error.message)
+        }
+    }
+
+    /**
+     * Frees the model's memory; the file stays, so the next [load] needs no
+     * network.
+     *
+     * A failed load goes back to [ModelStatus.Downloaded] as well, so the
+     * next visit to the chat tries again on its own instead of showing an old
+     * failure. The runtime is not asked to unload in that case: after a
+     * timeout it may still be stuck in the load, and waiting for it here
+     * would hold [lifecycle] — and with it every later [load] — for as long
+     * as it stays stuck. Each runtime's `load` discards a half-loaded engine
+     * itself.
+     */
     fun unload(): Job = scope.launch {
         lifecycle.withLock {
-            if (_status.value !is ModelStatus.Ready) return@withLock
-            runCatching { runtime.unload() }
-            _status.value = ModelStatus.Downloaded
+            when (val current = _status.value) {
+                is ModelStatus.Ready -> {
+                    runCatching { runtime.unload() }
+                    _status.value = ModelStatus.Downloaded
+                }
+                is ModelStatus.Failed -> if (current.failure == ModelFailure.LOAD) _status.value = ModelStatus.Downloaded
+                else -> Unit
+            }
         }
     }
 
@@ -177,5 +232,10 @@ class ChatModelManager(
     fun generate(prompt: String, options: GenerationOptions): Flow<String> = flow {
         check(_status.value is ModelStatus.Ready) { "the model is not loaded" }
         runtime.complete(prompt, options).collect { emit(it) }
+    }
+
+    companion object {
+        /** Several times what a slow phone or browser needs to read the file into memory. */
+        val DEFAULT_LOAD_TIMEOUT: Duration = 3.minutes
     }
 }

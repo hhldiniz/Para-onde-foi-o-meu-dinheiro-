@@ -9,10 +9,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChatModelManagerTest {
@@ -20,7 +23,8 @@ class ChatModelManagerTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val model = ChatModels.DEFAULT
 
-    private fun manager(runtime: FakeLlmRuntime) = ChatModelManager(runtime, model, CoroutineScope(dispatcher))
+    private fun manager(runtime: FakeLlmRuntime) =
+        ChatModelManager(runtime, model, CoroutineScope(dispatcher), loadTimeout = 1.minutes)
 
     @Test
     fun `refresh finds out whether the model is on the device`() = runTest(dispatcher) {
@@ -91,6 +95,40 @@ class ChatModelManagerTest {
         runtime.loadError = null
         manager.load()
         assertEquals(ModelStatus.Ready, manager.status.value)
+    }
+
+    @Test
+    fun `a load that never finishes fails after the timeout instead of loading forever`() = runTest(dispatcher) {
+        val runtime = FakeLlmRuntime(downloaded = true).apply { loadGate = CompletableDeferred() }
+        val manager = manager(runtime)
+        manager.refresh()
+
+        manager.load()
+        advanceTimeBy(59.seconds)
+        assertEquals(ModelStatus.Loading, manager.status.value)
+
+        advanceTimeBy(2.seconds)
+        val failed = manager.status.value
+        assertTrue(failed is ModelStatus.Failed && failed.failure == ModelFailure.LOAD)
+
+        // Retrying starts a new load, which this time the runtime answers.
+        runtime.loadGate = null
+        manager.load()
+        assertEquals(ModelStatus.Ready, manager.status.value)
+    }
+
+    @Test
+    fun `leaving the chat after a failed load lets the next visit load again`() = runTest(dispatcher) {
+        val runtime = FakeLlmRuntime(downloaded = true).apply { loadError = LlmRuntimeException("out of memory") }
+        val manager = manager(runtime)
+        manager.refresh()
+        manager.load()
+
+        manager.unload()
+
+        assertEquals(ModelStatus.Downloaded, manager.status.value)
+        // The runtime is not waited on: it may still be stuck in that load.
+        assertEquals(0, runtime.unloads)
     }
 
     @Test

@@ -25,6 +25,9 @@ class FakeLlmRuntime(
     /** When set, [download] waits on it, so a test can look at (or cancel) a download in flight. */
     var downloadGate: CompletableDeferred<Unit>? = null
 
+    /** When set, [load] waits on it — a load that never finishes, as a crashed engine's would. */
+    var loadGate: CompletableDeferred<Unit>? = null
+
     val prompts = mutableListOf<String>()
     var loads = 0
         private set
@@ -49,6 +52,7 @@ class FakeLlmRuntime(
     }
 
     override suspend fun load(model: ChatModel) {
+        loadGate?.await()
         loadError?.let { throw it }
         loads++
     }
