@@ -22,6 +22,7 @@ const CACHE = "praonde-shell-v1";
 const SHELL = [
     "./",
     "./manifest.webmanifest",
+    "./debug.js",
     "./icon.svg",
     "./icon-192.png",
     "./icon-512.png",

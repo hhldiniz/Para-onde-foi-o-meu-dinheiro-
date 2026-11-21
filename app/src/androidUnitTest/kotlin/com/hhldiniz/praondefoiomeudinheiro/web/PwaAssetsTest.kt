@@ -238,6 +238,20 @@ class PwaAssetsTest {
     }
 
     /**
+     * `debug.js` is the only way to see why the app fails on a phone with no
+     * developer tools, an installed iOS app above all. It catches nothing that
+     * happened before it was listening, so it has to be the first script on
+     * the page, and the service worker has to keep it for offline launches.
+     */
+    @Test
+    fun `the startup diagnostics load before anything else`() {
+        val html = resources.resolve("index.html").readText()
+        val firstScript = Regex("""<script[^>]*src="([^"]+)"""").find(html)?.groupValues?.get(1)
+        assertEquals("debug.js", firstScript)
+        assertTrue("sw.js does not keep debug.js for offline launches", resources.resolve("sw.js").readText().contains(""""./debug.js""""))
+    }
+
+    /**
      * `index.html` paints a placeholder while the wasm bundle downloads and
      * `main.kt` removes it once Compose is ready; they agree on nothing but
      * this id, and a mismatch would leave the placeholder covering the app.
