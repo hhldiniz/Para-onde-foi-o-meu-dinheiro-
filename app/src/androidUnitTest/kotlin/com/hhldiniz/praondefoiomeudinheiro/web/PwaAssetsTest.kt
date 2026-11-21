@@ -270,6 +270,28 @@ class PwaAssetsTest {
     }
 
     /**
+     * `sw.js` serves the scripts at the site's root network first, so a deploy
+     * reaches the bridges on the same launch as the page (see `isRootScript`).
+     * The rule is by location, not by name: a script `index.html` loads from a
+     * subdirectory would quietly go back to stale-while-revalidate, a launch
+     * behind everything else.
+     */
+    @Test
+    fun `every script the page loads is one the service worker fetches network first`() {
+        val html = resources.resolve("index.html").readText()
+        val scripts = Regex("""<script[^>]*src="([^"]+)"""").findAll(html).map { it.groupValues[1] }.toList()
+        assertTrue("index.html loads no scripts", scripts.isNotEmpty())
+        for (script in scripts) {
+            assertTrue(
+                "$script is not a root-level .js/.mjs file, so sw.js would serve it stale-while-revalidate",
+                Regex("""^(\./)?[^/]+\.m?js$""").matches(script),
+            )
+        }
+        val worker = resources.resolve("sw.js").readText()
+        assertTrue("sw.js no longer routes root scripts network first", worker.contains("if (isRootScript(url)) {"))
+    }
+
+    /**
      * `index.html` paints a placeholder while the wasm bundle downloads and
      * `main.kt` removes it once Compose is ready; they agree on nothing but
      * this id, and a mismatch would leave the placeholder covering the app.
