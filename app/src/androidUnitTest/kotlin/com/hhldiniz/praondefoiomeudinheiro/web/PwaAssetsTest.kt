@@ -156,6 +156,24 @@ class PwaAssetsTest {
     }
 
     /**
+     * The one patch to a vendored file (see `vendor/README.md`): wllama 3.8.1
+     * calls `.replace` on the reason the worker aborted with, which is an
+     * `Error` object — not a string — when the wasm fails to instantiate, as
+     * its default build does on Safari 27. The resulting TypeError swallows
+     * the failure and leaves the load pending forever. Re-copying the package
+     * on an update drops the patch, which this catches.
+     */
+    @Test
+    fun `the vendored wllama keeps its abort-message patch`() {
+        val wllama = resources.resolve("vendor/wllama/index.js").readText()
+        assertTrue(
+            "vendor/wllama/index.js lost its patch: re-apply String(message) (vendor/README.md)",
+            wllama.contains("let newMsg = String(message).replace("),
+        )
+        assertTrue("vendor/wllama/index.js has an unpatched message.replace", !wllama.contains("let newMsg = message.replace("))
+    }
+
+    /**
      * The chat's two halves are joined by nothing but these names, like the
      * install button's: `llm-chat.js` defines `window.praOndeLlm` and its
      * methods, `WllamaRuntime.kt` calls them, and a rename on either side
