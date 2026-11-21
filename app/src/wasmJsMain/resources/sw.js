@@ -114,13 +114,38 @@ self.addEventListener("activate", (event) => {
  * user may well have bookmarked `./index.html`, and both serve the same shell.
  */
 async function handleNavigation(request) {
+    return networkFirst(request, "./");
+}
+
+/**
+ * The scripts the page loads from the site's root — the bridges
+ * (`llm-chat.js`, `pdf-extract.js`, `ocr-extract.js`), `pwa.js`, `debug.js`
+ * and the compiled bundle's loader — are network first as well. Their names
+ * carry no content hash, so served stale-while-revalidate a deploy would only
+ * reach them a launch after the page itself: the first launch would run new
+ * Kotlin against an old bridge, and a fix in a bridge would look like it had
+ * not shipped. They are small, and GitHub Pages' ETags turn the check into a
+ * 304 when nothing changed.
+ *
+ * `vendor/` is deliberately not included: a vendored engine's script and its
+ * wasm change together, and fetching one fresh while the other comes from the
+ * cache would pair two versions that were never meant to run together.
+ */
+function isRootScript(url) {
+    if (!url.href.startsWith(self.registration.scope)) return false;
+    const path = url.pathname.slice(new URL(self.registration.scope).pathname.length);
+    return !path.includes("/") && /\.m?js$/.test(path);
+}
+
+/** Fetches [request] and caches it, falling back to the cache — then to [fallback] — offline. */
+async function networkFirst(request, fallback) {
     const cache = await caches.open(CACHE);
     try {
         const response = await fetch(request);
         if (isCacheable(response)) cache.put(request, response.clone());
         return response;
     } catch (error) {
-        const cached = (await cache.match(request)) || (await cache.match("./"));
+        const cached = (await cache.match(request)) || (fallback ? await cache.match(fallback) : undefined);
         if (cached) return cached;
         throw error;
     }
@@ -210,6 +235,10 @@ self.addEventListener("fetch", (event) => {
 
     if (request.mode === "navigate") {
         event.respondWith(handleNavigation(request));
+        return;
+    }
+    if (isRootScript(url)) {
+        event.respondWith(networkFirst(request));
         return;
     }
     event.respondWith(handleAsset(event));

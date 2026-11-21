@@ -42,6 +42,11 @@ let loadGeneration = 0;
 // logger — `worker.onerror = logger.error` — and leaves the load's promise
 // pending forever, which the app would show as "loading" for good.
 let onWorkerCrash = null;
+// Set once the default build has failed to start in this browser. wllama
+// only falls back to its compat build when `WebAssembly.Suspending` or 64-bit
+// memory is missing, and Safari 27 has both — yet cannot start that build,
+// so the bridge makes the fallback itself.
+let defaultBuildFailure = null;
 
 function loadModule() {
     if (!modulePromise) {
@@ -103,6 +108,59 @@ async function discardInstance() {
 async function findModel(url) {
     const models = await (await instance()).modelManager.getModels();
     return models.find((model) => model.url === url) || null;
+}
+
+// One attempt at loading the model, on wllama's default build or (`compat`)
+// on the compat one.
+async function loadOnce(url, contextLength, generation, compat) {
+    // Whatever is there — another model, or a load that failed or is
+    // still stuck — is thrown away; a fresh instance is cheaper to reason
+    // about than one that has been torn down halfway.
+    await discardInstance();
+
+    const model = await findModel(url);
+    if (!model) throw new Error(`the model ${url} is not downloaded`);
+    const engine = await instance();
+    if (compat) {
+        // What `getWorkerResources` returns when wllama itself decides
+        // the browser needs the compat build.
+        engine.getWorkerResources = () => ({
+            wasmPath: WLLAMA_COMPAT_WASM.href,
+            jsPath: WLLAMA_COMPAT_WORKER.href,
+            compat: true,
+        });
+    }
+    if (generation !== loadGeneration) throw new Error("the load was superseded by a newer one");
+    try {
+        await new Promise((resolve, reject) => {
+            onWorkerCrash = (event) => {
+                const detail = event && event.message ? `: ${event.message}` : "";
+                reject(new Error(`wllama ${WLLAMA_VERSION}'s worker stopped while loading the model${detail}`));
+            };
+            engine.loadModel(model, {
+                n_ctx: contextLength,
+                n_batch: 512,
+                // CPU only, like the native runtimes. wllama's default is
+                // to offload every layer to WebGPU wherever the browser
+                // exposes it, which on a phone means a gigabyte of
+                // weights pushed into GPU buffers on top of the copy in
+                // the worker — the heaviest way there is to load it.
+                n_gpu_layers: 0,
+                // One conversation at a time; wllama prepares four slots
+                // by default.
+                n_parallel: 1,
+            }).then(resolve, reject);
+        });
+    } catch (error) {
+        if (generation === loadGeneration) await discardInstance();
+        // Marks a failure of the engine itself — the only kind another
+        // build might not have.
+        throw Object.assign(error instanceof Error ? error : new Error(`${error}`), { fromEngine: true });
+    } finally {
+        if (generation === loadGeneration) onWorkerCrash = null;
+    }
+    if (generation !== loadGeneration) throw new Error("the load was superseded by a newer one");
+    loadedUrl = url;
 }
 
 function describeFailure(error, action) {
@@ -180,48 +238,32 @@ window.praOndeLlm = {
         if (model) await model.remove();
     }),
 
-    /** Loads the cached model at `url` with a context window of `contextLength` tokens. */
+    /**
+     * Loads the cached model at `url` with a context window of `contextLength`
+     * tokens. When the default build fails, tries once more on the compat
+     * build, and sticks to it for the rest of the session.
+     */
     load: wrap("loading the model", async (url, contextLength) => {
         if (loadedUrl === url && wllama && wllama.isModelLoaded()) return;
         const generation = ++loadGeneration;
-        // Whatever is there — another model, or a load that failed or is
-        // still stuck — is thrown away; a fresh instance is cheaper to reason
-        // about than one that has been torn down halfway.
-        await discardInstance();
-
-        const model = await findModel(url);
-        if (!model) throw new Error(`the model ${url} is not downloaded`);
-        const engine = await instance();
-        if (generation !== loadGeneration) throw new Error("the load was superseded by a newer one");
-        try {
-            await new Promise((resolve, reject) => {
-                onWorkerCrash = (event) => {
-                    const detail = event && event.message ? `: ${event.message}` : "";
-                    reject(new Error(`wllama ${WLLAMA_VERSION}'s worker stopped while loading the model${detail}`));
-                };
-                engine.loadModel(model, {
-                    n_ctx: contextLength,
-                    n_batch: 512,
-                    // CPU only, like the native runtimes. wllama's default is
-                    // to offload every layer to WebGPU wherever the browser
-                    // exposes it, which on a phone means a gigabyte of
-                    // weights pushed into GPU buffers on top of the copy in
-                    // the worker — the heaviest way there is to load it.
-                    n_gpu_layers: 0,
-                    // One conversation at a time; wllama prepares four slots
-                    // by default.
-                    n_parallel: 1,
-                }).then(resolve, reject);
-            });
-        } catch (error) {
-            if (generation === loadGeneration) await discardInstance();
-            throw error;
-        } finally {
-            if (generation === loadGeneration) onWorkerCrash = null;
+        if (defaultBuildFailure === null) {
+            try {
+                await loadOnce(url, contextLength, generation, false);
+                return;
+            } catch (error) {
+                if (generation !== loadGeneration || !(error && error.fromEngine)) throw error;
+                defaultBuildFailure = (error && error.message) || `${error}`;
+                console.warn(`wllama's default build failed, retrying on the compat build: ${defaultBuildFailure}`);
+            }
         }
-        if (generation !== loadGeneration) throw new Error("the load was superseded by a newer one");
-        loadedUrl = url;
+        try {
+            await loadOnce(url, contextLength, generation, true);
+        } catch (error) {
+            const message = (error && error.message) || `${error}`;
+            throw new Error(`${message} (compat build; the default build failed with: ${defaultBuildFailure})`);
+        }
     }),
+
 
     unload: wrap("unloading the model", async () => {
         loadGeneration++;

@@ -24,7 +24,7 @@ a model the user has to download online anyway.
 | `tesseract/` | `tesseract.js` | 5.1.1 | `dist/tesseract.esm.min.js` + `dist/worker.min.js` |
 | `tesseract-core/` | `tesseract.js-core` | 5.1.1 | `tesseract-core-simd-lstm.wasm.js`, the OCR engine itself (wasm embedded in the JS) |
 | `tessdata/` | `@tesseract.js-data/{por,eng,spa}` | 1.0.0 | The `4.0.0_best_int` models for the three languages the app is translated into |
-| `wllama/` | `@wllama/wllama` | 3.8.1 | `esm/index.js` + `esm/wasm/wllama.wasm`: llama.cpp in WebAssembly, behind the assistant chat (default build: JSPI + 64-bit memory, i.e. Chromium) |
+| `wllama/` | `@wllama/wllama` | 3.8.1 | `esm/index.js` + `esm/wasm/wllama.wasm`: llama.cpp in WebAssembly, behind the assistant chat (default build: JSPI + 64-bit memory, i.e. Chromium); patched, see below |
 | `wllama-compat/` | `@wllama/wllama-compat` | 3.8.1 | `wasm/wllama.js` + `wasm/wllama.wasm`: the Asyncify build wllama falls back to without JSPI (Safari); `llm-chat.js` points `setCompat` at it, or wllama would fetch it from jsDelivr |
 
 Licences ship next to each library (`LICENSE`); pdf.js and the Tesseract
@@ -52,7 +52,18 @@ packages are Apache-2.0, wllama is MIT.
 ## Updating
 
 Each directory holds exactly the files listed above, copied straight out of the
-npm tarball — nothing is patched, so an update is a re-copy:
+npm tarball, with **one patch**, which has to be re-applied after an update:
+
+- `wllama/index.js`, in `ProxyToWorker.onRecvMsg`'s `signal.abort` handler:
+  `message.replace(` → `String(message).replace(`. When the wasm cannot be
+  instantiated, emscripten aborts with the `Error` object itself, and the
+  unpatched `.replace` throws a TypeError that swallows the failure, leaving
+  the load pending forever. That is what Safari 27 hit with the default build
+  (`llm-chat.js` then falls back to the compat build). `PwaAssetsTest` fails if
+  the patch is missing, so a re-copy cannot drop it silently. Remove it once
+  wllama coerces the message itself.
+
+Otherwise an update is a re-copy:
 
 ```bash
 npm pack pdfjs-dist@<version> tesseract.js@<version> tesseract.js-core@<version> \

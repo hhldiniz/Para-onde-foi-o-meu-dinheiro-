@@ -156,6 +156,24 @@ class PwaAssetsTest {
     }
 
     /**
+     * The one patch to a vendored file (see `vendor/README.md`): wllama 3.8.1
+     * calls `.replace` on the reason the worker aborted with, which is an
+     * `Error` object — not a string — when the wasm fails to instantiate, as
+     * its default build does on Safari 27. The resulting TypeError swallows
+     * the failure and leaves the load pending forever. Re-copying the package
+     * on an update drops the patch, which this catches.
+     */
+    @Test
+    fun `the vendored wllama keeps its abort-message patch`() {
+        val wllama = resources.resolve("vendor/wllama/index.js").readText()
+        assertTrue(
+            "vendor/wllama/index.js lost its patch: re-apply String(message) (vendor/README.md)",
+            wllama.contains("let newMsg = String(message).replace("),
+        )
+        assertTrue("vendor/wllama/index.js has an unpatched message.replace", !wllama.contains("let newMsg = message.replace("))
+    }
+
+    /**
      * The chat's two halves are joined by nothing but these names, like the
      * install button's: `llm-chat.js` defines `window.praOndeLlm` and its
      * methods, `WllamaRuntime.kt` calls them, and a rename on either side
@@ -249,6 +267,28 @@ class PwaAssetsTest {
         val firstScript = Regex("""<script[^>]*src="([^"]+)"""").find(html)?.groupValues?.get(1)
         assertEquals("debug.js", firstScript)
         assertTrue("sw.js does not keep debug.js for offline launches", resources.resolve("sw.js").readText().contains(""""./debug.js""""))
+    }
+
+    /**
+     * `sw.js` serves the scripts at the site's root network first, so a deploy
+     * reaches the bridges on the same launch as the page (see `isRootScript`).
+     * The rule is by location, not by name: a script `index.html` loads from a
+     * subdirectory would quietly go back to stale-while-revalidate, a launch
+     * behind everything else.
+     */
+    @Test
+    fun `every script the page loads is one the service worker fetches network first`() {
+        val html = resources.resolve("index.html").readText()
+        val scripts = Regex("""<script[^>]*src="([^"]+)"""").findAll(html).map { it.groupValues[1] }.toList()
+        assertTrue("index.html loads no scripts", scripts.isNotEmpty())
+        for (script in scripts) {
+            assertTrue(
+                "$script is not a root-level .js/.mjs file, so sw.js would serve it stale-while-revalidate",
+                Regex("""^(\./)?[^/]+\.m?js$""").matches(script),
+            )
+        }
+        val worker = resources.resolve("sw.js").readText()
+        assertTrue("sw.js no longer routes root scripts network first", worker.contains("if (isRootScript(url)) {"))
     }
 
     /**

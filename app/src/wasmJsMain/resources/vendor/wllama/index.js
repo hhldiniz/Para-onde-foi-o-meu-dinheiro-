@@ -1639,7 +1639,7 @@ var ProxyToWorker = class {
       }
       (() => __async(this, null, function* () {
         let stack = "";
-        let newMsg = message.replace(
+        let newMsg = String(message).replace(
           "Build with -sASSERTIONS for more info.",
           ""
         );
