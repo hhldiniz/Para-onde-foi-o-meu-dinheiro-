@@ -33,6 +33,15 @@ let wllama = null;
 let loadedUrl = null;
 let downloadAbort = null;
 let completionAbort = null;
+// Bumped by every load and unload, so a load that was abandoned (the app gave
+// up waiting and asked again, or left the chat) cannot mark itself loaded
+// after a newer call has already replaced its instance.
+let loadGeneration = 0;
+// Set while a load is in flight. wllama hands a crash of its Web Worker (the
+// browser killing it for using too much memory, typically) to nothing but its
+// logger — `worker.onerror = logger.error` — and leaves the load's promise
+// pending forever, which the app would show as "loading" for good.
+let onWorkerCrash = null;
 
 function loadModule() {
     if (!modulePromise) {
@@ -54,7 +63,16 @@ async function instance() {
             {
                 // llama.cpp is chatty; the app has nowhere to show its log.
                 suppressNativeLog: true,
-                logger: { debug() {}, log() {}, warn: console.warn, error: console.error },
+                logger: {
+                    debug() {},
+                    log() {},
+                    warn: console.warn,
+                    error: (...args) => {
+                        console.error(...args);
+                        // The worker's error event, as opposed to a message.
+                        if (args[0] instanceof Event && onWorkerCrash) onWorkerCrash(args[0]);
+                    },
+                },
                 // A downloaded model must load with the network off.
                 allowOffline: true,
             },
@@ -62,6 +80,24 @@ async function instance() {
         wllama.setCompat({ worker: WLLAMA_COMPAT_WORKER.href, wasm: WLLAMA_COMPAT_WASM.href });
     }
     return wllama;
+}
+
+// Drops the current instance, terminating its worker. Also the only way out of
+// a load that failed or was abandoned halfway: wllama keeps the half-started
+// worker of a failed load, and refuses every later `loadModel` on that
+// instance with "Module is already initialized" — so without this, "try
+// again" could never work.
+async function discardInstance() {
+    const current = wllama;
+    wllama = null;
+    loadedUrl = null;
+    if (current) {
+        try {
+            await current.exit();
+        } catch (_) {
+            // Terminating a worker that already died can fail; it is gone either way.
+        }
+    }
 }
 
 async function findModel(url) {
@@ -147,26 +183,50 @@ window.praOndeLlm = {
     /** Loads the cached model at `url` with a context window of `contextLength` tokens. */
     load: wrap("loading the model", async (url, contextLength) => {
         if (loadedUrl === url && wllama && wllama.isModelLoaded()) return;
-        if (wllama && wllama.isModelLoaded()) {
-            await wllama.exit();
-            wllama = null;
-        }
-        loadedUrl = null;
+        const generation = ++loadGeneration;
+        // Whatever is there — another model, or a load that failed or is
+        // still stuck — is thrown away; a fresh instance is cheaper to reason
+        // about than one that has been torn down halfway.
+        await discardInstance();
 
         const model = await findModel(url);
         if (!model) throw new Error(`the model ${url} is not downloaded`);
-        await (await instance()).loadModel(model, { n_ctx: contextLength, n_batch: 512 });
+        const engine = await instance();
+        if (generation !== loadGeneration) throw new Error("the load was superseded by a newer one");
+        try {
+            await new Promise((resolve, reject) => {
+                onWorkerCrash = (event) => {
+                    const detail = event && event.message ? `: ${event.message}` : "";
+                    reject(new Error(`wllama ${WLLAMA_VERSION}'s worker stopped while loading the model${detail}`));
+                };
+                engine.loadModel(model, {
+                    n_ctx: contextLength,
+                    n_batch: 512,
+                    // CPU only, like the native runtimes. wllama's default is
+                    // to offload every layer to WebGPU wherever the browser
+                    // exposes it, which on a phone means a gigabyte of
+                    // weights pushed into GPU buffers on top of the copy in
+                    // the worker — the heaviest way there is to load it.
+                    n_gpu_layers: 0,
+                    // One conversation at a time; wllama prepares four slots
+                    // by default.
+                    n_parallel: 1,
+                }).then(resolve, reject);
+            });
+        } catch (error) {
+            if (generation === loadGeneration) await discardInstance();
+            throw error;
+        } finally {
+            if (generation === loadGeneration) onWorkerCrash = null;
+        }
+        if (generation !== loadGeneration) throw new Error("the load was superseded by a newer one");
         loadedUrl = url;
     }),
 
     unload: wrap("unloading the model", async () => {
-        if (wllama) {
-            await wllama.exit();
-            // exit() terminates the worker; a fresh instance is cheaper to
-            // reason about than one that has been torn down.
-            wllama = null;
-        }
-        loadedUrl = null;
+        loadGeneration++;
+        onWorkerCrash = null;
+        await discardInstance();
     }),
 
     /**
