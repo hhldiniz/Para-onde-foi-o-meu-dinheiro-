@@ -7,6 +7,8 @@ import com.hhldiniz.praondefoiomeudinheiro.data.local.buildAppDatabase
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.CategoryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.ImportedEntryDao
 import com.hhldiniz.praondefoiomeudinheiro.data.local.dao.InvestmentDao
+import com.hhldiniz.praondefoiomeudinheiro.domain.chat.ChatModel
+import com.hhldiniz.praondefoiomeudinheiro.domain.chat.ChatModels
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.LlmRuntime
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
@@ -19,4 +21,5 @@ actual val platformModule: Module = module {
     single<CategoryDao> { get<AppDatabase>().categoryDao() }
     single<InvestmentDao> { get<AppDatabase>().investmentDao() }
     single<LlmRuntime> { LlamatikRuntime() }
+    single<ChatModel> { ChatModels.DEFAULT }
 }

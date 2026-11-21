@@ -300,6 +300,7 @@
     <string name="chat_error_download">No se pudo descargar el modelo. Comprueba tu conexión e inténtalo de nuevo.</string>
     <string name="chat_error_storage">No hay suficiente espacio libre en este dispositivo. El modelo necesita %1$s.</string>
     <string name="chat_error_load">No se pudo cargar el modelo. Puede que el dispositivo no tenga memoria libre: cierra otras apps e inténtalo de nuevo.</string>
+    <string name="chat_error_crashed">La última vez, cargar el modelo cerró la app, probablemente por falta de memoria. Cierra otras apps e inténtalo de nuevo.</string>
     <string name="chat_error_detail">Detalle: %1$s</string>
     <string name="chat_btn_retry">INTENTAR DE NUEVO</string>
     <string name="chat_empty_title">Pregunta sobre tu dinero</string>

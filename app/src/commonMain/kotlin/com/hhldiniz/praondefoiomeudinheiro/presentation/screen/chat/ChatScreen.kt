@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hhldiniz.praondefoiomeudinheiro.data.chat.ModelFailure
 import com.hhldiniz.praondefoiomeudinheiro.data.chat.ModelStatus
+import com.hhldiniz.praondefoiomeudinheiro.data.chat.isLoadFailure
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.ChatModel
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.ChatRole
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.DownloadProgress
@@ -96,6 +97,7 @@ import com.hhldiniz.praondefoiomeudinheiro.resources.chat_download_progress
 import com.hhldiniz.praondefoiomeudinheiro.resources.chat_downloading_title
 import com.hhldiniz.praondefoiomeudinheiro.resources.chat_empty_title
 import com.hhldiniz.praondefoiomeudinheiro.resources.chat_error_detail
+import com.hhldiniz.praondefoiomeudinheiro.resources.chat_error_crashed
 import com.hhldiniz.praondefoiomeudinheiro.resources.chat_error_download
 import com.hhldiniz.praondefoiomeudinheiro.resources.chat_error_load
 import com.hhldiniz.praondefoiomeudinheiro.resources.chat_error_storage
@@ -140,7 +142,7 @@ fun ChatScreen(
 
     val modelOnDevice = state.status.let {
         it is ModelStatus.Downloaded || it is ModelStatus.Loading || it is ModelStatus.Ready ||
-            (it is ModelStatus.Failed && it.failure == ModelFailure.LOAD)
+            (it is ModelStatus.Failed && it.failure.isLoadFailure)
     }
 
     Scaffold(
@@ -212,7 +214,7 @@ fun ChatScreen(
                 ModelStatus.Downloaded, ModelStatus.Loading -> Waiting(stringResource(Res.string.chat_loading_model))
                 ModelStatus.NotDownloaded -> SetupContent(state.model, failure = null, onDownload = viewModel::onDownload)
                 is ModelStatus.Downloading -> DownloadingContent(status.progress, onCancel = viewModel::onCancelDownload)
-                is ModelStatus.Failed -> if (status.failure == ModelFailure.LOAD) {
+                is ModelStatus.Failed -> if (status.failure.isLoadFailure) {
                     FailureContent(status, state.model, onRetry = viewModel::onRetry)
                 } else {
                     SetupContent(state.model, failure = status, onDownload = viewModel::onRetry)
@@ -391,6 +393,7 @@ private fun ErrorCard(failure: ModelStatus.Failed, model: ChatModel) {
                     ModelFailure.DOWNLOAD -> stringResource(Res.string.chat_error_download)
                     ModelFailure.STORAGE -> stringResource(Res.string.chat_error_storage, formatByteSize(model.sizeBytes))
                     ModelFailure.LOAD -> stringResource(Res.string.chat_error_load)
+                    ModelFailure.CRASHED -> stringResource(Res.string.chat_error_crashed)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,

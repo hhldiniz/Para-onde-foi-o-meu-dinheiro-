@@ -1,5 +1,7 @@
 package com.hhldiniz.praondefoiomeudinheiro.data.chat
 
+import com.hhldiniz.praondefoiomeudinheiro.data.local.prefs.InMemoryKeyValueStore
+import com.hhldiniz.praondefoiomeudinheiro.data.local.prefs.KeyValueStore
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.ChatModel
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.ChatModels
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.DownloadProgress
@@ -55,7 +57,18 @@ enum class ModelFailure {
 
     /** The file is there but the runtime could not load it (most often: not enough memory). */
     LOAD,
+
+    /**
+     * The last load closed the app (the system killed it, almost always for
+     * memory). Unlike [LOAD] it is not retried on its own when the chat is
+     * opened again — that would only crash again — but waits for the user.
+     */
+    CRASHED,
 }
+
+/** A failure of loading the model, as opposed to getting it onto the device: retrying means loading again. */
+val ModelFailure.isLoadFailure: Boolean
+    get() = this == ModelFailure.LOAD || this == ModelFailure.CRASHED
 
 /** The device has less free space than the model needs. */
 class NotEnoughStorageException(val requiredBytes: Long, val availableBytes: Long) :
@@ -83,6 +96,16 @@ class ChatModelManager(
      * instead of an endless "loading" screen.
      */
     private val loadTimeout: Duration = DEFAULT_LOAD_TIMEOUT,
+    /**
+     * Where a load in progress is written down before it starts and erased
+     * once it ends, either way. Running out of memory while loading does not
+     * fail the load — the system kills the app (on an iPhone, Safari's page),
+     * and a load cannot report a crash that ended it. Finding the mark still
+     * there on the next [refresh] is how that crash is told apart from a
+     * model that was simply never loaded; without it, opening the chat again
+     * would load again by itself and crash again, in a loop.
+     */
+    private val loadMarker: KeyValueStore = InMemoryKeyValueStore(),
 ) {
     private val _status = MutableStateFlow<ModelStatus>(ModelStatus.Checking)
     val status: StateFlow<ModelStatus> = _status.asStateFlow()
@@ -99,13 +122,40 @@ class ChatModelManager(
     fun refresh(): Job = scope.launch {
         lifecycle.withLock {
             val current = _status.value
-            if (current is ModelStatus.Checking || current is ModelStatus.NotDownloaded || current is ModelStatus.Failed) {
-                _status.value = try {
-                    if (runtime.isDownloaded(model)) ModelStatus.Downloaded else ModelStatus.NotDownloaded
+            val recheck = current is ModelStatus.Checking || current is ModelStatus.NotDownloaded ||
+                (current is ModelStatus.Failed && current.failure != ModelFailure.CRASHED)
+            if (recheck) {
+                val downloaded = try {
+                    runtime.isDownloaded(model)
                 } catch (error: Exception) {
                     if (error is CancellationException) throw error
-                    ModelStatus.NotDownloaded
+                    false
                 }
+                _status.value = when {
+                    !downloaded -> ModelStatus.NotDownloaded
+                    // The last load never got to erase its mark: it took the
+                    // app down with it. Wait for the user rather than repeat it.
+                    loadMarker.getString(LOADING_KEY) == model.id -> ModelStatus.Failed(ModelFailure.CRASHED, null)
+                    else -> ModelStatus.Downloaded
+                }
+                loadMarker.putString(LOADING_KEY, "")
+            }
+            if (current is ModelStatus.Checking) deleteOtherModels()
+        }
+    }
+
+    /**
+     * Removes any other model a previous version of the app downloaded (see
+     * [ChatModels.ALL]) — a model switch must not leave the old file behind.
+     * Best effort, since a leftover only costs space.
+     */
+    private suspend fun deleteOtherModels() {
+        for (other in ChatModels.ALL) {
+            if (other.id == model.id) continue
+            try {
+                if (runtime.isDownloaded(other)) runtime.delete(other)
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
             }
         }
     }
@@ -146,7 +196,7 @@ class ChatModelManager(
         lifecycle.withLock {
             val current = _status.value
             val canLoad = current is ModelStatus.Downloaded ||
-                (current is ModelStatus.Failed && current.failure == ModelFailure.LOAD)
+                (current is ModelStatus.Failed && current.failure.isLoadFailure)
             if (!canLoad) return@withLock
 
             _status.value = ModelStatus.Loading
@@ -165,6 +215,15 @@ class ChatModelManager(
      * starts over.
      */
     private suspend fun loadWithin(timeout: Duration): ModelStatus {
+        loadMarker.putString(LOADING_KEY, model.id)
+        try {
+            return awaitLoad(timeout)
+        } finally {
+            loadMarker.putString(LOADING_KEY, "")
+        }
+    }
+
+    private suspend fun awaitLoad(timeout: Duration): ModelStatus {
         val result = CompletableDeferred<Unit>()
         val loading = scope.launch {
             try {
@@ -237,5 +296,10 @@ class ChatModelManager(
     companion object {
         /** Several times what a slow phone or browser needs to read the file into memory. */
         val DEFAULT_LOAD_TIMEOUT: Duration = 3.minutes
+
+        /** The [KeyValueStore] the load mark lives in. */
+        const val PREFS_NAME = "chat_model"
+
+        private const val LOADING_KEY = "loading_model"
     }
 }
