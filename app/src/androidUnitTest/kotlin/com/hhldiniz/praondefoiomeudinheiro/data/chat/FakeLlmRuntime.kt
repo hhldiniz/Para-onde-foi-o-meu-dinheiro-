@@ -1,6 +1,7 @@
 package com.hhldiniz.praondefoiomeudinheiro.data.chat
 
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.ChatModel
+import com.hhldiniz.praondefoiomeudinheiro.domain.chat.ChatModels
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.DownloadProgress
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.GenerationOptions
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.LlmRuntime
@@ -14,8 +15,13 @@ import kotlinx.coroutines.flow.flow
  * how the tests check what the assistant was actually asked.
  */
 class FakeLlmRuntime(
+    /** Whether the model under test ([activeModelId]) is on the "device". */
     var downloaded: Boolean = false,
+    private val activeModelId: String = ChatModels.DEFAULT.id,
 ) : LlmRuntime {
+
+    /** Other models' files left on the "device", by id — what a model switch leaves behind. */
+    val leftovers = mutableSetOf<String>()
 
     var answer: List<String> = listOf("Ok.")
     var downloadError: Exception? = null
@@ -36,7 +42,8 @@ class FakeLlmRuntime(
     var deletes = 0
         private set
 
-    override suspend fun isDownloaded(model: ChatModel): Boolean = downloaded
+    override suspend fun isDownloaded(model: ChatModel): Boolean =
+        if (model.id == activeModelId) downloaded else model.id in leftovers
 
     override suspend fun download(model: ChatModel, onProgress: (DownloadProgress) -> Unit) {
         onProgress(DownloadProgress(model.sizeBytes / 4, model.sizeBytes))
@@ -48,7 +55,7 @@ class FakeLlmRuntime(
 
     override suspend fun delete(model: ChatModel) {
         deletes++
-        downloaded = false
+        if (model.id == activeModelId) downloaded = false else leftovers.remove(model.id)
     }
 
     override suspend fun load(model: ChatModel) {

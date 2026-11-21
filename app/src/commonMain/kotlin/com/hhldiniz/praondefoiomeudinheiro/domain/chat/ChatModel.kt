@@ -75,6 +75,33 @@ object ChatModels {
         license = "Apache-2.0",
     )
 
-    /** The model the chat uses. */
+    /**
+     * The same Qwen2.5 1.5B Instruct, quantized to Q2_K (~750MB) — the web
+     * build's model.
+     *
+     * A browser cannot map the file the way llama.cpp does natively: wllama
+     * reads every weight into the WebAssembly heap, and on an iPhone a 1.1GB
+     * heap is enough for iOS to kill Safari's page. Q2_K is the same model in
+     * a third less memory, at a visible cost in quality, which is why the
+     * native builds keep [QWEN2_5_1_5B_INSTRUCT].
+     */
+    val QWEN2_5_1_5B_INSTRUCT_Q2_K = QWEN2_5_1_5B_INSTRUCT.copy(
+        id = "qwen2.5-1.5b-instruct-q2_k",
+        displayName = "Qwen2.5 1.5B Instruct (Q2_K)",
+        fileName = "qwen2.5-1.5b-instruct-q2_k.gguf",
+        sizeBytes = 752_880_160L,
+    )
+
+    /** The model the native builds (Android, iOS) use. */
     val DEFAULT: ChatModel = QWEN2_5_1_5B_INSTRUCT
+
+    /** The model the web build uses; see [QWEN2_5_1_5B_INSTRUCT_Q2_K]. */
+    val WEB: ChatModel = QWEN2_5_1_5B_INSTRUCT_Q2_K
+
+    /**
+     * Every model a build has ever downloaded. Whichever of them is not the
+     * current one is deleted on sight ([com.hhldiniz.praondefoiomeudinheiro.data.chat.ChatModelManager.refresh]),
+     * so switching models never leaves a gigabyte behind.
+     */
+    val ALL: List<ChatModel> = listOf(QWEN2_5_1_5B_INSTRUCT, QWEN2_5_1_5B_INSTRUCT_Q2_K)
 }

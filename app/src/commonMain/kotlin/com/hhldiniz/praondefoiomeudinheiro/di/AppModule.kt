@@ -1,6 +1,7 @@
 package com.hhldiniz.praondefoiomeudinheiro.di
 
 import com.hhldiniz.praondefoiomeudinheiro.data.chat.ChatModelManager
+import com.hhldiniz.praondefoiomeudinheiro.data.local.prefs.createKeyValueStore
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.CategoryRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.FileSpreadsheetRepository
 import com.hhldiniz.praondefoiomeudinheiro.data.repository.ImportRepository
@@ -32,7 +33,8 @@ val appModule = module {
     single<SpreadsheetRepository> { FileSpreadsheetRepository() }
     single { SmartImportAnalyzer() }
     // One per process: the model's download and load outlive the chat screen.
-    single { ChatModelManager(get()) }
+    // Which model is the platform's call (see ChatModels.WEB).
+    single { ChatModelManager(get(), get(), loadMarker = createKeyValueStore(ChatModelManager.PREFS_NAME)) }
 
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { LandingViewModel(get()) }

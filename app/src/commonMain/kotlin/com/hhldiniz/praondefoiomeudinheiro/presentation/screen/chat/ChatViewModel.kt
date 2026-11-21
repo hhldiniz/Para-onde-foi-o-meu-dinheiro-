@@ -96,7 +96,7 @@ class ChatViewModel(
     fun onRetry() {
         when (val status = _uiState.value.status) {
             is ModelStatus.Failed -> when (status.failure) {
-                ModelFailure.LOAD -> manager.load()
+                ModelFailure.LOAD, ModelFailure.CRASHED -> manager.load()
                 else -> manager.startDownload()
             }
             else -> Unit

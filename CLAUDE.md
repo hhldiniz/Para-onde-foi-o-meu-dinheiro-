@@ -260,8 +260,14 @@ Hugging Face repository, a **pinned revision** and its exact size — so a
 re-upload under the same name cannot change what the app runs, and a file of
 any other size is known to be broken. It is the balance point for "most modern
 devices": ~1.5GB of free memory, a readable pace on a mid-range phone, decent
-Portuguese/Spanish/English. Swapping models means a new `ChatModel` entry (and,
-if its chat template is not ChatML, a new `PromptFormat`).
+Portuguese/Spanish/English. **The web build runs the same model quantized to
+Q2_K** (~750MB, `ChatModels.WEB`): a browser cannot map the file the way
+llama.cpp does natively, so wllama reads every weight into the WebAssembly
+heap, and on an iPhone a 1.1GB heap gets Safari's page killed. Each
+`platformModule` binds the `ChatModel` its platform uses. Swapping models means
+a new `ChatModel` entry (and, if its chat template is not ChatML, a new
+`PromptFormat`), added to `ChatModels.ALL` so the previous file is deleted on
+the next start instead of staying behind.
 
 The split mirrors the vision importer — everything that decides *what* the
 model is asked lives in commonMain; only running llama.cpp is per platform:
@@ -299,6 +305,14 @@ model is asked lives in commonMain; only running llama.cpp is per platform:
   after which it becomes `Failed(LOAD)` with a retry button. Leaving the chat
   after a failed load puts the status back to Downloaded without calling the
   runtime (which may still be stuck), so the next visit tries again by itself.
+  **A load that kills the app is caught on the next start**: running out of
+  memory mid-load does not fail the load, the system kills the process, so
+  `loadMarker` (a `KeyValueStore`, `chat_model`) records the model's id before
+  every load and erases it after, either way. Finding it still there on
+  `refresh` means the last load took the app down: the status becomes
+  `Failed(CRASHED)`, which — unlike `LOAD` — neither reopening nor leaving the
+  chat retries; only the user's retry does, so a model too big for the device
+  cannot crash it in a loop.
 - **`ChatViewModel`** owns the conversation. Before **every** answer it re-reads
   the data (`ImportRepository.getAllEntries()`, the investments, currency,
   starting patrimony) into a fresh briefing, so something imported a minute

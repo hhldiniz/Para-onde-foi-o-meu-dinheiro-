@@ -1,5 +1,7 @@
 package com.hhldiniz.praondefoiomeudinheiro.data.chat
 
+import com.hhldiniz.praondefoiomeudinheiro.data.local.prefs.InMemoryKeyValueStore
+import com.hhldiniz.praondefoiomeudinheiro.data.local.prefs.KeyValueStore
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.ChatModels
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.DownloadProgress
 import com.hhldiniz.praondefoiomeudinheiro.domain.chat.GenerationOptions
@@ -23,8 +25,8 @@ class ChatModelManagerTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val model = ChatModels.DEFAULT
 
-    private fun manager(runtime: FakeLlmRuntime) =
-        ChatModelManager(runtime, model, CoroutineScope(dispatcher), loadTimeout = 1.minutes)
+    private fun manager(runtime: FakeLlmRuntime, loadMarker: KeyValueStore = InMemoryKeyValueStore()) =
+        ChatModelManager(runtime, model, CoroutineScope(dispatcher), loadTimeout = 1.minutes, loadMarker = loadMarker)
 
     @Test
     fun `refresh finds out whether the model is on the device`() = runTest(dispatcher) {
@@ -129,6 +131,44 @@ class ChatModelManagerTest {
         assertEquals(ModelStatus.Downloaded, manager.status.value)
         // The runtime is not waited on: it may still be stuck in that load.
         assertEquals(0, runtime.unloads)
+    }
+
+    @Test
+    fun `a load that closed the app is reported, and not retried until the user asks`() = runTest(dispatcher) {
+        val runtime = FakeLlmRuntime(downloaded = true).apply { loadGate = CompletableDeferred() }
+        val marker = InMemoryKeyValueStore()
+        // The first run starts loading and is killed mid-load: the mark stays.
+        manager(runtime, marker).apply { refresh(); load() }
+
+        // The next run finds it, instead of loading again by itself.
+        val restarted = manager(runtime, marker)
+        restarted.refresh()
+        assertEquals(ModelStatus.Failed(ModelFailure.CRASHED, null), restarted.status.value)
+
+        // Neither reopening nor leaving the chat sets it off again...
+        restarted.refresh()
+        restarted.unload()
+        assertEquals(ModelStatus.Failed(ModelFailure.CRASHED, null), restarted.status.value)
+
+        // ...only the user's retry, which then loads normally.
+        runtime.loadGate = null
+        restarted.load()
+        assertEquals(ModelStatus.Ready, restarted.status.value)
+
+        // A load that finished leaves no mark behind for the run after.
+        val third = manager(runtime, marker)
+        third.refresh()
+        assertEquals(ModelStatus.Downloaded, third.status.value)
+    }
+
+    @Test
+    fun `a model left behind by a model switch is deleted`() = runTest(dispatcher) {
+        val runtime = FakeLlmRuntime(downloaded = true).apply { leftovers += ChatModels.WEB.id }
+
+        manager(runtime).refresh()
+
+        assertTrue(runtime.leftovers.isEmpty())
+        assertTrue("the current model must stay", runtime.downloaded)
     }
 
     @Test
